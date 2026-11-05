@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Bell, Plus } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Bike, Check, Loader2, Plus, X } from "lucide-react";
 import { AdminOrderCardTeste } from "../components/AdminOrderCardTeste";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import OrdersToolbar, { type PeriodKey, type SourceKey } from "../components/orders/OrdersToolbar";
 import OrdersStatusPillsTeste from "../components/orders/OrdersStatusPillsTeste";
 import PixDirectAlert from "../components/orders/PixDirectAlert";
@@ -98,6 +99,81 @@ export default function OrdersSectionTeste(props: Props) {
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [pixProofPreview, setPixProofPreview] = useState<{ url: string; order: any } | null>(null);
+
+  // ─── Agrupar pedidos pro motoboy ───
+  // Pedidos de entrega (não-retirada) em preparo ou já prontos, ainda sem
+  // motoboy a caminho: são os que podem sair juntos numa viagem só.
+  const groupEligible = useMemo(
+    () =>
+      (orders || []).filter(
+        (o: any) =>
+          isOwnDelivery &&
+          hasLinkedDrivers &&
+          o.neighborhood !== "RETIRADA" &&
+          !o.driver_id &&
+          (o.status === "preparando" || o.status === "pronto_para_entrega")
+      ),
+    [orders, isOwnDelivery, hasLinkedDrivers]
+  );
+  const [groupSelected, setGroupSelected] = useState<string[]>([]);
+  const [groupDriverId, setGroupDriverId] = useState<string>("");
+  const [groupConfirmOpen, setGroupConfirmOpen] = useState(false);
+  const [groupBusy, setGroupBusy] = useState(false);
+
+  // Seleção só mantém pedidos que continuam elegíveis (status pode mudar
+  // por Realtime enquanto a tela está aberta).
+  useEffect(() => {
+    setGroupSelected((prev) => prev.filter((id) => groupEligible.some((o: any) => o.id === id)));
+  }, [groupEligible]);
+
+  // Com um motoboy só vinculado, ele é o destino natural do grupo.
+  useEffect(() => {
+    if ((linkedStoreDrivers?.length || 0) === 1) setGroupDriverId(linkedStoreDrivers![0].user_id);
+  }, [linkedStoreDrivers]);
+
+  const toggleGroupOrder = (id: string) =>
+    setGroupSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const selectedGroupOrders = groupEligible.filter((o: any) => groupSelected.includes(o.id));
+  const groupDriverName = groupDriverId ? getDriverName(groupDriverId) : null;
+
+  const confirmGroupDispatch = async () => {
+    if (groupBusy || selectedGroupOrders.length < 2) return;
+    setGroupBusy(true);
+    const target = groupDriverId || null;
+    try {
+      // 1) Designa o motoboy ANTES de mudar qualquer status (mesma regra do
+      // card individual: pronto dispara push/Realtime pros entregadores).
+      for (const o of selectedGroupOrders) {
+        if ((o as any).assigned_driver_id !== target) {
+          const { error } = await (supabase as any).rpc("store_assign_order_driver", {
+            _order_id: o.id,
+            _driver_user_id: target,
+          });
+          if (error) throw error;
+        }
+      }
+      // 2) Marca como pronto os que ainda estão em preparo (os já prontos
+      // ficam como estão — só ganharam a designação).
+      for (const o of selectedGroupOrders) {
+        if (o.status === "preparando") {
+          await updateOrderStatus(o.id, "pronto_para_entrega", target);
+        }
+      }
+      toast.success(
+        target
+          ? `${selectedGroupOrders.length} pedidos prontos — ${groupDriverName} leva todos numa viagem só!`
+          : `${selectedGroupOrders.length} pedidos prontos — abertos pros motoboys, numa viagem só!`
+      );
+      setGroupSelected([]);
+      setGroupConfirmOpen(false);
+      setActiveTab("pronto_para_entrega");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao agrupar os pedidos");
+    } finally {
+      setGroupBusy(false);
+    }
+  };
 
   const openProof = async (order: any) => {
     if (!order?.pix_proof_url) return;
@@ -267,6 +343,67 @@ export default function OrdersSectionTeste(props: Props) {
         setPixProofPreview={setPixProofPreview}
       />
 
+      {groupEligible.length >= 2 && (
+        <div className="mx-auto w-full max-w-6xl px-4 lg:px-6">
+          <div className="rounded-2xl border-2 border-dashed border-primary bg-primary/5 p-4">
+            <p className="text-base font-black text-foreground">🛵 Dá pra juntar esses pedidos!</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Tem <b className="text-foreground">{groupEligible.length} pedidos</b> pra sair agora. Juntando, o motoboy{" "}
+              <b className="text-foreground">leva todos numa viagem só</b> — entrega um, depois o outro — em vez de ir e
+              voltar várias vezes. Não precisa ser do mesmo bairro.
+            </p>
+            {groupSelected.length === 0 ? (
+              <button
+                onClick={() => setGroupSelected(groupEligible.map((o: any) => o.id))}
+                className="mt-3 w-full rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                JUNTAR OS {groupEligible.length} PEDIDOS
+              </button>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs font-bold text-muted-foreground">
+                  👇 Toque nos pedidos pra tirar ou pôr de volta — {groupSelected.length} de {groupEligible.length}{" "}
+                  vão juntos.
+                </p>
+                {(linkedStoreDrivers?.length || 0) > 1 && (
+                  <div>
+                    <label className="text-xs font-bold text-foreground">Quem leva?</label>
+                    <select
+                      value={groupDriverId}
+                      onChange={(e) => setGroupDriverId(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Qualquer motoboy (quem aceitar primeiro)</option>
+                      {linkedStoreDrivers!.map((d: any) => (
+                        <option key={d.user_id} value={d.user_id}>
+                          {d.full_name || "Motoboy"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setGroupConfirmOpen(true)}
+                    disabled={groupSelected.length < 2}
+                    className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+                  >
+                    MARCAR PRONTOS E ENVIAR PRO MOTOBOY ({groupSelected.length})
+                  </button>
+                  <button
+                    onClick={() => setGroupSelected([])}
+                    className="rounded-xl bg-muted px-3 py-3 text-sm font-bold text-muted-foreground"
+                    title="Cancelar a seleção"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <OrdersStatusPillsTeste
         orderTabs={orderTabs}
         orders={orders}
@@ -316,12 +453,66 @@ export default function OrdersSectionTeste(props: Props) {
               handleCancelOrder={handleCancelOrder}
               handlePrint={handlePrint}
               invalidateOrders={invalidateOrders}
+              groupSelectable={groupEligible.some((g: any) => g.id === order.id)}
+              groupChecked={groupSelected.includes(order.id)}
+              onToggleGroup={toggleGroupOrder}
             />
           ))
         ) : (
           <OrdersEmptyStateTeste activeTab={activeTab} />
         )}
       </div>
+
+      <Dialog open={groupConfirmOpen} onOpenChange={(open) => { if (!groupBusy) setGroupConfirmOpen(open); }}>
+        <DialogContent className="max-w-sm rounded-2xl p-4 gap-3">
+          <DialogHeader className="space-y-1 text-left">
+            <DialogTitle className="text-base">
+              Deseja despachar esses {selectedGroupOrders.length} pedidos agora?
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Eles marcam como pronto juntos e saem numa viagem só.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            {selectedGroupOrders.map((o: any) => (
+              <div key={o.id} className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 text-sm">
+                <span className="font-bold">#{o.id.slice(0, 8).toUpperCase()}</span>
+                <span className="text-muted-foreground">{o.neighborhood}</span>
+                <span className="font-black">{formatBRL(Number(o.total_price))}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Motoboy:{" "}
+            <b className="text-foreground">
+              {groupDriverName || "qualquer um — quem aceitar primeiro"}
+            </b>{" "}
+            leva {selectedGroupOrders.length === 2 ? "os dois" : "todos"} numa viagem só.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setGroupConfirmOpen(false)}
+              disabled={groupBusy}
+              className="flex-1 rounded-xl bg-muted px-4 py-3 text-sm font-bold text-foreground disabled:opacity-40"
+            >
+              Voltar
+            </button>
+            <button
+              onClick={confirmGroupDispatch}
+              disabled={groupBusy}
+              className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+            >
+              {groupBusy ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Despachando…
+                </span>
+              ) : (
+                "Sim, despachar agora"
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {store?.id && (
         <ManualOrderFlow
