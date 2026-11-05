@@ -32,7 +32,7 @@ export const PdvDeliveryAlerts = ({ storeId }: Props) => {
   useEffect(() => {
     audioRef.current = new Audio(ALERT_SOUND_URL);
     audioRef.current.loop = false;
-    audioRef.current.volume = 0.7;
+    audioRef.current.volume = 1.0;
   }, []);
 
   // Fetch inicial
