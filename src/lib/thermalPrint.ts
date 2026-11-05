@@ -192,7 +192,7 @@ function getOrCreatePrintContainer(): HTMLDivElement {
   return container;
 }
 
-/** Injeta @page com largura da bobina. */
+/** Injeta @page com largura da bobina e limita a zona à área imprimível. */
 function applyPaperWidth(width: 58 | 80) {
   if (typeof document === "undefined") return;
   const id = "thermal-print-page-style";
@@ -202,7 +202,11 @@ function applyPaperWidth(width: 58 | 80) {
     tag.id = id;
     document.head.appendChild(tag);
   }
-  tag.textContent = `@media print { @page { size: ${width}mm auto; margin: 2mm; } }`;
+  // A zona da notinha usa a área IMPRIMÍVEL da bobina (80mm → 72mm;
+  // 58mm → 48mm), centralizada: impressora térmica não imprime até a
+  // borda do papel, e largura cheia cortava os valores do lado direito.
+  const printable = width === 58 ? 48 : 72;
+  tag.textContent = `@media print { @page { size: ${width}mm auto; margin: 0mm; } .thermal-print-zone { width: ${printable}mm !important; max-width: ${printable}mm !important; margin: 0 auto !important; } }`;
 }
 
 // ─── Helpers de render ────────────────────────────────────────────────────

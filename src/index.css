@@ -191,9 +191,9 @@ div[style*="Edit with Lovable"],
     display: block !important;
     visibility: visible !important;
     position: static !important;
-    width: 80mm !important;
-    max-width: 80mm !important;
-    margin: 0 !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
     padding: 3mm !important;
     background: #fff !important;
     color: #000 !important;
