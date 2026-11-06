@@ -9,11 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.4.11",
+  version: "2.4.12",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.4.11.apk",
+  apkPath: "/apps/itasuper-entregador-2.4.12.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "GPS mais preciso: sua posição agora atualiza a cada poucos segundos e o app só usa localização fina — a loja acompanha você no mapa sem aqueles pulos",
     "Abriu, entrou: com o login salvo, o app agora abre direto nas suas entregas — sem passar pela tela de login e sem digitar a senha de novo",
     "Login que fica: o app agora lembra de você — pode fechar e abrir de novo sem digitar a senha toda vez; a sessão fica salva no aparelho e se renova sozinha",
     "Fluxo da rota corrigido: primeiro Sair para entrega — o botão Navegar rota aparece depois da saída e navega só as entregas que já estão na rua",
