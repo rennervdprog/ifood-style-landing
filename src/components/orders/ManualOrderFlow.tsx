@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Loader2, Minus, Pencil, Plus, Search, ShoppingCart, Trash2, Truck } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2, Minus, Pencil, Plus, Search, ShoppingCart, Trash2, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, sumMoney } from "@/lib/utils";
 import type { ProductAddonGroup, ProductAddonItem } from "@/lib/productAddons";
@@ -105,6 +105,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
   const [step, setStep] = useState<"picker" | "form">("picker");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<SelectedItem[]>([]);
+  // "Itens do pedido" colapsável: fechado, só o cabeçalho (contador + total)
+  const [cartExpanded, setCartExpanded] = useState(false);
   // Editor de adicionais de UM item (novo ou edição de linha já escolhida)
   const [addonEditor, setAddonEditor] = useState<{
     product: PickerProduct;
@@ -123,6 +125,7 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
       setSearch("");
       setSelected([]);
       setAddonEditor(null);
+      setCartExpanded(false);
     }
   }, [open ]);
 
@@ -454,8 +457,9 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
           </DialogHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4">
+        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col px-4 pt-4">
+          <div className="space-y-4 pb-3">
           {/* Stepper — 3 passos do pedido manual */}
           <div className="flex items-start justify-center gap-2">
             <span className="flex w-24 flex-col items-center gap-1 text-center">
@@ -491,16 +495,29 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
             />
           </div>
 
+          </div>
+
           {selected.length > 0 && (
-            <div className="sticky top-0 z-10 -mx-1 bg-background px-1 pb-1">
-              <div className="space-y-2 rounded-2xl border-2 border-primary/40 bg-primary/5 p-3">
-                <p className="flex items-center gap-2 text-sm font-black text-foreground">
-                  <ShoppingCart className="h-4 w-4 text-primary" />
-                  Itens do pedido
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-black text-primary-foreground">
-                    {totalQty} {totalQty === 1 ? "item" : "itens"} no pedido
-                  </span>
-                </p>
+            <div className="mb-3 rounded-2xl border-2 border-primary/40 bg-primary/5">
+              <button
+                type="button"
+                onClick={() => setCartExpanded((v) => !v)}
+                aria-expanded={cartExpanded}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+              >
+                <ShoppingCart className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-sm font-black text-foreground">Itens do pedido</span>
+                <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-black text-primary-foreground">
+                  {totalQty} {totalQty === 1 ? "item" : "itens"} no pedido
+                </span>
+                <span className="ml-auto text-sm font-black text-foreground">{formatBRL(subtotal)}</span>
+                <span className="flex shrink-0 items-center gap-0.5 text-[11px] font-bold text-muted-foreground">
+                  {cartExpanded ? "fechar" : "ver e editar"}
+                  {cartExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </span>
+              </button>
+              {cartExpanded && (
+                <div className="max-h-[40dvh] space-y-2 overflow-y-auto px-3 pb-3">
                 {selected.map((s) => (
                   <div key={s.lineKey} className="rounded-xl border border-primary/30 bg-background px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
@@ -566,10 +583,12 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                     />
                   </div>
                 ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
+          <div className="min-h-0 flex-1 overflow-y-auto pb-6">
           <div className="divide-y divide-border/60">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
@@ -651,6 +670,7 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
               Mostrando os 40 primeiros — use a busca para achar o produto.
             </p>
           )}
+          </div>
 
         </div>
         </div>
