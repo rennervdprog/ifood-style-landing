@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Minus, Plus, Search, ShoppingCart, Truck } from "lucide-react";
+import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
@@ -108,6 +108,11 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
     [selected]
   );
 
+  const totalQty = useMemo(
+    () => selected.reduce((acc, s) => acc + s.quantity, 0),
+    [selected]
+  );
+
   const cart: CartItem[] = useMemo(
     () =>
       selected.map((s) => ({
@@ -192,40 +197,57 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
           </div>
 
           {selected.length > 0 && (
-            <div className="space-y-2">
-              {selected.map((s) => (
-                <div key={s.product.id} className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-foreground min-w-0 truncate">{s.product.name}</p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setQty(s.product, s.quantity - 1)}
-                        className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
-                        aria-label="Diminuir"
-                      >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="text-sm font-black w-5 text-center">{s.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => setQty(s.product, s.quantity + 1)}
-                        className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
-                        aria-label="Aumentar"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="text-sm font-bold w-20 text-right">{formatBRL(s.product.price * s.quantity)}</span>
+            <div className="sticky top-0 z-10 -mx-1 bg-background px-1 pb-1">
+              <div className="space-y-2 rounded-2xl border-2 border-primary/40 bg-primary/5 p-3">
+                <p className="flex items-center gap-2 text-sm font-black text-foreground">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                  Itens do pedido
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-black text-primary-foreground">
+                    {totalQty} {totalQty === 1 ? "item" : "itens"} no pedido
+                  </span>
+                </p>
+                {selected.map((s) => (
+                  <div key={s.product.id} className="rounded-xl border border-primary/30 bg-background px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-foreground min-w-0 truncate">{s.product.name}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setQty(s.product, s.quantity - 1)}
+                          className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
+                          aria-label="Diminuir"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-sm font-black w-5 text-center">{s.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(s.product, s.quantity + 1)}
+                          className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
+                          aria-label="Aumentar"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-sm font-bold w-20 text-right">{formatBRL(s.product.price * s.quantity)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(s.product, 0)}
+                          className="h-7 w-7 rounded-lg border border-border bg-background text-muted-foreground flex items-center justify-center active:scale-95"
+                          aria-label={`Remover ${s.product.name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
+                    <Input
+                      value={s.observations}
+                      onChange={(e) => setObs(s.product.id, e.target.value)}
+                      placeholder="Observação (ex.: sem cebola)"
+                      className="mt-2 h-8 text-xs bg-background"
+                    />
                   </div>
-                  <Input
-                    value={s.observations}
-                    onChange={(e) => setObs(s.product.id, e.target.value)}
-                    placeholder="Observação (ex.: sem cebola)"
-                    className="mt-2 h-8 text-xs bg-background"
-                  />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
@@ -256,8 +278,24 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                           <Plus className="h-4 w-4" />
                         </button>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-xs font-black text-primary">
-                          <ShoppingCart className="h-3.5 w-3.5" /> {qty} no pedido
+                        <span className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setQty(p, qty - 1)}
+                            className="h-8 w-8 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
+                            aria-label={`Diminuir ${p.name}`}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="w-5 text-center text-sm font-black text-primary">{qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQty(p, qty + 1)}
+                            className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95"
+                            aria-label={`Aumentar ${p.name}`}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
                         </span>
                       )}
                     </div>
@@ -277,9 +315,14 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
 
         <div className="border-t border-border bg-background px-4 py-3">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Total até agora: <span className="text-base font-black text-foreground">{formatBRL(subtotal)}</span>
-            </p>
+            <div>
+              <p className="text-xs font-bold text-primary">
+                {totalQty > 0 ? `${totalQty} ${totalQty === 1 ? "item" : "itens"} no pedido` : "Nenhum item escolhido ainda"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Total até agora: <span className="text-base font-black text-foreground">{formatBRL(subtotal)}</span>
+              </p>
+            </div>
             <Button onClick={() => setStep("form")} disabled={selected.length === 0}>
               Continuar
             </Button>
