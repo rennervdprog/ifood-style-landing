@@ -19,7 +19,7 @@ export type DeliveryQuote = {
     neighborhood: string;
     lat: number;
     lng: number;
-    precision: "address" | "street" | "cep";
+    precision: "address" | "street" | "cep" | "neighborhood";
   } | null;
   distance: { km: number; source: string; max_km: number | null; eligible: boolean };
   pricing: {
@@ -49,6 +49,7 @@ export function normalizeCep(value: string | null | undefined): string {
 }
 
 export function asDeliveryAddress(input: Partial<DeliveryAddressInput>): DeliveryAddressInput | null {
+  const cepDigits = normalizeCep(input.cep);
   const address: DeliveryAddressInput = {
     street: String(input.street || "").trim(),
     number: String(input.number || "").trim(),
@@ -56,9 +57,12 @@ export function asDeliveryAddress(input: Partial<DeliveryAddressInput>): Deliver
     neighborhood: String(input.neighborhood || "").trim(),
     city: String(input.city || "").trim(),
     state: String(input.state || "").trim().toUpperCase(),
-    cep: normalizeCep(input.cep),
+    // CEP é opcional (2026-11-06): só vale com 8 dígitos. CEP parcial é
+    // ignorado em vez de travar o pedido — sem ele, o servidor geocodifica
+    // por rua+número+cidade/UF (a cidade/UF vêm da loja ou do cadastro).
+    cep: cepDigits.length === 8 ? cepDigits : "",
   };
-  return address.street && address.number && address.neighborhood && address.cep.length === 8 ? address : null;
+  return address.street && address.number && address.neighborhood ? address : null;
 }
 
 export function isSuccessfulDeliveryQuote(value: DeliveryQuoteResponse | null): value is DeliveryQuote {
@@ -83,15 +87,15 @@ export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null |
       ? `O endereço de entrega está a ${km.toFixed(1)} km da loja. Limite de ${maxKm} km.`
       : "O endereço informado está fora da área de entrega da loja.";
   }
-  // Fase 6B (P2-7): quando a cotação falha por não resolver o endereço, a
-  // mensagem orienta preencher o CEP — é ele que localiza a rua
-  // automaticamente (o campo é opcional no formulário, então o cliente pode
-  // nem saber que ele resolve a entrega). `address_not_resolved` é o erro da
-  // edge guest-checkout no submit; `delivery_quote_failed` / `delivery_quote_unavailable`
-  // são a falha genérica da cotação no mesmo caminho.
-  if (reason === "address_unavailable") return "Não localizamos esse endereço. Preencha o CEP — ele encontra sua rua automaticamente — e confira rua, número e bairro.";
-  if (reason === "address_not_resolved") return "Não conseguimos localizar esse endereço. Preencha o CEP (ele localiza sua rua automaticamente) e confira rua, número e bairro.";
-  if (reason === "delivery_quote_failed" || reason === "delivery_quote_unavailable") return "Não foi possível calcular a entrega para esse endereço. Preencha o CEP e confira rua, número e bairro, depois tente novamente.";
+  // Endereço não resolvido (mensagens revistas em 2026-11-06): o CEP deixou
+  // de ser obrigatório — o servidor geocodifica por rua+número+cidade. A
+  // orientação agora é conferir rua/número/bairro; o CEP entra só como ajuda
+  // opcional, nunca como a única saída. `address_not_resolved` é o erro da
+  // edge guest-checkout no submit; `delivery_quote_failed` /
+  // `delivery_quote_unavailable` são a falha genérica da cotação.
+  if (reason === "address_unavailable") return "Não localizamos esse endereço. Confira rua, número e bairro — se souber o CEP, ele ajuda a localizar, mas não é obrigatório.";
+  if (reason === "address_not_resolved") return "Não conseguimos localizar esse endereço. Confira rua, número e bairro — se souber o CEP, ele ajuda a localizar, mas não é obrigatório.";
+  if (reason === "delivery_quote_failed" || reason === "delivery_quote_unavailable") return "Não foi possível calcular a entrega para esse endereço. Confira rua, número e bairro — se souber o CEP, ele ajuda a localizar — e tente novamente.";
   if (reason === "unauthorized") return "Sua sessão expirou. Entre novamente para confirmar o endereço.";
   if (reason === "invalid_cep") return "Informe um CEP válido com 8 dígitos para calcular a entrega.";
   return "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";
@@ -100,10 +104,11 @@ export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null |
 export function deliveryQuoteBreakdown(quote: DeliveryQuote | null): string | null {
   if (!quote || quote.fulfillment !== "delivery") return null;
   if (quote.pricing.free_delivery_applied) return "Frete grátis aplicado pela regra da loja";
-  const base = Number(quote.pricing.store_delivery_base || 0);
-  const platform = Number(quote.pricing.platform_fee_customer || 0);
-  if (platform > 0) return `Entrega: R$ ${base.toFixed(2).replace(".", ",")} + Taxa operacional: R$ ${platform.toFixed(2).replace(".", ",")}`;
-  return `Entrega: R$ ${base.toFixed(2).replace(".", ",")}`;
+  // 2026-11-06: sem linha de detalhamento pro cliente. O texto antigo
+  // ("Entrega: R$ X + Taxa operacional: R$ 0,99") confundia o cliente — o
+  // resumo já mostra a linha única "Entrega" com o total. A divisão
+  // base/taxa continua existindo no painel do lojista e nos relatórios.
+  return null;
 }
 
 export function serializeDeliveryQuote(quote: DeliveryQuote) {
