@@ -27,6 +27,7 @@ import { statusColorsTeste } from "../constants-teste";
 import { parseOrderAddons } from "../helpers";
 import type { OrderStatus, RequiredAddonHighlight } from "../types";
 import { supabase } from "@/integrations/supabase/client";
+import MerchantLiveMap from "@/components/MerchantLiveMap";
 import { fetchWhatsappMode } from "@/lib/orderNotifications";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -386,6 +387,16 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
           <Truck className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-foreground font-semibold">🛵 {order.driver_id ? driverName(order.driver_id) : "Motoboy"} está entregando</span>
         </div>
+      )}
+
+      {order.driver_id && (order.status === "saiu_entrega" || order.status === "em_transito") && (
+        <MerchantLiveMap
+          orderId={order.id}
+          driverId={order.driver_id}
+          driverName={driverName(order.driver_id)}
+          clientLat={(order as any).client_lat}
+          clientLng={(order as any).client_lng}
+        />
       )}
       {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
