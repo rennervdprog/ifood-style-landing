@@ -9,11 +9,13 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.0",
+  version: "2.5.1",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.0.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.1.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Google Maps abrindo de verdade: corrigido o defeito que fazia a navegação cair sempre no Waze, mesmo com o Maps escolhido",
+    "Sua posição não some mais do mapa da loja quando você está parado — esperando na loja, no sinal ou falando com o cliente, o ponto continua lá",
     "Você no mapa da loja enquanto estiver ONLINE: agora sua posição aparece para suas lojas o turno inteiro — não só durante a entrega. Ficou offline, para na hora",
     "Saúde do rastreio no Perfil: um checklist mostra o que falta configurar no seu aparelho (localização o tempo todo, bateria sem restrição) para o mapa não perder você",
     "GPS mais preciso: sua posição agora atualiza a cada poucos segundos e o app só usa localização fina — a loja acompanha você no mapa sem aqueles pulos",
