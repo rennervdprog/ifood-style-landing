@@ -25,6 +25,7 @@ export type DashboardTab =
   | "subscription"
   | "loyalty"
   | "drivers"
+  | "motoboys_map"
   | "refunds"
   | "tutoriais"
   | "cash_register"
