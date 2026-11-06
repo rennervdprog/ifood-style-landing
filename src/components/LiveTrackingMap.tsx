@@ -68,6 +68,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const clientMarkerRef = useRef<any>(null);
   const storeMarkerRef = useRef<any>(null);
   const routeLineRef = useRef<any>(null);
+  const accuracyCircleRef = useRef<any>(null);
   const arrivalNotifiedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [L, setL] = useState<any>(null);
@@ -87,7 +88,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       if (!driverId) return null;
       const { data } = await supabase
         .from("driver_locations")
-        .select("latitude, longitude, speed, heading, updated_at")
+        .select("latitude, longitude, accuracy, speed, heading, updated_at")
         .eq("driver_user_id", driverId)
         .maybeSingle();
       if (!isValidCoordinate(data?.latitude, data?.longitude)) return null;
@@ -121,6 +122,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
           queryClient.setQueryData(["driver-location", driverId], {
             latitude: newData.latitude,
             longitude: newData.longitude,
+            accuracy: newData.accuracy,
             speed: newData.speed,
             heading: newData.heading,
             updated_at: newData.updated_at,
@@ -228,6 +230,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       clientMarkerRef.current = null;
       storeMarkerRef.current = null;
       routeLineRef.current = null;
+      accuracyCircleRef.current = null;
       setMapReady(false);
     };
   }, [L]);
@@ -269,6 +272,34 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       // Remove stale driver marker
       map.removeLayer(driverMarkerRef.current);
       driverMarkerRef.current = null;
+    }
+
+    // Círculo de precisão do GPS: aparece quando o sinal está fraco (> 25 m),
+    // p/ o usuário enxergar a margem de erro da posição.
+    if (driverLocation && isRecentDriverLocation) {
+      const acc = typeof (driverLocation as any).accuracy === "number" ? (driverLocation as any).accuracy : null;
+      if (acc && acc > 25) {
+        const cPos: [number, number] = [driverLocation.latitude, driverLocation.longitude];
+        if (accuracyCircleRef.current) {
+          accuracyCircleRef.current.setLatLng(cPos);
+          accuracyCircleRef.current.setRadius(acc);
+        } else {
+          accuracyCircleRef.current = L.circle(cPos, {
+            radius: acc,
+            color: "#3b82f6",
+            weight: 1,
+            opacity: 0.55,
+            fillColor: "#3b82f6",
+            fillOpacity: 0.12,
+          }).addTo(map);
+        }
+      } else if (accuracyCircleRef.current) {
+        map.removeLayer(accuracyCircleRef.current);
+        accuracyCircleRef.current = null;
+      }
+    } else if (accuracyCircleRef.current) {
+      map.removeLayer(accuracyCircleRef.current);
+      accuracyCircleRef.current = null;
     }
 
     // Store marker
