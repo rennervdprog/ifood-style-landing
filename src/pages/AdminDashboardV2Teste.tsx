@@ -63,6 +63,7 @@ const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
 const DashboardOverviewSectionTeste = lazy(() => import("./admin/sections/DashboardOverviewSectionTeste"));
+const ManualOrderFlow = lazy(() => import("@/components/orders/ManualOrderFlow"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
@@ -260,6 +261,8 @@ const AdminDashboardTeste = () => {
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>(
     initialTabParam || "dashboard",
   );
+  // Pedido manual aberto direto da Visão Geral (botão na home)
+  const [manualFlowOpen, setManualFlowOpen] = useState(false);
   const [isPendingTab, startTabTransition] = useTransition();
   // Fonte única da verdade: store.settings.auto_print_delivery (do banco).
   // O sino do topo lê/escreve direto desse setting — não há mais override local
@@ -2150,9 +2153,22 @@ const AdminDashboardTeste = () => {
                 handleCancelOrder={handleCancelOrder}
                 setupSteps={setupSteps}
                 repassePending={repassePending}
+                onOpenManualOrder={() => setManualFlowOpen(true)}
               />
               </Suspense>
               </ErrorBoundary>
+              {store?.plan_type !== "pdv_only" && (
+                <Suspense fallback={null}>
+                  <ManualOrderFlow
+                    open={manualFlowOpen}
+                    onClose={() => setManualFlowOpen(false)}
+                    storeId={store.id}
+                    storeName={store?.name}
+                    storeSettings={(store as any)?.settings || null}
+                    onCreated={() => queryClient.invalidateQueries({ queryKey: ["admin-orders"] })}
+                  />
+                </Suspense>
+              )}
             </>
           )}
 

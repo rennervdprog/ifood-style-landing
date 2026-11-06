@@ -50,6 +50,8 @@ import {
   GraduationCap,
   MapPin,
   Monitor,
+  Plus,
+  Receipt,
   Settings,
   ShoppingBag,
   Store,
@@ -122,6 +124,8 @@ interface Props {
   updateOrderStatus: (id: string, status: any) => void;
   handleAcceptOrder: (o: any) => void;
   handleCancelOrder: (o: any) => void;
+  /** Abre o fluxo de pedido manual (hospedado no shell do dashboard). */
+  onOpenManualOrder?: () => void;
   /** Passos do checklist, calculados no shell (mesma conta do selo da nav). */
   setupSteps: SetupStep[];
   /** Total de repasse em aberto, já calculado no shell (useRepassePending). */
@@ -241,7 +245,7 @@ export default function DashboardOverviewSectionTeste(props: Props) {
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
     buildReadyMessage, openWhatsApp, evolutionConnected, cancelConfirm, cancelReason,
     setCancelConfirm, setCancelReason, cancellingOrder, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
-    setupSteps, repassePending,
+    onOpenManualOrder, setupSteps, repassePending,
   } = props;
 
   // Status do PDV (idêntico ao original: mesma query, mesmo intervalo)
@@ -341,6 +345,26 @@ export default function DashboardOverviewSectionTeste(props: Props) {
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
 
   <TabHeader title="Visão Geral" subtitle="Como sua loja está hoje: pedidos, vendas e o que precisa da sua atenção" tutorialId="dashboard" />
+
+  {/* ── NOVO: Pedido manual direto da home ── */}
+  {store?.plan_type !== "pdv_only" && onOpenManualOrder && (
+    <button
+      onClick={onOpenManualOrder}
+      className="w-full text-left bg-primary text-primary-foreground rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-primary/25 active:scale-[0.99] transition-transform"
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 flex-shrink-0">
+        <Plus className="h-6 w-6" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-black flex items-center gap-2">
+          Pedido manual
+          <span className="text-[10px] font-black bg-white/25 px-2 py-0.5 rounded-full">NOVO</span>
+        </h3>
+        <p className="text-xs opacity-90 mt-0.5">Para pedidos que chegam pelo WhatsApp ou telefone</p>
+      </div>
+      <ChevronRight className="h-5 w-5 flex-shrink-0 opacity-90" />
+    </button>
+  )}
 
   {/* ── 1. ALERTAS PRIMEIRO ── */}
   {avisosCount > 0 && (
@@ -833,6 +857,23 @@ export default function DashboardOverviewSectionTeste(props: Props) {
   <div className="space-y-3">
     <h3 className="font-black text-foreground text-base tracking-tight">Ações Rápidas</h3>
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      {store?.plan_type !== "pdv_only" && onOpenManualOrder && (
+        <button
+          onClick={onOpenManualOrder}
+          className="group relative overflow-hidden flex items-center gap-3 bg-primary/5 border-2 border-primary/50 rounded-2xl p-3.5 hover:shadow-md hover:shadow-primary/5 active:scale-[0.97] transition-all text-left"
+        >
+          <div className="relative w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+            <Receipt className="h-5 w-5 text-primary" />
+          </div>
+          <div className="relative min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-foreground leading-tight">
+              Pedido manual
+              <span className="text-[9px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">NOVO</span>
+            </span>
+            <span className="block text-xs text-muted-foreground/80 mt-0.5 truncate">Lançar pedido do WhatsApp</span>
+          </div>
+        </button>
+      )}
       {[
         { label: "Cardápio", hint: "Itens e fotos", icon: UtensilsCrossed, tab: "menu" as DashboardTab },
         { label: "Finanças", hint: "Saques e taxas", icon: Coins, tab: "finance" as DashboardTab },

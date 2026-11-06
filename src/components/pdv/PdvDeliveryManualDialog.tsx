@@ -24,6 +24,14 @@ interface Props {
   onSuccess: () => void;
   /** Tela cheia (fluxo da tela de Pedidos). Padrão: janela central (PDV). */
   fullscreen?: boolean;
+  /**
+   * Apresentação em 3 passos do pedido manual (Pedidos/home do painel):
+   * 1 itens (fora, no ManualOrderFlow) · 2 quem vai receber · 3 entrega e
+   * pagamento. Sem esta prop, o diálogo mantém o visual único do PDV.
+   */
+  wizardSteps?: boolean;
+  /** Voltar do passo 2 para a seleção de itens (só com wizardSteps). */
+  onBackToItems?: () => void;
 }
 
 function genPin() {
@@ -40,7 +48,7 @@ function formatPhoneBR(raw: string) {
 }
 
 export function PdvDeliveryManualDialog({
-  open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess, fullscreen,
+  open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess, fullscreen, wizardSteps, onBackToItems,
 }: Props) {
   const queryClient = useQueryClient();
 
@@ -65,6 +73,8 @@ export function PdvDeliveryManualDialog({
   const [calcFee, setCalcFee] = useState(false);
   const [deliveryQuote, setDeliveryQuote] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  // Passo visível na apresentação em 3 passos (wizardSteps): 2 = cliente, 3 = entrega/pagamento
+  const [wizardStep, setWizardStep] = useState<2 | 3>(2);
 
   // Reset ao abrir
   useEffect(() => {
@@ -74,6 +84,7 @@ export function PdvDeliveryManualDialog({
       setComplement(""); setReference("");
       setPaymentMethod("dinheiro"); setChangeFor("");
       setFee(null); setFeeBreakdown(null); setDeliveryQuote(null);
+      setWizardStep(2);
     }
   }, [open]);
 
@@ -196,6 +207,48 @@ export function PdvDeliveryManualDialog({
       fee !== null
     );
   }, [cart.length, name, street, number, pin, deliveryQuote, fee]);
+
+  // Passo 2 → 3 (wizard): nome e PIN são os obrigatórios de "Quem vai receber"
+  const canWizardContinue = name.trim().length >= 2 && pin.length === 4;
+
+  // Indicador dos 3 passos (só na apresentação wizardSteps)
+  const wizardStepper = (
+    <div className="flex items-start justify-center gap-2">
+      {[
+        { n: 1, t: "O que o cliente pediu" },
+        { n: 2, t: "Quem vai receber" },
+        { n: 3, t: "Entrega e pagamento" },
+      ].map((s, i) => {
+        const done = s.n < wizardStep || s.n === 1;
+        const active = s.n === wizardStep;
+        return (
+          <div key={s.n} className="contents">
+            {i > 0 && <span className="mt-3 h-px w-6 shrink-0 bg-border" />}
+            <span className="flex w-24 flex-col items-center gap-1 text-center">
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : done
+                      ? "bg-success text-white"
+                      : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {done && !active ? "✓" : s.n}
+              </span>
+              <span
+                className={`text-[11px] leading-tight ${
+                  active ? "font-bold text-primary" : done ? "font-semibold text-success" : "font-semibold text-muted-foreground"
+                }`}
+              >
+                {s.t}
+              </span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   const handleConfirm = async () => {
     if (!canSave || saving) return;
@@ -353,13 +406,16 @@ export function PdvDeliveryManualDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className={fullscreen ? "h-[100dvh] w-[100vw] max-w-none rounded-none border-0 overflow-y-auto p-0" : "max-w-2xl max-h-[90vh] overflow-y-auto"}>
-        <div className={fullscreen ? "mx-auto w-full max-w-2xl px-4 py-4" : undefined}>
+      <DialogContent className={fullscreen ? (wizardSteps ? "flex h-[100dvh] w-[100vw] max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0" : "h-[100dvh] w-[100vw] max-w-none rounded-none border-0 overflow-y-auto p-0") : "max-w-2xl max-h-[90vh] overflow-y-auto"}>
+        <div className={fullscreen ? (wizardSteps ? "mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-4 py-4" : "mx-auto w-full max-w-2xl px-4 py-4") : undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" />
-            Pedido Delivery Manual
+            {wizardSteps ? "Pedido manual" : "Pedido Delivery Manual"}
           </DialogTitle>
+          {wizardSteps && (
+            <p className="text-xs text-muted-foreground">Para pedidos que chegam pelo WhatsApp ou telefone</p>
+          )}
         </DialogHeader>
 
         {cart.length === 0 ? (
@@ -392,29 +448,42 @@ export function PdvDeliveryManualDialog({
         ) : (
           <div className="space-y-5">
             {/* Stepper */}
-            <div className="flex items-center justify-center gap-2 text-xs font-semibold">
-              <span className="flex items-center gap-1 text-success">
-                <CheckCircle2 className="h-4 w-4" />
-                {cart.length} {cart.length === 1 ? "item" : "itens"}
-              </span>
-              <span className="h-px w-8 bg-border" />
-              <span className="flex items-center gap-1 text-primary">
-                <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">2</span>
-                Dados do cliente
-              </span>
-            </div>
+            {wizardSteps ? (
+              <div className="pt-4">{wizardStepper}</div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                <span className="flex items-center gap-1 text-success">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {cart.length} {cart.length === 1 ? "item" : "itens"}
+                </span>
+                <span className="h-px w-8 bg-border" />
+                <span className="flex items-center gap-1 text-primary">
+                  <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">2</span>
+                  Dados do cliente
+                </span>
+              </div>
+            )}
           </div>
         )}
         {cart.length > 0 && (
           <div className="space-y-5">
+            {wizardSteps && wizardStep === 2 && (
+              <div className="pt-4">
+                <h2 className="text-base font-black text-foreground">2. Quem vai receber?</h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Só o nome é obrigatório. O WhatsApp ajuda se precisar falar com o cliente.
+                </p>
+              </div>
+            )}
             {/* Cliente */}
+            {(!wizardSteps || wizardStep === 2) && (
             <section className="space-y-3">
               <h3 className="text-sm font-bold flex items-center gap-2">
                 <User className="h-4 w-4" /> Dados do cliente
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label>Nome *</Label>
+                  <Label>{wizardSteps ? "Nome de quem vai receber *" : "Nome *"}</Label>
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Dona Maria" />
                 </div>
                 <div>
@@ -428,7 +497,7 @@ export function PdvDeliveryManualDialog({
                   />
                 </div>
                 <div>
-                  <Label className="flex items-center gap-1"><Lock className="h-3 w-3" /> PIN do cliente *</Label>
+                  <Label className="flex items-center gap-1"><Lock className="h-3 w-3" /> {wizardSteps ? "Código de entrega (PIN) *" : "PIN do cliente *"}</Label>
                   <div className="flex gap-2">
                     <Input
                       value={pin}
@@ -437,24 +506,42 @@ export function PdvDeliveryManualDialog({
                       className="font-mono text-center text-lg tracking-widest"
                     />
                     <Button type="button" variant="outline" size="sm" onClick={() => setPin(genPin())}>
-                      Gerar
+                      {wizardSteps ? "Gerar outro" : "Gerar"}
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Informe este PIN ao cliente — o motoboy vai confirmar na entrega.
+                    {wizardSteps
+                      ? "Passe esse código para o cliente. Na hora da entrega, o motoboy pede o código para confirmar que entregou para a pessoa certa."
+                      : "Informe este PIN ao cliente — o motoboy vai confirmar na entrega."}
                   </p>
                 </div>
               </div>
             </section>
+            )}
 
-            {/* Endereço */}
+            {wizardSteps && wizardStep === 3 && (
+              <div>
+                <h2 className="text-base font-black text-foreground">3. Entrega e pagamento</h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Confira a taxa, escolha como o cliente vai pagar na entrega e crie o pedido. Ele entra direto em “Preparando”, igual aos pedidos do site.
+                </p>
+              </div>
+            )}
+            {/* Endereço + Pagamento + Resumo (passo 3 no wizard) */}
+            {(!wizardSteps || wizardStep === 3) && (
+            <>
             <section className="space-y-3">
               <h3 className="text-sm font-bold flex items-center gap-2">
                 <MapPin className="h-4 w-4" /> Endereço de entrega
               </h3>
+              {wizardSteps && (
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Comece pelo CEP: a rua, o bairro e a cidade preenchem sozinhos. A taxa de entrega é calculada automaticamente com o endereço.
+                </p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1">
-                  <Label>CEP <span className="text-muted-foreground text-[10px]">(opcional)</span></Label>
+                  <Label>{wizardSteps ? "CEP" : <>CEP <span className="text-muted-foreground text-[10px]">(opcional)</span></>}</Label>
                   <div className="flex gap-2">
                     <Input
                       value={cep}
@@ -499,13 +586,13 @@ export function PdvDeliveryManualDialog({
                 {feeBreakdown && (
                   <p className="text-[11px] text-muted-foreground mt-1">{feeBreakdown}</p>
                 )}
-                <p className="mt-2 text-[11px] text-muted-foreground">A taxa é definida pela cotação central da loja e não pode ser alterada manualmente neste pedido.</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{wizardSteps ? "A taxa é calculada pelo sistema com o endereço do cliente — não dá para mudar neste pedido." : "A taxa é definida pela cotação central da loja e não pode ser alterada manualmente neste pedido."}</p>
               </div>
             </section>
 
             {/* Pagamento */}
             <section className="space-y-3">
-              <h3 className="text-sm font-bold">Pagamento na entrega</h3>
+              <h3 className="text-sm font-bold">{wizardSteps ? "Como o cliente vai pagar na entrega?" : "Pagamento na entrega"}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: "dinheiro", label: "Dinheiro" },
@@ -562,18 +649,60 @@ export function PdvDeliveryManualDialog({
               </div>
             </section>
 
-            <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={onClose} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button onClick={handleConfirm} disabled={!canSave || saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Truck className="h-4 w-4 mr-2" />}
-                Criar pedido manual
-              </Button>
-            </div>
+            {wizardSteps && (
+              <div className="rounded-xl border border-success/40 bg-success/5 p-3 text-xs leading-relaxed">
+                ✅ <strong>Pronto para criar.</strong> Ao tocar em “Criar pedido”, ele aparece na tela de Pedidos como{" "}
+                <strong>Preparando</strong>, a notinha imprime e o motoboy confirma a entrega com o PIN <strong>{pin}</strong>.
+              </div>
+            )}
+            </>
+            )}
+
+            {!wizardSteps && (
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={onClose} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleConfirm} disabled={!canSave || saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Truck className="h-4 w-4 mr-2" />}
+                  Criar pedido manual
+                </Button>
+              </div>
+            )}
           </div>
         )}
         </div>
+        {wizardSteps && cart.length > 0 && (
+          <div className="border-t border-border bg-background px-4 py-3">
+            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3">
+              {wizardStep === 3 ? (
+                <Button variant="outline" onClick={() => setWizardStep(2)} disabled={saving}>
+                  ← Voltar
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => (onBackToItems ? onBackToItems() : onClose())}>
+                  ← Voltar
+                </Button>
+              )}
+              <p className="text-right text-xs text-muted-foreground">
+                Total até agora
+                <span className="block text-base font-black text-foreground">
+                  {formatBRL(wizardStep === 3 ? finalTotal : Math.max(0, subtotal - discountAmount))}
+                </span>
+              </p>
+              {wizardStep === 2 ? (
+                <Button onClick={() => setWizardStep(3)} disabled={!canWizardContinue}>
+                  Continuar →
+                </Button>
+              ) : (
+                <Button onClick={handleConfirm} disabled={!canSave || saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  ✓ Criar pedido
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
