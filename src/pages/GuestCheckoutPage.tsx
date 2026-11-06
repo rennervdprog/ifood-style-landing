@@ -74,7 +74,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_public")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key_configured, is_open, force_closed, preorder_enabled, preorder_minutes_before")
+        .select("id, name, address_city, address_state, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key_configured, is_open, force_closed, preorder_enabled, preorder_minutes_before")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;
     },
@@ -176,7 +176,11 @@ const GuestCheckoutPage = () => {
     complement,
     neighborhood,
     cep,
-  }), [street, number, complement, neighborhood, cep]);
+    // Sem CEP, a cidade/UF são as da loja (o visitante não digita cidade;
+    // a entrega é local por definição e a edge guest-checkout reforça isso).
+    city: (store as any)?.address_city || "",
+    state: (store as any)?.address_state || "",
+  }), [street, number, complement, neighborhood, cep, store]);
   const deliveryQuoteInputKey = useMemo(
     () => quoteRequestKey(storeId, subtotal, deliveryAddress),
     [storeId, subtotal, deliveryAddress],
@@ -661,6 +665,18 @@ const GuestCheckoutPage = () => {
             {addressOk && <CheckCircle2 className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
+          <div className="grid grid-cols-3 gap-2">
+            <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
+              className="col-span-2 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+            <input type="text" placeholder="Nº" value={number} onChange={(e) => setNumber(e.target.value)} inputMode="numeric"
+              className="h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+          </div>
+          <input type="text" placeholder="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+          <input type="text" placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+          <input type="text" placeholder="Ponto de referência" value={reference} onChange={(e) => setReference(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
           <div className="flex gap-2">
             <input type="text" placeholder="CEP (opcional)" value={cep}
               onChange={(e) => handleCepChange(e.target.value)}
@@ -671,19 +687,7 @@ const GuestCheckoutPage = () => {
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-1">Não sabe o CEP? Pode deixar em branco.</p>
-          <div className="grid grid-cols-3 gap-2">
-            <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
-              className="col-span-2 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
-            <input type="text" placeholder="Nº" value={number} onChange={(e) => setNumber(e.target.value)} inputMode="numeric"
-              className="h-11 px-3 rounded-xl border border-border bg-background text-sm" />
-          </div>
-          <input type="text" placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
-          <input type="text" placeholder="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
-          <input type="text" placeholder="Ponto de referência" value={reference} onChange={(e) => setReference(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+          <p className="text-[11px] text-muted-foreground -mt-1">Opcional — ajuda a achar sua rua, mas dá pra pedir sem ele.</p>
           </div>
         </section>
         )}
@@ -800,9 +804,9 @@ const GuestCheckoutPage = () => {
             {closedButtonLabel}
           </button>
         ) : (
-          <button onClick={handleConfirm} disabled={submitting || belowMinimum || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
+          <button onClick={handleConfirm} disabled={submitting || belowMinimum || !payment || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
             className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
-            {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : `Confirmar pedido — ${formatBRL(total)}`}
+            {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : !payment ? "Escolha a forma de pagamento" : `Confirmar pedido — ${formatBRL(total)}`}
           </button>
         )}
       </div>
