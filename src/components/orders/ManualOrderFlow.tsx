@@ -135,6 +135,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
         discountAmount={0}
         onSuccess={() => onCreated?.()}
         fullscreen
+        wizardSteps
+        onBackToItems={() => setStep("picker")}
       />
     );
   }
@@ -146,24 +148,37 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-primary" />
-              Pedido Delivery Manual
+              Pedido manual
             </DialogTitle>
+            <p className="text-xs text-muted-foreground">Para pedidos que chegam pelo WhatsApp ou telefone</p>
           </DialogHeader>
         </div>
 
         <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4">
-          {/* Stepper — mesmo desenho do diálogo do PDV */}
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold">
-            <span className="flex items-center gap-1 text-primary">
-              <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">1</span>
-              Selecionar itens
+          {/* Stepper — 3 passos do pedido manual */}
+          <div className="flex items-start justify-center gap-2">
+            <span className="flex w-24 flex-col items-center gap-1 text-center">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+              <span className="text-[11px] font-bold leading-tight text-primary">O que o cliente pediu</span>
             </span>
-            <span className="h-px w-8 bg-border" />
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <span className="h-6 w-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center">2</span>
-              Dados do cliente
+            <span className="mt-3 h-px w-6 shrink-0 bg-border" />
+            <span className="flex w-24 flex-col items-center gap-1 text-center">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">2</span>
+              <span className="text-[11px] font-semibold leading-tight text-muted-foreground">Quem vai receber</span>
             </span>
+            <span className="mt-3 h-px w-6 shrink-0 bg-border" />
+            <span className="flex w-24 flex-col items-center gap-1 text-center">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">3</span>
+              <span className="text-[11px] font-semibold leading-tight text-muted-foreground">Entrega e pagamento</span>
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-base font-black text-foreground">1. O que o cliente pediu?</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Toque no + para adicionar. Se o cliente pediu algum detalhe (“sem cebola”, “bem passado”), escreva na observação do item.
+            </p>
           </div>
 
           <div className="relative">
@@ -263,7 +278,7 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
         <div className="border-t border-border bg-background px-4 py-3">
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Subtotal: <span className="text-base font-black text-foreground">{formatBRL(subtotal)}</span>
+              Total até agora: <span className="text-base font-black text-foreground">{formatBRL(subtotal)}</span>
             </p>
             <Button onClick={() => setStep("form")} disabled={selected.length === 0}>
               Continuar
