@@ -56,6 +56,7 @@ const BordasTabTeste = lazy(() => import("./admin/tabs/BordasTabTeste"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
+const MotoboysMapTab = lazy(() => import("./admin/tabs/MotoboysMapTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
@@ -2294,6 +2295,7 @@ const AdminDashboardTeste = () => {
                 {dashboardTab === "promotions" && <PromotionsTab storeId={store.id} />}
                 {dashboardTab === "reviews" && <ReviewsTab storeId={store.id} />}
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
+                {dashboardTab === "motoboys_map" && store && <MotoboysMapTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>
               </ErrorBoundary>

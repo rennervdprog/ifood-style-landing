@@ -5,6 +5,7 @@ import {
   Bike, AlertTriangle, GraduationCap, Settings,
   MessageCircle, ShoppingCart, Headphones, Tag, Flame,
   Bell, Banknote,
+  MapPin,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -152,6 +153,7 @@ export const dashboardGroups: DashboardGroup[] = [
     subTabs: [
       { key: "hours", label: "Horários", icon: Clock, hideOnPdvOnly: true },
       { key: "drivers", label: "Motoboys", icon: Bike, hideOnPdvOnly: true },
+      { key: "motoboys_map", label: "Onde Estão Meus Motoboys", icon: MapPin, hideOnPdvOnly: true },
     ],
   },
   {
