@@ -28,6 +28,16 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
     refetchInterval: 60_000,
   });
 
+  const { data: storeStatus } = useQuery({
+    queryKey: ["valor-a-pagar-store-status", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("status").eq("id", storeId).maybeSingle();
+      return data?.status as string | undefined;
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
   const isLoading = repasseLoading || mensalidadeLoading;
   const data = mensalidadeData ? {
     repasse: breakdown.splitEntrega,
@@ -69,7 +79,9 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
 
   const total = data?.total ?? 0;
   const isZero = total === 0;
-  const blocked = (data?.operationalTotal ?? 0) >= REPASSE_RULES.BLOCK_THRESHOLD_BRL;
+  // Bloqueio de verdade é o status no banco; saldo >= teto é risco, não bloqueio.
+  const blocked = storeStatus === "bloqueado";
+  const aboveCeiling = !blocked && (data?.operationalTotal ?? 0) >= REPASSE_RULES.BLOCK_THRESHOLD_BRL;
 
   return (
     <Card className={blocked ? "rounded-none border-0 border-l-4 border-l-destructive bg-card shadow-none" : isZero ? "rounded-none border-0 border-l-4 border-l-emerald-500 bg-card shadow-none" : "rounded-none border-0 border-l-4 border-l-amber-500 bg-card shadow-none"}>
@@ -91,7 +103,13 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
 
         {blocked && (
           <div className="text-xs text-destructive font-semibold border-t border-destructive/30 pt-2">
-            ⚠️ Loja bloqueada: taxas e comissões operacionais acumuladas em {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} ou mais. Quite os valores para que a situação seja reavaliada.
+            🔒 Loja bloqueada: as vendas estão pausadas até quitar os valores. A reativação é automática após o pagamento.
+          </div>
+        )}
+
+        {aboveCeiling && (
+          <div className="text-xs font-semibold border-t pt-2 text-foreground">
+            ⚠️ Repasse acima do teto de {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)}: se continuar assim na segunda-feira, as vendas pausam até quitar.
           </div>
         )}
 
