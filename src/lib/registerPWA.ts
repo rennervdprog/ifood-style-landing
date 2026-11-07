@@ -87,8 +87,9 @@ export async function registerPWA() {
 }
 
 /**
- * Aplica uma atualização de SW que já esteja em "waiting", do jeito seguro:
- * força uma checagem, pede SKIP_WAITING e espera o `controllerchange`
+ * Aplica uma atualização de SW, do jeito seguro: força uma checagem,
+ * espera a versão nova terminar de instalar (se ainda estiver baixando),
+ * pede SKIP_WAITING ao SW em "waiting" e espera o `controllerchange`
  * antes de retornar — quem chama recarrega em seguida e cai no SW novo.
  *
  * NUNCA apaga caches aqui: o Cache Storage é compartilhado por TODAS as
@@ -98,19 +99,46 @@ export async function registerPWA() {
  * novos (o SW novo ainda não assumira), e cada reload repetia o erro.
  * Quem limpa precache antigo é o próprio SW novo, na ativação.
  *
+ * Correção 2026-11-07 (botão "Atualizar" que parecia não fazer nada): a
+ * versão anterior lia `reg.waiting` UMA vez, logo após `reg.update()`.
+ * Quando a versão nova ainda estava BAIXANDO/INSTALANDO (o precache tem
+ * ~6 MB), `waiting` vinha null e a função desistia na hora — o clique só
+ * fechava o aviso e a página seguia na versão velha. Agora a checagem
+ * tem teto de tempo (uma chamada travada não segura o clique) e, havendo
+ * instalação em andamento, a função ESPERA ela virar "waiting" (até
+ * `installWaitMs`) antes de desistir.
+ *
  * Retorna true se havia um SW esperando e ele foi acionado.
  */
-export async function applyServiceWorkerUpdate(timeoutMs = 4000): Promise<boolean> {
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function waitForWaitingWorker(
+  reg: ServiceWorkerRegistration,
+  timeoutMs: number,
+): Promise<ServiceWorker | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (reg.waiting) return reg.waiting;
+    await sleep(300);
+  }
+  return reg.waiting ?? null;
+}
+
+export async function applyServiceWorkerUpdate(timeoutMs = 4000, installWaitMs = 20000): Promise<boolean> {
   if (!("serviceWorker" in navigator)) return false;
   try {
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg) return false;
+    // Checagem de atualização com teto de tempo: se a rede travar a
+    // chamada, seguimos com o que houver em vez de segurar o clique.
     try {
-      await reg.update();
+      await Promise.race([reg.update(), sleep(3000)]);
     } catch {
       /* rede intermitente — segue com o que houver */
     }
-    const waiting = reg.waiting;
+    const waiting = (await waitForWaitingWorker(reg, installWaitMs)) ?? reg.waiting;
     if (!waiting) return false;
     await new Promise<void>((resolve) => {
       const timer = setTimeout(finish, timeoutMs);

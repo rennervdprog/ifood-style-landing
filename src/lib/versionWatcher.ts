@@ -105,10 +105,18 @@ async function applyUpdate(remoteId: string, opts?: { persistent?: boolean }) {
     action: {
       label: "Atualizar",
       onClick: async () => {
-        // Fluxo seguro (registerPWA.applyServiceWorkerUpdate): aciona o SW
-        // em espera e aguarda ele assumir (controllerchange) antes de
-        // recarregar. NUNCA apagar caches aqui — o cache é compartilhado
-        // com as outras abas abertas e apagá-lo travou o app no loop
+        // Feedback imediato: sem isto o toque parecia não fazer nada —
+        // o aviso fechava e a instalação da versão nova (que pode levar
+        // vários segundos no celular) acontecia sem nada na tela.
+        toast("Atualizando para a nova versão…", {
+          description: "Pode levar alguns segundos. Não feche o app.",
+          duration: Infinity,
+        });
+        // Fluxo seguro (registerPWA.applyServiceWorkerUpdate): espera a
+        // versão nova terminar de instalar, aciona o SW em espera e
+        // aguarda ele assumir (controllerchange) antes de recarregar.
+        // NUNCA apagar caches aqui — o cache é compartilhado com as
+        // outras abas abertas e apagá-lo travou o app no loop
         // "Atualizando o app..." de 2026-11-07.
         try { await applyServiceWorkerUpdate(); } catch {}
         try { window.location.reload(); } catch {}
