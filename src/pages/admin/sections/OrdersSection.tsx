@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, Bell, Plus, Bike, Check, Loader2, X } from "
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
+import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import OrdersToolbar, { type PeriodKey, type SourceKey } from "../components/orders/OrdersToolbar";
