@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 
 const CartPage = () => {
-  const { items, neighborhood, neighborhoodFee, subtotal, total, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, neighborhood, neighborhoodFee, subtotal, total, updateQuantity, removeItem, clearCart, addItem } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -57,7 +57,7 @@ const CartPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_public")
-        .select("is_open, force_closed, minimum_order_value")
+        .select("is_open, force_closed, minimum_order_value, delivery_fee_type, delivery_fee, delivery_fee_base, delivery_fee_per_km, platform_split_effective, free_delivery_threshold")
         .eq("id", storeId!)
         .maybeSingle() as { data: any };
       return data;
@@ -91,6 +91,49 @@ const CartPage = () => {
     refetchInterval: 60_000,
   });
 
+  // "Complete seu pedido" (2026-11-07): sugestões de clique rápido da PRÓPRIA
+  // loja — complementos (bebida/porção/sobremesa) com foto, ordenados pelo que
+  // mais sai em pedidos reais. Só entram produtos SIMPLES (sem grupos de
+  // adicionais): quem tem opção continua no cardápio, pra o "+" ser 1 toque
+  // de verdade, sem abrir tela nenhuma.
+  const { data: suggestionPool } = useQuery({
+    queryKey: ["cart-suggestions", storeId],
+    queryFn: async () => {
+      const { data: sections } = await supabase
+        .from("menu_sections")
+        .select("id, name")
+        .eq("store_id", storeId!);
+      const comp = (sections || []).filter((s: any) =>
+        /bebida|porç|porc|sobremesa|doce|acompanhamento|batata/i.test(String(s.name || "")),
+      );
+      if (!comp.length) return [] as any[];
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name, price, image_url, section_id")
+        .eq("store_id", storeId!)
+        .eq("is_available", true)
+        .in("section_id", comp.map((s: any) => s.id));
+      const list = (prods || []).filter((p: any) => p.image_url);
+      if (!list.length) return [] as any[];
+      const ids = list.map((p: any) => p.id);
+      const [{ data: links }, { data: sold }] = await Promise.all([
+        (supabase as any).from("product_addon_groups").select("product_id").in("product_id", ids),
+        (supabase as any).from("order_items").select("product_id").in("product_id", ids).limit(1000),
+      ]);
+      const withAddons = new Set((links || []).map((l: any) => l.product_id));
+      const freq = new Map<string, number>();
+      (sold || []).forEach((r: any) => freq.set(r.product_id, (freq.get(r.product_id) || 0) + 1));
+      const secName = new Map((sections || []).map((s: any) => [s.id, String(s.name || "")]));
+      const groupOf = (name: string) => (/bebida/i.test(name) ? 0 : /sobremesa|doce/i.test(name) ? 2 : 1);
+      return list
+        .filter((p: any) => !withAddons.has(p.id))
+        .map((p: any) => ({ ...p, _freq: freq.get(p.id) || 0, _group: groupOf(secName.get(p.section_id) || "") }))
+        .sort((a: any, b: any) => b._freq - a._freq);
+    },
+    enabled: !!storeId,
+    staleTime: 300_000,
+  });
+
   const storeStatus = cartStore
     ? getStoreOpenStatus(cartHours || [], cartStore.force_closed ?? false, cartStore.is_open ?? true, undefined, cartHolidays || [])
     : null;
@@ -98,6 +141,36 @@ const CartPage = () => {
   const storeMinimumOrderValue = Number(cartStore?.minimum_order_value || 0);
   const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
   const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
+
+  // Sugestões finais: fora o que já está no carrinho; 1 por grupo
+  // (bebida → acompanhamento → sobremesa), completando até 3 pelos mais pedidos.
+  const inCartIds = new Set(items.map((i) => i.id));
+  const suggestions = (() => {
+    const pool = (suggestionPool || []).filter((p: any) => !inCartIds.has(p.id));
+    const picked: any[] = [];
+    for (const g of [0, 1, 2]) {
+      const cand = pool.find((p: any) => p._group === g && !picked.includes(p));
+      if (cand) picked.push(cand);
+    }
+    for (const p of pool) {
+      if (picked.length >= 3) break;
+      if (!picked.includes(p)) picked.push(p);
+    }
+    return picked.slice(0, 3);
+  })();
+
+  // Entrega "a partir de": taxa inicial real da loja (base no km, ou a taxa
+  // fixa) + a taxa da plataforma vigente pra loja — o valor final continua
+  // sendo o da cotação pelo endereço no checkout.
+  const feePlatform = Number((cartStore as any)?.platform_split_effective ?? 0.99);
+  const feeIsKm = (cartStore as any)?.delivery_fee_type === "km";
+  const feeConfigured = feeIsKm
+    ? (cartStore as any)?.delivery_fee_base != null || (cartStore as any)?.delivery_fee_per_km != null
+    : (cartStore as any)?.delivery_fee != null;
+  const startingFee = cartStore && feeConfigured
+    ? Math.max(0, Number(feeIsKm ? (cartStore as any)?.delivery_fee_base || 0 : (cartStore as any)?.delivery_fee || 0) + feePlatform)
+    : null;
+  const freeThreshold = Number((cartStore as any)?.free_delivery_threshold || 0);
 
   if (items.length === 0) {
     return (
@@ -234,6 +307,34 @@ const CartPage = () => {
                 </div>
               ))}
             </div>
+
+            {/* Complete seu pedido — clique rápido (só na loja do carrinho) */}
+            {suggestions.length > 0 && storeId === items[0]?.store_id && (
+              <div className="border-t border-border/50 px-4 py-3.5 bg-primary/[0.03]">
+                <h4 className="text-[13px] font-bold text-foreground">Complete seu pedido</h4>
+                <p className="text-[11px] text-muted-foreground mb-2.5">Combina com o que você pegou · 1 toque e já entra no pedido</p>
+                <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
+                  {suggestions.map((p: any) => (
+                    <div key={p.id} className="w-[104px] shrink-0 bg-card border border-border rounded-xl overflow-hidden">
+                      <img src={p.image_url} alt={p.name} className="w-full h-16 object-cover" loading="lazy" />
+                      <div className="p-2">
+                        <p className="text-[11px] font-semibold leading-tight line-clamp-2 min-h-[26px] text-foreground">{p.name}</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-xs font-black text-primary">{formatBRL(Number(p.price))}</span>
+                          <button
+                            aria-label={`Adicionar ${p.name}`}
+                            onClick={() => addItem({ id: p.id, store_id: items[0].store_id, store_name: items[0].store_name, name: p.name, price: Number(p.price), basePrice: Number(p.price), image_url: p.image_url })}
+                            className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-95 transition-transform"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         ))}
       </div>
@@ -252,8 +353,21 @@ const CartPage = () => {
             <span className="text-muted-foreground flex items-center gap-1">
               <Truck className="h-3 w-3" /> Entrega
             </span>
-            <span className="font-semibold text-foreground">
-              {neighborhood ? `${formatBRL(neighborhoodFee)}` : "Calculado no checkout"}
+            <span className="font-semibold text-foreground text-right">
+              {neighborhood
+                ? `${formatBRL(neighborhoodFee)}`
+                : startingFee === null
+                  ? "Calculado no checkout"
+                  : startingFee <= 0 || (freeThreshold > 0 && subtotal >= freeThreshold)
+                    ? "Grátis"
+                    : (
+                      <>
+                        a partir de {formatBRL(startingFee)}
+                        <span className="block text-[11px] font-normal text-muted-foreground">
+                          {freeThreshold > 0 ? `grátis acima de ${formatBRL(freeThreshold)} · ` : ""}calculada pelo seu endereço
+                        </span>
+                      </>
+                    )}
             </span>
           </div>
           <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
