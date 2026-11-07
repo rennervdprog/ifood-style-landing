@@ -1,6 +1,8 @@
-// Cron diário: envia lembretes de mensalidade via WhatsApp da plataforma.
-// D-3, D-1 (aviso), D+1 (atraso), D+3 (aviso pós-bloqueio).
-// Roda contra Supabase EXTERNO. Só dispara para cobranças pending #MENS-* ou #ASSIN-*.
+// Cron diário: envia lembretes de cobrança via WhatsApp da plataforma.
+// Mensalidade (#MENS-*/#ASSIN-*): D-3, D-1 (aviso), D+1 (atraso), D+3 (pós-bloqueio).
+// Repasse (#REP-*, desde a Fase 4): D-3, D-1, D+1 e D+23 (faltam 7 dias
+// para a cobrança completar 30 dias e pausar as vendas).
+// Roda contra Supabase EXTERNO. Só dispara para cobranças pending.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const cors = {
@@ -17,6 +19,10 @@ const templates: Record<string, (ctx: { name: string; amount: number; pixCode?: 
   d_minus_1: (c) => `⏰ ${c.storeName || c.name}, sua mensalidade ItaSuper vence *AMANHÃ* — ${money(c.amount)}.\n\nAcesse o painel para pagar via PIX.`,
   d_plus_1: (c) => `⚠️ ${c.storeName || c.name}, sua mensalidade ItaSuper de ${money(c.amount)} está em atraso.\n\nEm 2 dias sua loja será suspensa. Regularize o PIX no painel.`,
   d_plus_3: (c) => `🚫 ${c.storeName || c.name}, sua loja foi *suspensa* por falta de pagamento (${money(c.amount)}).\n\nPague o PIX no painel para reativar imediatamente.`,
+  rep_d_minus_3: (c) => `Olá, ${c.storeName || c.name}! 👋\n\nSeu repasse ItaSuper de ${money(c.amount)} vence em *3 dias*.\n\nQuite pelo PIX na aba Repasse do painel para manter tudo em dia.`,
+  rep_d_minus_1: (c) => `⏰ ${c.storeName || c.name}, seu repasse ItaSuper de ${money(c.amount)} vence *AMANHÃ*.\n\nGere o PIX na aba Repasse do painel e quite em poucos segundos.`,
+  rep_d_plus_1: (c) => `⚠️ ${c.storeName || c.name}, seu repasse ItaSuper de ${money(c.amount)} está em atraso.\n\nSe completar 30 dias sem pagar, suas vendas pausam até a quitação. Regularize na aba Repasse do painel.`,
+  rep_d_plus_23: (c) => `🚨 ${c.storeName || c.name}, faltam *7 dias* para o repasse de ${money(c.amount)} completar 30 dias em aberto.\n\nSe isso acontecer, suas vendas pausam até o pagamento. Quite o PIX na aba Repasse do painel.`,
 };
 
 const daysDiff = (dueIso: string) => {
@@ -44,12 +50,19 @@ Deno.serve(async (req) => {
 
   const { data: pending, error } = await sb
     .from("financial_transactions")
-    .select("id, store_id, amount, reference_code, created_at, status, stores!inner(id, name, owner_id)")
+    .select("id, store_id, amount, reference_code, created_at, status, metadata, stores!inner(id, name, owner_id)")
     .eq("status", "pending")
-    .or("reference_code.like.#MENS-%,reference_code.like.#ASSIN-%");
+    .or("reference_code.like.#MENS-%,reference_code.like.#ASSIN-%,reference_code.like.#REP-%");
   if (error) return json({ error: error.message }, 500);
 
-  const kindByDiff = (d: number): string | null => {
+  const kindByDiff = (family: "mensalidade" | "repasse", d: number): string | null => {
+    if (family === "repasse") {
+      if (d === -3) return "rep_d_minus_3";
+      if (d === -1) return "rep_d_minus_1";
+      if (d === 1) return "rep_d_plus_1";
+      if (d === 23) return "rep_d_plus_23";
+      return null;
+    }
     if (d === -3) return "d_minus_3";
     if (d === -1) return "d_minus_1";
     if (d === 1) return "d_plus_1";
@@ -70,10 +83,15 @@ Deno.serve(async (req) => {
     const owner: any = profilesById[store?.owner_id];
     const phone: string = String(owner?.whatsapp || "").replace(/\D/g, "");
     if (!phone || !tx.created_at) { skipped.push({ id: tx.id, reason: "no_phone_or_created" }); continue; }
-    // Vencimento = created_at + 3 dias (regra do auto-deactivate)
-    const due = new Date(new Date(tx.created_at).getTime() + 3 * 86400000);
+    const isRepasse = String(tx.reference_code || "").startsWith("#REP-");
+    // Mensalidade: vencimento = created_at + 3 dias (regra do auto-deactivate).
+    // Repasse: vencimento gravado no metadata (due_date); sem ele, created_at + 7 dias.
+    const dueRaw = isRepasse ? (tx as any).metadata?.due_date : null;
+    const due = dueRaw
+      ? new Date(dueRaw)
+      : new Date(new Date(tx.created_at).getTime() + (isRepasse ? 7 : 3) * 86400000);
     const diff = daysDiff(due.toISOString());
-    const kind = kindByDiff(diff);
+    const kind = kindByDiff(isRepasse ? "repasse" : "mensalidade", diff);
     if (!kind) { skipped.push({ id: tx.id, diff, reason: "no_reminder_today" }); continue; }
     const message = templates[kind]({
       name: owner?.full_name || "lojista",
@@ -86,7 +104,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         phone, message,
         kind: `billing_${kind}`,
-        category: "mensalidade",
+        category: isRepasse ? "repasse" : "mensalidade",
         store_id: tx.store_id,
         store_name: store?.name,
       }),
