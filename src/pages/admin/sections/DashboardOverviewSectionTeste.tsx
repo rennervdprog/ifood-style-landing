@@ -333,11 +333,15 @@ export default function DashboardOverviewSectionTeste(props: Props) {
   const nextChargeLabel = nextCharge.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   const repasseSub = pendingCharge
     ? "Cobrança gerada — toque para pagar"
-    : repassePending > 0
-      ? nextChargeIsToday
-        ? "Cobrança hoje, segunda-feira"
-        : `Próxima segunda, ${nextChargeLabel}`
-      : "Nenhum valor em aberto";
+    : store?.status === "bloqueado"
+      ? "Loja pausada — quite pra reativar"
+      : repassePending >= REPASSE_RULES.BLOCK_THRESHOLD_BRL
+        ? `Acima do teto — quite até segunda, ${nextChargeLabel}`
+        : repassePending > 0
+          ? nextChargeIsToday
+            ? "Cobrança hoje, segunda-feira"
+            : `Próxima segunda, ${nextChargeLabel}`
+          : "Nenhum valor em aberto";
 
   const setupDoneCount = setupSteps.filter((s) => s.done).length;
 
