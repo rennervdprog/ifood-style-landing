@@ -26,17 +26,16 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   private async hardReload(goHome = false) {
-    try {
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-    } catch {}
+    // Último recurso MANUAL: desregistra o SW e navega com cache-buster.
+    // NÃO apaga caches: o Cache Storage é compartilhado por todas as abas
+    // abertas sob o mesmo SW — apagar o precache com o SW antigo ainda no
+    // comando travou as abas no loop "Atualizando o app..." de 2026-11-07
+    // (sem os chunks antigos no cache e sem o SW novo no comando, cada
+    // reload repetia o erro de chunk).
     try {
       const regs = await navigator.serviceWorker?.getRegistrations();
       if (regs) await Promise.all(regs.map((r) => r.unregister()));
     } catch {}
-    // Cache-buster na URL para garantir HTML/assets novos.
     // goHome=true (botão manual, último recurso) vai para "/" — o reload
     // automático usa goHome=false e volta para a mesma rota.
     const target = goHome ? "/" : window.location.pathname + window.location.search;
@@ -44,27 +43,73 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.replace(target + sep + "_v=" + Date.now());
   }
 
+  // Recuperação automática de chunk error SEM tocar em caches nem
+  // desregistrar o SW: se há um SW novo esperando, aciona ele
+  // (SKIP_WAITING) e espera assumir (controllerchange, até 4s) antes de
+  // navegar de volta para a mesma rota com cache-buster. Sem SW novo, a
+  // navegação com cache-buster busca o HTML atual do servidor.
+  private async recoverInPlace() {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (reg) {
+        try { await reg.update(); } catch {}
+        if (reg.waiting) {
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(finish, 4000);
+            function finish() {
+              clearTimeout(timer);
+              navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+              resolve();
+            }
+            function onChange() { finish(); }
+            navigator.serviceWorker.addEventListener("controllerchange", onChange);
+            reg.waiting?.postMessage({ type: "SKIP_WAITING" });
+          });
+        }
+      }
+    } catch {}
+    const target = window.location.pathname + window.location.search;
+    const sep = target.includes("?") ? "&" : "?";
+    window.location.replace(target + sep + "_v=" + Date.now());
+  }
+
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ErrorBoundary]", error, errorInfo);
 
-    // Chunk error: limpar caches e recarregar NA MESMA ROTA (1x por sessão).
-    // Depois da limpeza de cache/SW, o HTML novo referencia os chunks novos,
-    // então a mesma rota carrega normalmente e o usuário continua onde estava
-    // (antes ia para "/" e perdia a tela). Se falhar de novo na mesma sessão,
-    // nao recarrega mais sozinho — a tela abaixo oferece o botao manual.
+    // Chunk error: recuperar NA MESMA ROTA, sem apagar caches e sem
+    // desregistrar o SW (ver recoverInPlace). Orçamento COMPARTILHADO
+    // entre abas (localStorage, não sessionStorage): no máximo 2
+    // tentativas automáticas por janela de 10 minutos em TODO o
+    // navegador — com várias abas abertas, o contador por aba não
+    // impedia o loop de uma aba re-disparando a outra (2026-11-07).
+    // Esgotado o orçamento, fica só a tela com o botão manual.
     if (
       error.message?.includes("Failed to fetch dynamically imported module") ||
       error.message?.includes("Importing a module script failed") ||
       error.message?.includes("Loading chunk") ||
       error.name === "ChunkLoadError"
     ) {
-      const reloadKey = "eb_chunk_reload_count";
-      const count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
-      if (count < 1) {
-        sessionStorage.setItem(reloadKey, String(count + 1));
-        // Pequeno delay para feedback.
-        setTimeout(() => this.hardReload(false), 600);
-      }
+      const budgetKey = "eb_chunk_recovery_v2";
+      const WINDOW_MS = 10 * 60 * 1000;
+      const MAX_TRIES = 2;
+      try {
+        const now = Date.now();
+        let rec: { count: number; firstAt: number } = { count: 0, firstAt: now };
+        try {
+          const raw = localStorage.getItem(budgetKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.count === "number" && typeof parsed.firstAt === "number" && now - parsed.firstAt < WINDOW_MS) {
+              rec = parsed;
+            }
+          }
+        } catch {}
+        if (rec.count < MAX_TRIES) {
+          localStorage.setItem(budgetKey, JSON.stringify({ count: rec.count + 1, firstAt: rec.firstAt }));
+          // Pequeno delay para feedback.
+          setTimeout(() => this.recoverInPlace(), 600);
+        }
+      } catch {}
     }
   }
 
@@ -84,7 +129,8 @@ class ErrorBoundary extends Component<Props, State> {
           </div>
           <button
             onClick={() => {
-              sessionStorage.removeItem("eb_chunk_reload_count");
+              try { localStorage.removeItem("eb_chunk_recovery_v2"); } catch {}
+              try { sessionStorage.removeItem("eb_chunk_reload_count"); } catch {}
               this.hardReload(true);
             }}
             className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-95 transition-transform"
@@ -93,6 +139,7 @@ class ErrorBoundary extends Component<Props, State> {
             Recarregar agora
           </button>
           <p className="text-[11px] text-muted-foreground/70 mt-1">Se a tela não mudar em alguns segundos, toque no botão.</p>
+          <p className="text-[11px] text-muted-foreground/70">Se o problema continuar, feche as outras abas do ItaSuper — uma aba antiga aberta mantém a versão velha no comando.</p>
         </div>
       );
     }
