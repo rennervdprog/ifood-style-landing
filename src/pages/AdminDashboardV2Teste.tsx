@@ -2225,6 +2225,8 @@ const AdminDashboardTeste = () => {
               expandedClient={expandedClient}
               setExpandedClient={setExpandedClient}
               storeName={store?.name}
+              storeId={store?.id}
+              storeSlug={store?.slug}
               clientCounts={clientCounts}
               clientSort={clientSort}
               setClientSort={setClientSort}
