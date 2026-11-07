@@ -2245,6 +2245,7 @@ const AdminDashboard = () => {
               <OrdersSection
                 store={store}
                 orders={orders}
+                historyOrders={allOrders}
                 isLoading={isLoading}
                 filteredOrders={filteredOrders}
                 orderCounters={orderCounters}
