@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import OrdersToolbar, { type PeriodKey, type SourceKey } from "../components/orders/OrdersToolbar";
+import { classifyOrderSource, matchesExtraFilters, buildOrdersCsv, openOrdersReport, paymentLabel, EMPTY_EXTRA_FILTERS, type OrdersExtraFilters } from "../components/orders/ordersReport";
 import OrdersStatusPills from "../components/orders/OrdersStatusPills";
 import PixDirectAlert from "../components/orders/PixDirectAlert";
 import OrdersEmptyState from "../components/orders/OrdersEmptyState";
@@ -17,6 +18,7 @@ import ManualOrderFlow from "@/components/orders/ManualOrderFlow";
 interface Props {
   store: any;
   orders: any[] | undefined;
+  historyOrders?: any[];
   isLoading: boolean;
   filteredOrders: any[];
   orderCounters: any;
@@ -56,7 +58,7 @@ interface Props {
 
 export default function OrdersSection(props: Props) {
   const {
-    store, orders, isLoading, filteredOrders, orderTabs, activeTab, setActiveTab,
+    store, orders, historyOrders, isLoading, filteredOrders, orderTabs, activeTab, setActiveTab,
     expandedAddresses, cancelConfirm, setCancelConfirm,
     cancelReason, setCancelReason, cancellingOrder,
     isOwnDelivery, hasLinkedDrivers, driversLoading, onlineDrivers, linkedStoreDrivers,
@@ -68,6 +70,8 @@ export default function OrdersSection(props: Props) {
 
   const [period, setPeriod] = useState<PeriodKey>("all");
   const [sourceFilter, setSourceFilter] = useState<SourceKey>("all");
+  const [customRange, setCustomRange] = useState({ from: "", to: "" });
+  const [extraFilters, setExtraFilters] = useState<OrdersExtraFilters>(EMPTY_EXTRA_FILTERS);
   const [manualOpen, setManualOpen] = useState(false);
 
   const pixPending = useMemo(
@@ -222,8 +226,22 @@ export default function OrdersSection(props: Props) {
       const s = new Date(start); s.setDate(s.getDate() - 6);
       return { from: s.getTime(), to: Infinity };
     }
+    if (period === "30d") {
+      const s = new Date(start); s.setDate(s.getDate() - 29);
+      return { from: s.getTime(), to: Infinity };
+    }
+    if (period === "custom") {
+      const from = customRange.from ? new Date(`${customRange.from}T00:00:00`).getTime() : -Infinity;
+      let to = Infinity;
+      if (customRange.to) {
+        const d = new Date(`${customRange.to}T00:00:00`);
+        d.setDate(d.getDate() + 1);
+        to = d.getTime();
+      }
+      return { from, to };
+    }
     return { from: -Infinity, to: Infinity };
-  }, [period]);
+  }, [period, customRange]);
 
   const finalOrders = useMemo(() => {
     return filteredOrders.filter((o: any) => {
@@ -238,12 +256,12 @@ export default function OrdersSection(props: Props) {
         if (t < periodRange.from || t >= periodRange.to) return false;
       }
       if (sourceFilter !== "all") {
-        const src = o.order_source || "delivery";
-        if (src !== sourceFilter) return false;
+        if (classifyOrderSource(o) !== sourceFilter) return false;
       }
+      if (!matchesExtraFilters(o, extraFilters)) return false;
       return true;
     });
-  }, [filteredOrders, periodRange, sourceFilter]);
+  }, [filteredOrders, periodRange, sourceFilter, extraFilters]);
 
   // "Ver pendentes": além de trocar a aba, abre o período para "Tudo" —
   // pendentes de dias anteriores continuam visíveis e acionáveis.
@@ -252,23 +270,120 @@ export default function OrdersSection(props: Props) {
     setActiveTab("pendente");
   };
 
+// ─── Relatórios (Fase A): recorte sobre o histórico completo da loja ───
+  const reportBase = historyOrders ?? orders;
+
   const periodSummary = useMemo(() => {
-    const base = (orders || []).filter((o: any) => {
+    const inRange = (reportBase || []).filter((o: any) => {
+      if (o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") return false;
       const t = new Date(o.created_at).getTime();
       if (t < periodRange.from || t >= periodRange.to) return false;
-      return o.status !== "cancelado";
+      return matchesExtraFilters(o, extraFilters);
     });
-    let total = 0, pdvCount = 0, pdvTotal = 0, deliveryCount = 0, deliveryTotal = 0, manualCount = 0, manualTotal = 0;
+    const base = inRange.filter((o: any) => o.status !== "cancelado");
+    let total = 0, pdvCount = 0, pdvTotal = 0, deliveryCount = 0, deliveryTotal = 0, manualCount = 0, manualTotal = 0, whatsappCount = 0, whatsappTotal = 0;
     for (const o of base) {
       const price = Number(o.total_price || 0);
       total += price;
-      const src = o.order_source || "delivery";
+      const src = classifyOrderSource(o);
       if (src === "pdv") { pdvCount++; pdvTotal += price; }
       else if (src === "manual") { manualCount++; manualTotal += price; }
+      else if (src === "whatsapp") { whatsappCount++; whatsappTotal += price; }
       else { deliveryCount++; deliveryTotal += price; }
     }
-    return { count: base.length, total, pdvCount, pdvTotal, deliveryCount, deliveryTotal, manualCount, manualTotal };
-  }, [orders, periodRange]);
+    return {
+      count: base.length, total,
+      ticketMedio: base.length ? total / base.length : 0,
+      cancelledCount: inRange.length - base.length,
+      pdvCount, pdvTotal, deliveryCount, deliveryTotal, manualCount, manualTotal, whatsappCount, whatsappTotal,
+    };
+  }, [reportBase, periodRange, extraFilters]);
+
+  const paymentOptions = useMemo(
+    () => [...new Set((reportBase || []).map((o: any) => o.payment_method).filter(Boolean))].sort() as string[],
+    [reportBase]
+  );
+  const neighborhoodOptions = useMemo(
+    () => [...new Set((reportBase || []).map((o: any) => o.neighborhood).filter((n: any) => n && n !== "RETIRADA"))].sort() as string[],
+    [reportBase]
+  );
+  const productOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const o of reportBase || []) {
+      for (const i of o.order_items || []) {
+        if (i?.products?.name) names.add(i.products.name);
+      }
+    }
+    return [...names].sort();
+  }, [reportBase]);
+
+  const reportSet = useMemo(() => {
+    const search = (settlementSearch || "").toLowerCase().trim();
+    const searchDigits = search.replace(/\D/g, "");
+    return (reportBase || []).filter((o: any) => {
+      if (o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") return false;
+      const t = new Date(o.created_at).getTime();
+      if (t < periodRange.from || t >= periodRange.to) return false;
+      if (sourceFilter !== "all" && classifyOrderSource(o) !== sourceFilter) return false;
+      if (!matchesExtraFilters(o, extraFilters)) return false;
+      if (search) {
+        const phone = (getClientWhatsApp(o.client_id) || "").replace(/\D/g, "");
+        const hit =
+          o.id.slice(0, 8).toLowerCase().includes(search) ||
+          String(o.order_number ?? "").includes(search) ||
+          getClientName(o.client_id).toLowerCase().includes(search) ||
+          (o.neighborhood || "").toLowerCase().includes(search) ||
+          (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) ||
+          (searchDigits.length >= 3 && phone.includes(searchDigits));
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }, [reportBase, periodRange, sourceFilter, extraFilters, settlementSearch, getClientName, getClientWhatsApp, getDriverName]);
+
+  const exportCsv = useMemo(
+    () => buildOrdersCsv(reportSet, { getClientName, getClientWhatsApp }),
+    [reportSet, getClientName, getClientWhatsApp]
+  );
+
+  const periodLabelText = useMemo(() => {
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR");
+    if (period === "today") return `Hoje (${fmt(new Date())})`;
+    if (period === "yesterday") { const d = new Date(); d.setDate(d.getDate() - 1); return `Ontem (${fmt(d)})`; }
+    if (period === "7d") return "Últimos 7 dias";
+    if (period === "30d") return "Últimos 30 dias";
+    if (period === "custom") {
+      const de = customRange.from ? fmt(new Date(`${customRange.from}T00:00:00`)) : "início";
+      const ate = customRange.to ? fmt(new Date(`${customRange.to}T00:00:00`)) : "hoje";
+      return `Personalizado: ${de} a ${ate}`;
+    }
+    return "Todo o período";
+  }, [period, customRange]);
+
+  const filtersLabelText = useMemo(() => {
+    const parts: string[] = [];
+    if (sourceFilter !== "all") parts.push(`origem ${{ delivery: "Delivery", whatsapp: "WhatsApp", pdv: "PDV", manual: "Manual" }[sourceFilter]}`);
+    if (extraFilters.payment) parts.push(`pagamento ${paymentLabel(extraFilters.payment)}`);
+    if (extraFilters.fulfillment === "delivery") parts.push("só entrega");
+    if (extraFilters.fulfillment === "pickup") parts.push("só retirada");
+    if (extraFilters.neighborhood) parts.push(`bairro ${extraFilters.neighborhood}`);
+    if (extraFilters.product) parts.push(`produto ${extraFilters.product}`);
+    if (extraFilters.minValue) parts.push(`valor mín R$ ${extraFilters.minValue}`);
+    if (extraFilters.maxValue) parts.push(`valor máx R$ ${extraFilters.maxValue}`);
+    if (settlementSearch?.trim()) parts.push(`busca "${settlementSearch.trim()}"`);
+    return parts.length ? parts.join(" · ") : "sem filtros adicionais";
+  }, [sourceFilter, extraFilters, settlementSearch]);
+
+  const handleGenerateReport = () => {
+    const ok = openOrdersReport({
+      storeName: store?.name || "Loja",
+      periodLabel: periodLabelText,
+      filtersLabel: filtersLabelText,
+      orders: reportSet,
+      getters: { getClientName, getClientWhatsApp },
+    });
+    if (!ok) toast.error("Permita pop-ups no navegador para gerar o relatório");
+  };
 
   const attentionCount = pendingCount + pixPending.length;
 
@@ -296,6 +411,15 @@ export default function OrdersSection(props: Props) {
         setSearch={setSettlementSearch}
         periodSummary={periodSummary}
         showSearch={(orders?.length || 0) > 1}
+        customRange={customRange}
+        onCustomRangeChange={setCustomRange}
+        extraFilters={extraFilters}
+        onExtraFiltersChange={setExtraFilters}
+        paymentOptions={paymentOptions}
+        neighborhoodOptions={neighborhoodOptions}
+        productOptions={productOptions}
+        exportCsv={exportCsv}
+        onGenerateReport={handleGenerateReport}
       />
 
       {attentionCount > 0 && (
