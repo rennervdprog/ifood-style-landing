@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Tag, Percent, DollarSign, Truck } from "lucide-react";
+import { Plus, Trash2, Tag, Percent, DollarSign, Truck, Check, Sparkles } from "lucide-react";
 import { useStorePlan } from "@/hooks/useStorePlan";
 
 interface CouponManagerProps {
@@ -17,10 +17,50 @@ const discountTypeLabels: Record<string, { label: string; icon: React.ElementTyp
   free_shipping: { label: "Frete grátis", icon: Truck },
 };
 
+const COUPON_TEMPLATES = [
+  {
+    code: "PRIMEIRA10",
+    title: "Primeira compra",
+    benefit: "10% de desconto em pedidos acima de R$ 30 · só pra quem nunca comprou · vale 30 dias",
+    payload: {
+      description: "10% de desconto na primeira compra acima de R$ 30",
+      discount_type: "percentage",
+      discount_value: 10,
+      min_order_value: 30,
+      first_order_only: true,
+    },
+  },
+  {
+    code: "VOLTA10",
+    title: "Volta de cliente",
+    benefit: "R$ 10 de desconto em pedidos acima de R$ 30 · 1 uso por cliente · vale 30 dias",
+    payload: {
+      description: "R$ 10 de desconto pra quem voltou, em pedidos acima de R$ 30",
+      discount_type: "fixed",
+      discount_value: 10,
+      min_order_value: 30,
+      first_order_only: false,
+    },
+  },
+  {
+    code: "FRETEGRATIS",
+    title: "Frete grátis",
+    benefit: "Entrega grátis em pedidos acima de R$ 50 · 1 uso por cliente · vale 30 dias",
+    payload: {
+      description: "Frete grátis em pedidos acima de R$ 50",
+      discount_type: "free_shipping",
+      discount_value: 0,
+      min_order_value: 50,
+      first_order_only: false,
+    },
+  },
+];
+
 const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
   const queryClient = useQueryClient();
   const storePlan = useStorePlan(storeId);
   const [showForm, setShowForm] = useState(false);
+  const [creatingTemplate, setCreatingTemplate] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "expired" | "exhausted">("all");
   const [form, setForm] = useState({
     code: "",
@@ -108,6 +148,28 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
     }
   };
 
+  const createFromTemplate = async (t: (typeof COUPON_TEMPLATES)[number]) => {
+    setCreatingTemplate(t.code);
+    try {
+      const payload: any = {
+        code: t.code,
+        ...t.payload,
+        max_uses: null,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        is_active: true,
+      };
+      if (storeId) payload.store_id = storeId;
+      const { error } = await supabase.from("coupons" as any).insert(payload);
+      if (error) throw error;
+      toast.success(`Cupom ${t.code} criado e ativo por 30 dias!`);
+      queryClient.invalidateQueries({ queryKey: ["coupons", storeId] });
+    } catch (err: any) {
+      toast.error(err.message?.includes("unique") ? "Esse código já existe nesta loja." : "Erro ao criar o cupom.");
+    } finally {
+      setCreatingTemplate(null);
+    }
+  };
+
   const toggleActive = async (id: string, current: boolean) => {
     await supabase.from("coupons" as any).update({ is_active: !current }).eq("id", id);
     queryClient.invalidateQueries({ queryKey: ["coupons", storeId] });
@@ -135,6 +197,41 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
           <Plus className="h-3.5 w-3.5" /> Novo
         </button>
       </div>
+
+      {storeId && !isLoading && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Comece de um modelo — 1 clique e está ativo
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {COUPON_TEMPLATES.map(t => {
+              const exists = (coupons || []).some((c: any) => c.code === t.code);
+              return (
+                <div key={t.code} className={`rounded-xl border p-3 space-y-2 ${exists ? "border-border bg-muted/30" : "border-primary/40 bg-card"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-foreground">{t.title}</p>
+                    <span className="font-mono text-[11px] font-bold bg-primary/10 text-primary rounded-md px-1.5 py-0.5">{t.code}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{t.benefit}</p>
+                  {exists ? (
+                    <p className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <Check className="h-3.5 w-3.5" /> Já criado — está na lista abaixo
+                    </p>
+                  ) : (
+                    <button
+                      onClick={() => createFromTemplate(t)}
+                      disabled={creatingTemplate === t.code}
+                      className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50"
+                    >
+                      {creatingTemplate === t.code ? "Criando..." : "Criar este cupom"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
