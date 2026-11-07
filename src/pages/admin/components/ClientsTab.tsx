@@ -1,8 +1,13 @@
-import { memo } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Users, Heart, UserX, MapPinned, Search, AlertTriangle, ChevronUp, ChevronDown, Star,
   Sparkles, Repeat, Crown, Clock, TrendingUp, Calendar, Download, ArrowUpDown,
+  MessageCircle, X, Send, CheckCircle2,
 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { formatBRL } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -74,6 +79,8 @@ interface ClientsTabProps {
   expandedClient: string | null;
   setExpandedClient: (id: string | null) => void;
   storeName?: string;
+  storeId?: string;
+  storeSlug?: string;
   clientCounts?: {
     total: number; new: number; weekly: number; vip: number;
     atrisk: number; inactive30: number; inactive45: number; inactive60: number; highticket: number;
@@ -85,10 +92,219 @@ interface ClientsTabProps {
 const ClientsTabImpl = ({
   clientFilter, setClientFilter, clientSearch, setClientSearch,
   filteredClients, expandedClient, setExpandedClient, storeName,
+  storeId, storeSlug,
   clientCounts, clientSort = "orders", setClientSort,
 }: ClientsTabProps) => {
   const counts = clientCounts || { total: 0, new: 0, weekly: 0, vip: 0, atrisk: 0, inactive30: 0, inactive45: 0, inactive60: 0, highticket: 0 };
   const totalInactive = counts.inactive30 + counts.inactive45 + counts.inactive60;
+
+  // ── Chamar de volta (Fase 1): registro de cliques + retorno em 14 dias ──
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const queryClient = useQueryClient();
+  const [recallClient, setRecallClient] = useState<any | null>(null);
+  const [recallCoupon, setRecallCoupon] = useState<string>("");
+  const [recallMessage, setRecallMessage] = useState("");
+  const [recallSending, setRecallSending] = useState(false);
+  const [creatingVolta, setCreatingVolta] = useState(false);
+  const [showCalled, setShowCalled] = useState(false);
+
+  const { data: recallLogs } = useQuery({
+    queryKey: ["client-recall-logs", storeId],
+    enabled: !!storeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_recall_logs" as any)
+        .select("*")
+        .eq("store_id", storeId)
+        .order("clicked_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: storeCoupons } = useQuery({
+    queryKey: ["coupons", storeId],
+    enabled: !!storeId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons" as any)
+        .select("*")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: recentOrders } = useQuery({
+    queryKey: ["client-recall-orders", storeId],
+    enabled: !!storeId,
+    queryFn: async () => {
+      const since = new Date(Date.now() - 45 * DAY_MS).toISOString();
+      const { data, error } = await supabase
+        .from("orders" as any)
+        .select("id, client_id, total_price, status, created_at")
+        .eq("store_id", storeId)
+        .gte("created_at", since)
+        .neq("status", "cancelado")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const activeCoupons = useMemo(
+    () =>
+      (storeCoupons || []).filter(
+        (c: any) =>
+          c.is_active &&
+          (!c.expires_at || new Date(c.expires_at).getTime() > Date.now()) &&
+          (c.max_uses == null || (c.used_count || 0) < c.max_uses)
+      ),
+    [storeCoupons]
+  );
+
+  const lastRecallByClient = useMemo(() => {
+    const m = new Map<string, any>();
+    (recallLogs || []).forEach((l: any) => {
+      if (!m.has(l.client_id)) m.set(l.client_id, l);
+    });
+    return m;
+  }, [recallLogs]);
+
+  const calledDaysAgo = (clientId: string): number | null => {
+    const l = lastRecallByClient.get(clientId);
+    if (!l) return null;
+    return Math.floor((Date.now() - new Date(l.clicked_at).getTime()) / DAY_MS);
+  };
+
+  const isRecentlyCalled = (clientId: string) => {
+    const d = calledDaysAgo(clientId);
+    return d !== null && d < 30;
+  };
+
+  const recallStats = useMemo(() => {
+    const logs30 = (recallLogs || []).filter(
+      (l: any) => Date.now() - new Date(l.clicked_at).getTime() < 30 * DAY_MS
+    );
+    const firstCall = new Map<string, number>();
+    logs30.forEach((l: any) => {
+      const t = new Date(l.clicked_at).getTime();
+      const prev = firstCall.get(l.client_id);
+      if (prev === undefined || t < prev) firstCall.set(l.client_id, t);
+    });
+    let returned = 0;
+    let revenue = 0;
+    firstCall.forEach((t0, cid) => {
+      const back = (recentOrders || []).find((o: any) => {
+        if (o.client_id !== cid) return false;
+        const t = new Date(o.created_at).getTime();
+        return t > t0 && t <= t0 + 14 * DAY_MS;
+      });
+      if (back) {
+        returned++;
+        revenue += Number(back.total_price) || 0;
+      }
+    });
+    return { called: firstCall.size, returned, revenue };
+  }, [recallLogs, recentOrders]);
+
+  const isRecallFilter =
+    clientFilter === "atrisk" || clientFilter === "inactive30" ||
+    clientFilter === "inactive45" || clientFilter === "inactive60";
+
+  const visibleClients = useMemo(() => {
+    if (!isRecallFilter || showCalled) return filteredClients;
+    return filteredClients.filter((c: any) => !isRecentlyCalled(c.clientId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredClients, isRecallFilter, showCalled, lastRecallByClient]);
+  const hiddenCalledCount = filteredClients.length - visibleClients.length;
+
+  const buildRecallMessage = (client: any, coupon: any): string => {
+    const first = (client.name || "").split(" ")[0] || "tudo bem";
+    const link = storeSlug ? `https://itasuper.com.br/loja/${storeSlug}` : "https://itasuper.com.br";
+    if (coupon) {
+      const benefit =
+        coupon.discount_type === "percentage"
+          ? `${Number(coupon.discount_value)}% de desconto`
+          : coupon.discount_type === "fixed"
+            ? `${formatBRL(Number(coupon.discount_value))} de desconto`
+            : "frete grátis";
+      const min = Number(coupon.min_order_value) > 0 ? ` em pedidos acima de ${formatBRL(Number(coupon.min_order_value))}` : "";
+      return `Oi ${first}! Aqui é da ${storeName || "loja"} 😊 Sentimos sua falta! Preparamos um presente pra você voltar: o cupom ${coupon.code} dá ${benefit} no seu próximo pedido${min}. É só pedir pelo nosso cardápio: ${link} — esperamos você!`;
+    }
+    return `Oi ${first}! Aqui é da ${storeName || "loja"} 😊 Sentimos sua falta! Dá uma olhada no cardápio e faz seu pedido por aqui: ${link} — esperamos você!`;
+  };
+
+  const openRecall = (client: any) => {
+    const def = activeCoupons.find((c: any) => c.code === "VOLTA10") || activeCoupons[0] || null;
+    setRecallClient(client);
+    setRecallCoupon(def ? def.code : "");
+    setRecallMessage(buildRecallMessage(client, def));
+  };
+
+  const onRecallCouponChange = (code: string) => {
+    setRecallCoupon(code);
+    if (!recallClient) return;
+    const coupon = activeCoupons.find((c: any) => c.code === code) || null;
+    setRecallMessage(buildRecallMessage(recallClient, coupon));
+  };
+
+  const createVoltaCoupon = async () => {
+    if (!storeId) return;
+    setCreatingVolta(true);
+    try {
+      const { error } = await supabase.from("coupons" as any).insert({
+        code: "VOLTA10",
+        description: "R$ 10 de desconto pra quem voltou, em pedidos acima de R$ 30",
+        discount_type: "fixed",
+        discount_value: 10,
+        min_order_value: 30,
+        max_uses: null,
+        first_order_only: false,
+        expires_at: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+        is_active: true,
+        store_id: storeId,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["coupons", storeId] });
+      setRecallCoupon("VOLTA10");
+      if (recallClient) {
+        setRecallMessage(
+          buildRecallMessage(recallClient, { code: "VOLTA10", discount_type: "fixed", discount_value: 10, min_order_value: 30 })
+        );
+      }
+      toast.success("Cupom VOLTA10 criado e ativo por 30 dias!");
+    } catch {
+      toast.error("Não consegui criar o cupom. Tente pela aba Cupons.");
+    } finally {
+      setCreatingVolta(false);
+    }
+  };
+
+  const confirmRecall = async () => {
+    if (!recallClient || !storeId) return;
+    setRecallSending(true);
+    try {
+      const { error } = await supabase.from("client_recall_logs" as any).insert({
+        store_id: storeId,
+        client_id: recallClient.clientId,
+        client_phone: String(recallClient.phone || "").replace(/\D/g, ""),
+        segment: recallClient.segment,
+        coupon_code: recallCoupon || null,
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["client-recall-logs", storeId] });
+      openWhatsApp(recallClient.phone, recallMessage);
+      setRecallClient(null);
+      toast.success("Boa! Agora é só apertar enviar na conversa que abriu.");
+    } catch {
+      toast.error("Não consegui registrar a chamada. Tente de novo.");
+    } finally {
+      setRecallSending(false);
+    }
+  };
 
   const metricCards = [
     { key: "all" as ClientFilter,     label: "Total",       value: counts.total,    icon: Users,    cls: "from-primary/15 to-primary/5 text-primary" },
@@ -186,8 +402,36 @@ const ClientsTabImpl = ({
         </div>
       )}
 
+      {isRecallFilter && storeId && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+          <p className="text-xs font-bold text-foreground">Chamados de volta</p>
+          {recallStats.called === 0 ? (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Ninguém foi chamado ainda. Quando você chamar, aqui aparece quantos voltaram a pedir e quanto venderam.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Chamados: <b className="text-foreground">{recallStats.called}</b> · Voltaram:{" "}
+              <b className="text-foreground">{recallStats.returned}</b> · Vendas de retorno:{" "}
+              <b className="text-foreground">{formatCurrency(recallStats.revenue)}</b>{" "}
+              <span className="opacity-70">(primeiro pedido em até 14 dias depois da chamada)</span>
+            </p>
+          )}
+          {hiddenCalledCount > 0 && (
+            <button
+              onClick={() => setShowCalled(!showCalled)}
+              className="text-[11px] font-bold text-primary mt-1.5 underline underline-offset-2"
+            >
+              {showCalled
+                ? "Ocultar quem já foi chamado"
+                : `${hiddenCalledCount} já chamado(s) nos últimos 30 dias — mostrar`}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
-        {filteredClients.length === 0 ? (
+        {visibleClients.length === 0 ? (
           clientFilter === "all" && !clientSearch.trim() ? (
             <EmptyState
               icon={<Users className="h-10 w-10" />}
@@ -198,13 +442,14 @@ const ClientsTabImpl = ({
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-bold">
-              {clientFilter === "atrisk" ? "Nenhum cliente em risco — bom trabalho!" :
+              {hiddenCalledCount > 0 ? "Todos deste segmento já foram chamados nos últimos 30 dias" :
+               clientFilter === "atrisk" ? "Nenhum cliente em risco — bom trabalho!" :
                clientFilter === "inactive30" || clientFilter === "inactive45" || clientFilter === "inactive60" ? "Nenhum cliente inativo neste período" :
                "Nenhum cliente encontrado"}
             </p>
           </div>
           )
-        ) : filteredClients.map(client => (
+        ) : visibleClients.map(client => (
           <div key={client.clientId} className="bg-card border border-border rounded-2xl overflow-hidden">
             <button onClick={() => setExpandedClient(expandedClient === client.clientId ? null : client.clientId)}
               className="w-full p-3 flex items-center justify-between text-left hover:bg-accent/30 transition-colors">
@@ -247,6 +492,24 @@ const ClientsTabImpl = ({
                 {expandedClient === client.clientId ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </div>
             </button>
+
+            {(client.segment === "atrisk" || client.segment === "inactive") && client.phone && storeId && (
+              <div className="px-3 pb-3">
+                {isRecentlyCalled(client.clientId) ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/40 rounded-xl px-3 py-2.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    Chamado há {calledDaysAgo(client.clientId)} dia(s) — volta pra fila depois de 30 dias.
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => openRecall(client)}
+                    className="w-full flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-xl py-2.5 active:scale-[.99] transition"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" /> Chamar no WhatsApp
+                  </button>
+                )}
+              </div>
+            )}
 
             {expandedClient === client.clientId && (
               <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
@@ -330,20 +593,37 @@ const ClientsTabImpl = ({
 
                 {client.phone && (
                   <div className="flex gap-2">
-                    <WhatsAppButton
-                      number={client.phone}
-                      message={buildCampaignMessage(client, storeName || "nossa loja")}
-                      label={
-                        client.segment === "inactive" ? "Reativar c/ cupom" :
-                        client.segment === "atrisk" ? "Reengajar" :
-                        client.segment === "vip" || client.segment === "weekly" ? "Agradecer" :
-                        client.segment === "new" ? "Boas-vindas" : "Mensagem"
-                      }
-                      size="sm"
-                    />
-                    <WhatsAppButton number={client.phone}
-                      message={`Olá ${client.name}! Novidades no ${storeName}! 🍔`}
-                      label="Promoção" size="sm" />
+                    {(client.segment === "atrisk" || client.segment === "inactive") && storeId ? (
+                      <>
+                        <button
+                          onClick={() => openRecall(client)}
+                          className="inline-flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl px-3 py-2 text-xs min-h-[44px] active:scale-95 transition-transform"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          {client.segment === "inactive" ? "Reativar c/ cupom" : "Chamar de volta"}
+                        </button>
+                        <WhatsAppButton number={client.phone}
+                          message={`Olá ${client.name}! Novidades no ${storeName}! 🍔`}
+                          label="Promoção" size="sm" />
+                      </>
+                    ) : (
+                      <>
+                        <WhatsAppButton
+                          number={client.phone}
+                          message={buildCampaignMessage(client, storeName || "nossa loja")}
+                          label={
+                            client.segment === "inactive" ? "Reativar c/ cupom" :
+                            client.segment === "atrisk" ? "Reengajar" :
+                            client.segment === "vip" || client.segment === "weekly" ? "Agradecer" :
+                            client.segment === "new" ? "Boas-vindas" : "Mensagem"
+                          }
+                          size="sm"
+                        />
+                        <WhatsAppButton number={client.phone}
+                          message={`Olá ${client.name}! Novidades no ${storeName}! 🍔`}
+                          label="Promoção" size="sm" />
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -351,6 +631,101 @@ const ClientsTabImpl = ({
           </div>
         ))}
       </div>
+
+      {recallClient && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center sm:p-4"
+          onClick={() => setRecallClient(null)}
+        >
+          <div
+            className="bg-card w-full max-w-md rounded-t-2xl sm:rounded-2xl p-4 space-y-3 max-h-[92vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-base font-black text-foreground">
+                  Chamar {(recallClient.name || "").split(" ")[0]} de volta
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  A conversa abre no <b>seu</b> WhatsApp (Web no computador ou aplicativo no celular), com a
+                  mensagem pronta. Você confere, ajusta se quiser e aperta enviar — a plataforma não envia nada sozinha.
+                </p>
+              </div>
+              <button onClick={() => setRecallClient(null)} className="p-1.5 text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1.5">Cupom oferecido</label>
+              {activeCoupons.length > 0 ? (
+                <select
+                  value={recallCoupon}
+                  onChange={e => onRecallCouponChange(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  {activeCoupons.map((c: any) => (
+                    <option key={c.id} value={c.code}>
+                      {c.code} —{" "}
+                      {c.discount_type === "percentage"
+                        ? `${Number(c.discount_value)}% off`
+                        : c.discount_type === "fixed"
+                          ? `${formatBRL(Number(c.discount_value))} off`
+                          : "frete grátis"}
+                      {Number(c.min_order_value) > 0 ? ` acima de ${formatBRL(Number(c.min_order_value))}` : ""}
+                    </option>
+                  ))}
+                  <option value="">Sem cupom — só a mensagem</option>
+                </select>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Sua loja ainda não tem cupom ativo. Crie o modelo de volta com 1 clique:
+                  </p>
+                  <button
+                    onClick={createVoltaCoupon}
+                    disabled={creatingVolta}
+                    className="w-full py-2.5 rounded-xl border border-primary/50 text-primary text-xs font-bold disabled:opacity-50"
+                  >
+                    {creatingVolta ? "Criando..." : "Criar cupom VOLTA10 — R$ 10 acima de R$ 30"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1.5">Mensagem (pode editar)</label>
+              <textarea
+                value={recallMessage}
+                onChange={e => setRecallMessage(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRecallClient(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-bold text-muted-foreground"
+              >
+                Agora não
+              </button>
+              <button
+                onClick={confirmRecall}
+                disabled={recallSending || !recallClient.phone}
+                className="flex-1 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" /> {recallSending ? "Abrindo..." : "Abrir no WhatsApp"}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Depois de chamar, o cliente fica marcado como chamado por 30 dias e sai desta fila.{" "}
+              <b>Dica de ritmo:</b> chame poucos clientes por dia, espaçado — mensagem de gente de verdade não cai em bloqueio.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
