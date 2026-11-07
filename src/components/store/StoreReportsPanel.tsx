@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import TutorialHelpButton from "@/components/TutorialHelp";
+import OrdersStatement from "@/components/store/OrdersStatement";
 
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.DailyRevenueChart }))
@@ -16,7 +17,7 @@ const PaymentPieChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.PaymentPieChart }))
 );
 
-type SubTab = "overview" | "sales" | "products" | "hours" | "funil";
+type SubTab = "overview" | "sales" | "products" | "hours" | "funil" | "extrato";
 
 // Mapas únicos de rótulos (o mapa local antigo não cobria os valores reais
 // do banco — cash, maquininha_pix, whatsapp_bot etc. vazavam crus na tela).
@@ -310,6 +311,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     { key: "products", label: "Produtos" },
     { key: "hours", label: "Horários" },
     { key: "funil", label: "Funil" },
+    { key: "extrato", label: "Extrato de pedidos" },
   ];
 
   return (
@@ -407,7 +409,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         </div>
       )}
 
-      {!isLoading && pedidos === 0 && !error && sub !== "funil" && (
+      {!isLoading && pedidos === 0 && !error && sub !== "funil" && sub !== "extrato" && (
         <div className="p-8 rounded-2xl bg-card/60 border border-border/40 text-center">
           <p className="text-sm font-bold text-foreground">Nenhuma venda no período</p>
           <p className="text-xs text-muted-foreground mt-1">Selecione outra data para ver os resultados.</p>
@@ -668,6 +670,10 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
           </div>
           <p className="text-[10px] text-muted-foreground mt-4">As etapas "viram um produto" e "abriram o carrinho" começaram a ser medidas agora — antes, só visita e checkout eram registrados. Os números dessas duas etapas crescem a partir de hoje.</p>
         </div>
+      )}
+
+      {sub === "extrato" && (
+        <OrdersStatement storeId={storeId} storeName={storeName || "Loja"} />
       )}
     </div>
   );
