@@ -30,9 +30,4 @@ export const REPASSE_LABELS = {
  */
 export function repasseRulesSummary(): string {
   return `Durante a semana, tudo que você vende fica com você — só junta a parte do ItaSuper (R$ 0,99 por entrega + R$ 1,99 por pedido em PIX). Toda segunda-feira, se o acumulado passou de R$ ${REPASSE_RULES.MIN_AUTO_CHARGE_BRL}, geramos o PIX pra você quitar. Se a segunda chegar com o saldo acima de R$ ${REPASSE_RULES.BLOCK_THRESHOLD_BRL} e ele não for quitado, as vendas pausam até o pagamento. Cobrança sem pagar por ${REPASSE_RULES.SUSPENSION_DAYS} dias também pausa. Pagou, volta na hora.`;
-} Cobranças de ciclos diferentes ficam separadas — não são somadas. Saldo total acima de R$ ${
-    REPASSE_RULES.BLOCK_THRESHOLD_BRL
-  } bloqueia novos pedidos até a quitação. A cobrança pendente mais antiga bloqueia a loja após ${
-    REPASSE_RULES.SUSPENSION_DAYS
-  } dias. Após a quitação integral, a loja é reativada automaticamente.`;
 }
