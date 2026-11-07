@@ -53,6 +53,22 @@ async function verifyWooviSignature(rawBody: string, signatureB64: string | null
   }
 }
 
+/**
+ * Conta ÚNICA de reativação (Fase 4 do pacote Repasse): a RPC
+ * get_store_billing_state soma repasse + comissão conforme o plano E a
+ * taxa do PDV pendente, e confirma que não resta cobrança de comissão
+ * pendente. Antes esta conta vivia aqui e deixava o PDV de fora — uma
+ * loja podia reativar devendo PDV acima do teto. Em erro, NÃO reativa.
+ */
+async function canReactivateStore(supabase: any, storeId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("get_store_billing_state", { p_store_id: storeId });
+  if (error) {
+    console.error("[woovi-webhook] get_store_billing_state error", error);
+    return false;
+  }
+  return (data as any)?.pode_reativar === true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -172,22 +188,8 @@ Deno.serve(async (req) => {
     }
 
     // Reativa somente bloqueios criados pela política financeira e somente
-    // depois de quitar todas as cobranças de comissão ainda pendentes.
-    const { data: balanceAfterPayment } = await supabase
-      .from("store_balances")
-      .select("repasse_pendente, comissao_pendente")
-      .eq("store_id", tx.store_id)
-      .maybeSingle();
-    const remainingBalance = Number(balanceAfterPayment?.repasse_pendente || 0) +
-      Number(balanceAfterPayment?.comissao_pendente || 0);
-    const { count: unresolvedCharges } = await supabase
-      .from("financial_transactions")
-      .select("id", { count: "exact", head: true })
-      .eq("store_id", tx.store_id)
-      .eq("transaction_kind", "commission_charge")
-      .eq("status", "pending");
-
-    if ((unresolvedCharges || 0) === 0 && remainingBalance < REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
+    // depois de quitar tudo (conta única da Fase 4, com o PDV dentro).
+    if (await canReactivateStore(supabase, tx.store_id)) {
       const { error: restoreErr } = await supabase
         .from("stores")
         .update({ status: "ativo", billing_blocked_at: null, billing_block_reason: null } as any)
@@ -213,20 +215,7 @@ Deno.serve(async (req) => {
     // Uma expiração pode encerrar a última pendência que mantinha a loja bloqueada.
     // Reavalia a mesma política financeira usada após confirmação de pagamento.
     if (failedRows?.length) {
-      const { data: balanceAfterFailure } = await supabase
-        .from("store_balances")
-        .select("repasse_pendente, comissao_pendente")
-        .eq("store_id", tx.store_id)
-        .maybeSingle();
-      const remainingBalance = Number(balanceAfterFailure?.repasse_pendente || 0) +
-        Number(balanceAfterFailure?.comissao_pendente || 0);
-      const { count: unresolvedCharges } = await supabase
-        .from("financial_transactions")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", tx.store_id)
-        .eq("transaction_kind", "commission_charge")
-        .eq("status", "pending");
-      if ((unresolvedCharges || 0) === 0 && remainingBalance < REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
+      if (await canReactivateStore(supabase, tx.store_id)) {
         const { error: restoreErr } = await supabase
           .from("stores")
           .update({ status: "ativo", billing_blocked_at: null, billing_block_reason: null } as any)
