@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Clock, Copy, CheckCircle2, Loader2, CreditCard, Sparkles, MessageCircle } from "lucide-react";
+import { AlertTriangle, Clock, Copy, CheckCircle2, Loader2, CreditCard, Sparkles, MessageCircle, Lock } from "lucide-react";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { StorePlanFeatures } from "@/hooks/useStorePlan";
@@ -54,6 +56,64 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     staleTime: 60_000,
   });
 
+  // Bloqueio por REPASSE: vive no banco (stores.status) — a Fase 3 unifica
+  // as duas telas: mensalidade pendente e repasse bloqueado aparecem juntos.
+  const { data: storeBlock } = useQuery({
+    queryKey: ["guard-store-block", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("status, billing_blocked_at, billing_block_reason")
+        .eq("id", storeId)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!storeId,
+    refetchInterval: 30_000,
+  });
+  const isRepasseBlocked = storeBlock?.status === "bloqueado";
+  const { total: repasseTotal } = usePendingRepasse(isRepasseBlocked ? storeId : undefined);
+
+  // Cobrança #REP já emitida (segunda-feira) com PIX pronto, se houver.
+  const { data: pendingRepasseCharge } = useQuery({
+    queryKey: ["guard-pending-repasse", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, reference_code, pix_copy_paste, pix_qr_code_base64, amount")
+        .eq("store_id", storeId)
+        .eq("status", "pending")
+        .eq("transaction_kind", "commission_charge")
+        .like("reference_code", "#REP-%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!storeId && isRepasseBlocked,
+    staleTime: 1000 * 30,
+  });
+
+  const [repassePix, setRepassePix] = useState<{
+    qr: string | null;
+    base64: string | null;
+    amount: number;
+    ref?: string;
+  } | null>(null);
+  const [repasseLoading, setRepasseLoading] = useState(false);
+  const [repasseCopied, setRepasseCopied] = useState(false);
+
+  const repassePixShown =
+    repassePix ??
+    (pendingRepasseCharge?.pix_copy_paste
+      ? {
+          qr: pendingRepasseCharge.pix_copy_paste as string,
+          base64: pendingRepasseCharge.pix_qr_code_base64 as string | null,
+          amount: Number(pendingRepasseCharge.amount),
+          ref: pendingRepasseCharge.reference_code as string,
+        }
+      : null);
+
   // Check for pending subscription/monthly payment
   const { data: pendingPayment } = useQuery({
     queryKey: ["pending-subscription-payment", storeId],
@@ -96,7 +156,8 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
      storePlan.monthlyFee > 0 &&
      hasUnpaidBill; // ← exige fatura existente
  
-   const shouldBlock = isTrialExpired || hasUnpaidBill || isOverdue;
+   const shouldBlockMensalidade = isTrialExpired || hasUnpaidBill || isOverdue;
+   const shouldBlock = shouldBlockMensalidade || isRepasseBlocked;
 
   // Poll for payment confirmation
   useEffect(() => {
@@ -142,11 +203,67 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     }
   }, [hasUnpaidBill, pendingPayment, pixData, storeId]);
 
-  // 🔓 Bypass total quando a mensalidade é R$0 (Essencial gratuito).
-  // Sem isso, cobranças órfãs de planos antigos travariam o lojista.
-  if (storePlan.monthlyFee === 0 || !shouldBlock) {
+  // 🔓 Bypass da MENSALIDADE quando ela é R$0 (Essencial gratuito) — as
+  // condições acima já exigem monthlyFee > 0. O bloqueio por REPASSE não
+  // tem bypass: vale pra qualquer plano, porque as vendas estão pausadas.
+  if (!shouldBlock) {
     return <>{children}</>;
   }
+
+  // Enquanto a loja está pausada por repasse, confere a reativação:
+  // o webhook da Woovi reativa a loja quando o pagamento cai.
+  useEffect(() => {
+    if (!isRepasseBlocked) return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("status")
+        .eq("id", storeId)
+        .single();
+      if (data?.status && data.status !== "bloqueado") {
+        toast.success("Pagamento confirmado! Sua loja foi reativada.");
+        queryClient.invalidateQueries({ queryKey: ["guard-store-block", storeId] });
+        queryClient.invalidateQueries({ queryKey: ["store-plan", storeId] });
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isRepasseBlocked, storeId, queryClient]);
+
+  const handleGenerateRepassePix = async () => {
+    setRepasseLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("payment-router", {
+        body: {
+          action: "commission_charge",
+          store_id: storeId,
+          amount: repasseTotal,
+          description: "Repasse ItaSuper",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setRepassePix({
+        qr: data?.pix_copy_paste ?? data?.qr_code ?? null,
+        base64: data?.pix_qr_code_base64 ?? data?.qr_code_base64 ?? null,
+        amount: Number(data?.amount ?? repasseTotal),
+        ref: data?.reference_code,
+      });
+      toast.success("PIX gerado! Pague para reativar sua loja.");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar PIX. Tente novamente.");
+    } finally {
+      setRepasseLoading(false);
+    }
+  };
+
+  const handleCopyRepasse = () => {
+    if (repassePixShown?.qr) {
+      navigator.clipboard.writeText(repassePixShown.qr);
+      setRepasseCopied(true);
+      toast.success("Código PIX copiado!");
+      setTimeout(() => setRepasseCopied(false), 3000);
+    }
+  };
 
   const handleGeneratePix = async () => {
     setLoading(true);
@@ -200,18 +317,24 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full border-2 border-amber-500/30 shadow-xl rounded-3xl">
+      <Card className={`max-w-md w-full border-2 shadow-xl rounded-3xl ${isRepasseBlocked ? "border-destructive/40" : "border-amber-500/30"}`}>
         <CardContent className="p-6 space-y-6">
           {/* Header */}
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto">
-              <Clock className="h-8 w-8 text-amber-500" />
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${isRepasseBlocked ? "bg-destructive/10" : "bg-amber-500/10"}`}>
+              {isRepasseBlocked ? <Lock className="h-8 w-8 text-destructive" /> : <Clock className="h-8 w-8 text-amber-500" />}
             </div>
             <h1 className="text-2xl font-black text-foreground">
-              {isRecurring ? "Mensalidade pendente" : "Período de teste expirou"}
+              {isRepasseBlocked ? "Sua loja está pausada" : isRecurring ? "Mensalidade pendente" : "Período de teste expirou"}
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              {isRecurring ? (
+              {isRepasseBlocked ? (
+                <>
+                  As vendas pararam por um <span className="font-bold text-foreground">repasse em aberto</span>.
+                  Quite abaixo pra voltar a vender — a reativação é automática quando o pagamento cair.
+                  {shouldBlockMensalidade && " Sua mensalidade também está pendente — quite as duas pra liberar tudo."}
+                </>
+              ) : isRecurring ? (
                 <>
                   Sua mensalidade do plano{" "}
                   <span className="font-bold text-primary">{planLabel}</span> está pendente.
@@ -227,6 +350,77 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
             </p>
           </div>
 
+          {/* Repasse bloqueado: bloco de quitação */}
+          {isRepasseBlocked && (
+            <div className="bg-destructive/5 border border-destructive/30 rounded-2xl p-4 space-y-3">
+              <div>
+                <p className="font-bold text-foreground">Repasse à plataforma</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {storeBlock?.billing_block_reason === "overdue"
+                    ? "Uma cobrança de repasse ficou mais de 30 dias sem pagar."
+                    : `O repasse passou do teto de ${formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} na rodada de segunda-feira.`}
+                </p>
+                <p className="text-3xl font-black text-foreground mt-2">{formatBRL(repasseTotal)}</p>
+              </div>
+
+              {!repassePixShown ? (
+                <Button
+                  onClick={handleGenerateRepassePix}
+                  disabled={repasseLoading || repasseTotal <= 0}
+                  className="w-full py-5 text-base font-bold rounded-2xl"
+                  size="lg"
+                >
+                  {repasseLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Gerando PIX...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      Gerar PIX do repasse
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-center text-2xl font-black text-primary">{formatBRL(repassePixShown.amount)}</p>
+                  {repassePixShown.base64 && (
+                    <div className="flex justify-center">
+                      <img
+                        src={`data:image/png;base64,${repassePixShown.base64}`}
+                        alt="QR Code PIX"
+                        className="w-48 h-48 rounded-xl border border-border"
+                      />
+                    </div>
+                  )}
+                  <Button onClick={handleCopyRepasse} variant="outline" className="w-full rounded-xl py-4">
+                    {repasseCopied ? (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar código PIX
+                      </>
+                    )}
+                  </Button>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Aguardando confirmação do pagamento...
+                  </div>
+                  {repassePixShown.ref && (
+                    <p className="text-xs text-center text-muted-foreground">Ref: {repassePixShown.ref}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {shouldBlockMensalidade && (
+          <>
           {/* Plan summary */}
           <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -316,13 +510,16 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
               </p>
             </div>
           )}
+          </>
+          )}
 
           {/* Warning */}
           <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-500/10 rounded-xl p-3">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <p>
-              Enquanto o pagamento não for confirmado, o acesso ao painel ficará limitado.
-              Seus dados e pedidos estão seguros.
+              {isRepasseBlocked
+                ? "Enquanto o repasse não for quitado, sua loja não recebe pedidos novos. Seus dados e pedidos estão seguros."
+                : "Enquanto o pagamento não for confirmado, o acesso ao painel ficará limitado. Seus dados e pedidos estão seguros."}
             </p>
           </div>
 
