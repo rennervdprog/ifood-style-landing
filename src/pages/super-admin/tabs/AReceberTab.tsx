@@ -9,6 +9,7 @@ import { Wallet, Crown, Truck, Percent, ShoppingCart, CheckCircle2, MessageCircl
 import { brl } from "@/components/finance/financeExport";
 import { planLabel } from "@/lib/plansInfo";
 import { toast } from "sonner";
+import FailedChargesCard from "../components/FailedChargesCard";
 
 type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
 
@@ -238,6 +239,9 @@ const AReceberTab = () => {
           ))}
         </div>
       )}
+
+      {/* Fase 5 do pacote Repasse — cobranças com falha (antes invisíveis). */}
+      <FailedChargesCard />
     </div>
   );
 };
