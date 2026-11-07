@@ -31,6 +31,7 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "Pix",
   pix_machine: "Pix na maquininha",
   pix_maquininha: "Pix na maquininha",
+  maquininha_pix: "Pix na maquininha",
   cartao: "Cartão",
   cartao_credito: "Cartão de crédito",
   cartao_debito: "Cartão de débito",
