@@ -203,13 +203,6 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     }
   }, [hasUnpaidBill, pendingPayment, pixData, storeId]);
 
-  // 🔓 Bypass da MENSALIDADE quando ela é R$0 (Essencial gratuito) — as
-  // condições acima já exigem monthlyFee > 0. O bloqueio por REPASSE não
-  // tem bypass: vale pra qualquer plano, porque as vendas estão pausadas.
-  if (!shouldBlock) {
-    return <>{children}</>;
-  }
-
   // Enquanto a loja está pausada por repasse, confere a reativação:
   // o webhook da Woovi reativa a loja quando o pagamento cai.
   useEffect(() => {
@@ -228,6 +221,13 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     }, 5000);
     return () => clearInterval(interval);
   }, [isRepasseBlocked, storeId, queryClient]);
+
+  // 🔓 Bypass da MENSALIDADE quando ela é R$0 (Essencial gratuito) — as
+  // condições acima já exigem monthlyFee > 0. O bloqueio por REPASSE não
+  // tem bypass: vale pra qualquer plano, porque as vendas estão pausadas.
+  if (!shouldBlock) {
+    return <>{children}</>;
+  }
 
   const handleGenerateRepassePix = async () => {
     setRepasseLoading(true);
