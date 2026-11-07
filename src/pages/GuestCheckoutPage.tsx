@@ -42,6 +42,13 @@ const GuestCheckoutPage = () => {
   const { items, subtotal, clearCart } = useCart();
   const storeId = items[0]?.store_id;
 
+  // Tracking de chegada ao checkout (funil da loja) — o checkout guest não
+  // disparava o evento "checkout" que o checkout logado já dispara.
+  useEffect(() => {
+    if (!storeId) return;
+    import("@/lib/pageView").then((m) => m.trackPageView("checkout", { storeId }));
+  }, [storeId]);
+
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);

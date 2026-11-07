@@ -212,6 +212,13 @@ const StorePage = () => {
     import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
   }, [store?.id]);
 
+  // Tracking de visualização de produto (funil da loja): registra quando o
+  // cliente abre um produto. A deduplicação da pageView conta sessões.
+  useEffect(() => {
+    if (!store?.id || !selectedProduct) return;
+    import("@/lib/pageView").then((m) => m.trackPageView("product_view", { storeId: store.id }));
+  }, [store?.id, selectedProduct]);
+
   // IMPORTANTE: nunca usar `id` (param de rota = slug) como storeId.
   // Isso disparava queries Supabase com slug onde se espera UUID (400 22P02).
   const storeId = store?.id ?? null;
