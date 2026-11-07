@@ -39,11 +39,11 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0">
-          <TabsTrigger value="summary" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><LayoutDashboard className="h-4 w-4" />Resumo</TabsTrigger>
-          <TabsTrigger value="history" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Receipt className="h-4 w-4" />Extrato</TabsTrigger>
-          <TabsTrigger value="conciliacao" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Scale className="h-4 w-4" />Conciliação</TabsTrigger>
-          <TabsTrigger value="repasse" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Cobranças</TabsTrigger>
+        <TabsList className="no-scrollbar flex h-auto w-full flex-nowrap justify-start gap-4 overflow-x-auto rounded-none border-b border-border bg-transparent p-0 sm:gap-6">
+          <TabsTrigger value="summary" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><LayoutDashboard className="h-4 w-4" />Resumo</TabsTrigger>
+          <TabsTrigger value="history" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Receipt className="h-4 w-4" />Extrato</TabsTrigger>
+          <TabsTrigger value="conciliacao" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Scale className="h-4 w-4" />Conciliação</TabsTrigger>
+          <TabsTrigger value="repasse" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Cobranças</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="mt-5 space-y-5">
