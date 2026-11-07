@@ -86,6 +86,7 @@ import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/l
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 import { useAttendantRequests } from "./admin/useAttendantRequests";
 import { useRepassePending } from "./admin/useRepassePending";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
@@ -1622,6 +1623,8 @@ const AdminDashboardTeste = () => {
   const { requests: attendantRequests, resolve: resolveAttendant } =
     useAttendantRequests(store?.id, playAlert);
 
+  const repassePending = useRepassePending(store?.id);
+
   const avisosCount = useAvisosCount({
     store,
     storePlan,
@@ -1633,6 +1636,7 @@ const AdminDashboardTeste = () => {
     delayedOrdersCount: delayedOrders.length,
     attendantCount: attendantRequests.length,
     soundOff: !soundEnabled && !Capacitor.isNativePlatform(),
+    repasseUrgent: repassePending >= REPASSE_RULES.BLOCK_THRESHOLD_BRL || store?.status === "bloqueado",
   });
 
   // Lateral "Entregadores": a contagem é a EQUIPE vinculada (mesma fonte do
@@ -1645,7 +1649,6 @@ const AdminDashboardTeste = () => {
     ? (storeDeliveryAvailability?.available_drivers_count || 0) > 0
     : (onlineDrivers?.length || 0) > 0;
 
-  const repassePending = useRepassePending(store?.id);
 
   const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     const isPickupOrder = order?.neighborhood === "RETIRADA";
@@ -2185,6 +2188,7 @@ const AdminDashboardTeste = () => {
                 hasLinkedDrivers={hasLinkedDrivers}
                 setDashboardTab={setDashboardTab}
                 count={avisosCount}
+                repassePending={repassePending}
                 pendingOrdersCount={pendingCount}
                 delayedOrdersCount={delayedOrders.length}
                 delayedPreparingCount={delayedPreparingCount}

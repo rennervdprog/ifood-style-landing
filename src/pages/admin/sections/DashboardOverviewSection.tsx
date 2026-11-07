@@ -5,6 +5,8 @@ type OrderStatus = any;
 type DashboardTab = any;
 import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell, Plus, Receipt } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 import { formatElapsedMinutes } from "@/lib/elapsedTime";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
@@ -111,6 +113,9 @@ export default function DashboardOverviewSection(props: Props) {
     enabled: !!store?.id,
     refetchInterval: 30_000,
   });
+
+  // Repasse em aberto (mesma fonte da aba Repasse) — pra carta de teto/bloqueio na Início.
+  const { total: repasseTotal } = usePendingRepasse(store?.id);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
@@ -219,6 +224,28 @@ export default function DashboardOverviewSection(props: Props) {
         <p className="text-xs text-muted-foreground mt-0.5">Toque para pagar via PIX</p>
       </div>
       <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
+    </button>
+  )}
+
+  {(store?.status === "bloqueado" || repasseTotal >= REPASSE_RULES.BLOCK_THRESHOLD_BRL) && (
+    <button
+      onClick={() => setDashboardTab("repasse")}
+      className={`w-full text-left border-2 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform ${store?.status === "bloqueado" ? "bg-destructive/5 border-destructive/40" : "bg-primary/5 border-primary/40"}`}
+    >
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white flex-shrink-0 ${store?.status === "bloqueado" ? "bg-destructive" : "bg-primary"}`}>
+        <CreditCard className="h-5 w-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-black text-foreground">
+          {store?.status === "bloqueado" ? "Loja pausada — repasse em aberto" : "Repasse acima do teto"}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {store?.status === "bloqueado"
+            ? `Quite ${formatBRL(repasseTotal)} pra reativar as vendas`
+            : `${formatBRL(repasseTotal)} a repassar — quite até segunda pra não pausar as vendas`}
+        </p>
+      </div>
+      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
     </button>
   )}
 

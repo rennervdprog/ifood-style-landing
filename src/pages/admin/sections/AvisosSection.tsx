@@ -1,4 +1,6 @@
-import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList, MessageCircle, Check, VolumeX, Volume2 } from "lucide-react";
+import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList, MessageCircle, Check, VolumeX, Volume2, CreditCard } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 import {
   attendantContextLabel,
   attendantWaLink,
@@ -31,6 +33,8 @@ interface Props {
   soundOff?: boolean;
   /** Ativa o som de alerta (mesma ação do botão "Som" do topo). */
   onActivateSound?: () => void;
+  /** Total de repasse em aberto (pra carta de teto/bloqueio). */
+  repassePending?: number;
 }
 
 function attendantAgo(iso: string): string {
@@ -58,6 +62,7 @@ export default function AvisosSection({
   onResolveAttendant,
   soundOff = false,
   onActivateSound,
+  repassePending = 0,
 }: Props) {
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
@@ -108,6 +113,34 @@ export default function AvisosSection({
             >
               <Volume2 className="inline h-3 w-3 mr-1" /> Ativar som agora
             </button>
+          </div>
+        </div>
+      )}
+
+      {(store?.status === "bloqueado" || repassePending >= REPASSE_RULES.BLOCK_THRESHOLD_BRL) && (
+        <div className={`border-2 rounded-2xl p-4 flex items-start gap-3 ${store?.status === "bloqueado" ? "bg-destructive/5 border-destructive/40" : "bg-primary/5 border-primary/40"}`}>
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white flex-shrink-0 ${store?.status === "bloqueado" ? "bg-destructive" : "bg-primary"}`}>
+            <CreditCard className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black text-foreground text-sm">
+              {store?.status === "bloqueado" ? "Loja pausada por repasse em aberto" : "Repasse acima do teto"}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {store?.status === "bloqueado" ? (
+                <>As vendas estão pausadas até quitar o repasse de <strong className="text-foreground">{formatBRL(repassePending)}</strong>. Pagou, a loja volta a vender sozinha.</>
+              ) : (
+                <>Você tem <strong className="text-foreground">{formatBRL(repassePending)}</strong> a repassar. Se continuar acima de {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} na segunda-feira, as vendas pausam até quitar. Quite antes pra não correr o risco.</>
+              )}
+            </p>
+            <div className="mt-2">
+              <button
+                onClick={() => setDashboardTab("repasse")}
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Ver repasse
+              </button>
+            </div>
           </div>
         </div>
       )}
