@@ -463,10 +463,10 @@ const GuestCheckoutPage = () => {
     ? [...BASE_PAY_METHODS, { id: "pix_direto", label: "Pix Direto (chave do lojista)", icon: QrCode }]
     : BASE_PAY_METHODS;
 
+  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const contactOk = phone.replace(/\D/g, "").length >= 10 && name.trim().length >= 2;
   const addressOk = isPickup || (!!street.trim() && !!number.trim() && !!neighborhood.trim());
-  const stepsDone = [contactOk, addressOk, !!payment];
-  const stepLabels = ["Contato", isPickup ? "Retirada" : "Endereço", "Pagamento"];
+
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -474,6 +474,33 @@ const GuestCheckoutPage = () => {
         <button onClick={() => navigate(-1)} className="p-1 -ml-1"><ArrowLeft className="h-5 w-5" /></button>
         <h1 className="text-base font-bold">Finalizar pedido</h1>
       </header>
+
+      {/* Resumo sempre visível (redesenho 2026-11-07): o total aparece desde a
+          primeira tela e nenhuma taxa nova surge no fim — taxa surpresa é a
+          maior causa de abandono em delivery. A taxa exibida é a da cotação
+          real pelo endereço, quando ela existe. */}
+      <div className="sticky top-14 z-30 bg-card/95 backdrop-blur-sm border-b border-border px-4 py-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {itemCount} {itemCount === 1 ? "item" : "itens"} · {items[0]?.store_name}
+          </span>
+          <span className="text-sm font-bold text-foreground">
+            Total <span className="text-primary font-black">{formatBRL(total)}</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-0.5">
+          <span>Subtotal {formatBRL(subtotal)}</span>
+          <span>
+            {isPickup
+              ? "Retirada · grátis"
+              : calculatingFee
+                ? "Calculando entrega…"
+                : isSuccessfulDeliveryQuote(deliveryQuote)
+                  ? `Entrega ${formatBRL(matchedFee)} · ${deliveryQuote.distance.km.toFixed(1)} km`
+                  : "Entrega calculada pelo endereço"}
+          </span>
+        </div>
+      </div>
 
       {/* Fase 4: loja fechada — mesmo aviso do checkout logado */}
       {isStoreClosed && storeStatus && (
@@ -519,36 +546,9 @@ const GuestCheckoutPage = () => {
         </div>
       )}
 
-      {/* Progress steps — igual ao checkout normal */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center gap-1.5">
-          {stepLabels.map((step, i) => {
-            const done = stepsDone[i];
-            const active = !done && stepsDone.slice(0, i).every(Boolean);
-            return (
-              <div key={step} className="flex-1">
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 transition-all ${
-                      done
-                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                        : active
-                          ? "bg-primary/15 text-primary ring-2 ring-primary/40"
-                          : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
-                  </div>
-                  {i < stepLabels.length - 1 && (
-                    <div className={`flex-1 h-0.5 rounded-full transition-all ${done ? "bg-primary" : "bg-muted"}`} />
-                  )}
-                </div>
-                <p className={`text-[10px] mt-1.5 font-bold ${done || active ? "text-foreground" : "text-muted-foreground"}`}>{step}</p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Redesenho 2026-11-07: saiu o indicador de passos (1-2-3). A página já
+          era uma tela só em seções; quem mostra o progresso agora são os
+          cabeçalhos das seções (check ao completar) e o resumo fixo no topo. */}
 
       <div className="px-4 py-2 space-y-4">
         {/* SECTION: Tipo de pedido (Entrega x Retirada) */}
@@ -804,10 +804,13 @@ const GuestCheckoutPage = () => {
             {closedButtonLabel}
           </button>
         ) : (
-          <button onClick={handleConfirm} disabled={submitting || belowMinimum || !payment || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
-            className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
-            {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : !payment ? "Escolha a forma de pagamento" : `Confirmar pedido — ${formatBRL(total)}`}
-          </button>
+          <>
+            <button onClick={handleConfirm} disabled={submitting || belowMinimum || !payment || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
+              className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
+              {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : !payment ? "Escolha a forma de pagamento" : `Confirmar pedido — ${formatBRL(total)}`}
+            </button>
+            <p className="text-center text-[11px] text-muted-foreground mt-2">Sem cadastro · Pagamento direto pra loja</p>
+          </>
         )}
       </div>
     </div>
