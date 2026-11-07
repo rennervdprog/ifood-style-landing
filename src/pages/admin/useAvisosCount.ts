@@ -21,6 +21,8 @@ interface Params {
   attendantCount?: number;
   /** Som de alerta ainda não ativado neste aparelho/navegador. */
   soundOff?: boolean;
+  /** Repasse urgente: saldo >= teto (500) ou loja bloqueada por repasse. */
+  repasseUrgent?: boolean;
 }
 
 export function useAvisosCount({
@@ -34,6 +36,7 @@ export function useAvisosCount({
   delayedOrdersCount = 0,
   attendantCount = 0,
   soundOff = false,
+  repasseUrgent = false,
 }: Params): number {
   if (!store) return 0;
 
@@ -45,6 +48,7 @@ export function useAvisosCount({
   if (delayedOrdersCount > 0) count++;
   count += attendantCount;
   if (soundOff) count++;
+  if (repasseUrgent) count++;
 
   return count;
 }
