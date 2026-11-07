@@ -13,6 +13,7 @@
  * Não roda em: dev, preview Lovable, iframe.
  */
 import { BUILD_ID } from "@/lib/buildInfo";
+import { applyServiceWorkerUpdate } from "@/lib/registerPWA";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 
@@ -104,16 +105,12 @@ async function applyUpdate(remoteId: string, opts?: { persistent?: boolean }) {
     action: {
       label: "Atualizar",
       onClick: async () => {
-        try {
-          if ("serviceWorker" in navigator) {
-            const reg = await navigator.serviceWorker.getRegistration();
-            reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
-            if ("caches" in window) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
-            }
-          }
-        } catch {}
+        // Fluxo seguro (registerPWA.applyServiceWorkerUpdate): aciona o SW
+        // em espera e aguarda ele assumir (controllerchange) antes de
+        // recarregar. NUNCA apagar caches aqui — o cache é compartilhado
+        // com as outras abas abertas e apagá-lo travou o app no loop
+        // "Atualizando o app..." de 2026-11-07.
+        try { await applyServiceWorkerUpdate(); } catch {}
         try { window.location.reload(); } catch {}
       },
     },
