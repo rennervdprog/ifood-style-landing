@@ -651,7 +651,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
                     <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{st.uniques}</strong> visitantes · {st.views} visualizações · {pct.toFixed(0)}%</span>
                   </div>
                   <div className="h-2.5 bg-muted rounded-full overflow-hidden mt-1">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
                   </div>
                 </div>
               );
@@ -659,10 +659,10 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
             <div>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-xs font-bold text-foreground">Viraram pedido</span>
-                <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{pedidos}</strong> pedidos · {((pedidos / funnelTop) * 100).toFixed(0)}%</span>
+                <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{pedidos}</strong> pedidos no período</span>
               </div>
               <div className="h-2.5 bg-muted rounded-full overflow-hidden mt-1">
-                <div className="h-full bg-primary rounded-full" style={{ width: `${(pedidos / funnelTop) * 100}%` }} />
+                <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (pedidos / funnelTop) * 100)}%` }} />
               </div>
             </div>
           </div>
