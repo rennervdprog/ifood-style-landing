@@ -2244,6 +2244,7 @@ const AdminDashboardTeste = () => {
               <OrdersSectionTeste
                 store={store}
                 orders={orders}
+                historyOrders={allOrders}
                 isLoading={isLoading}
                 ordersError={ordersError || null}
                 onRetryOrders={() => queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] })}
