@@ -83,6 +83,29 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     enabled: !!storeId && !!startDate && !!endDate,
   });
 
+  // Pedidos brutos do período (com 1 dia de margem, filtrados pela data
+  // local) — base dos cancelamentos por motivo.
+  const { data: extraOrders } = useQuery({
+    queryKey: ["store-report-extra", storeId, startDate, endDate],
+    queryFn: async () => {
+      const from = parseISO(startDate); from.setDate(from.getDate() - 1);
+      const to = parseISO(endDate); to.setDate(to.getDate() + 1);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("created_at, status, cancel_reason")
+        .eq("store_id", storeId)
+        .gte("created_at", from.toISOString())
+        .lte("created_at", to.toISOString());
+      if (error) throw error;
+      return (data || []).filter((o: any) => {
+        const d = isoDate(new Date(o.created_at));
+        return d >= startDate && d <= endDate;
+      });
+    },
+    staleTime: 60_000,
+    enabled: !!storeId && !!startDate && !!endDate,
+  });
+
   const resumo = data?.resumo || {};
   const prev = data?.resumo_anterior || {};
   const receita = Number(resumo.receita_total || 0);
@@ -116,6 +139,44 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
   const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#a855f7", "#ef4444", "#0ea5e9"];
 
   const totalProdReceita = produtos.reduce((s, p) => s + Number(p.receita || 0), 0);
+
+  // Semana completa: agrega as linhas por data da RPC no dia da semana.
+  const weekdayStats = useMemo(() => {
+    const acc = WEEKDAYS.map((label, dow) => ({ label, dow, pedidos: 0, receita: 0 }));
+    for (const d of dias) {
+      const dow = parseISO(d.data).getDay();
+      acc[dow].pedidos += Number(d.pedidos || 0);
+      acc[dow].receita += Number(d.receita || 0);
+    }
+    return [1, 2, 3, 4, 5, 6, 0].map((dow) => acc[dow]);
+  }, [dias]);
+  const weekdayMaxReceita = Math.max(0, ...weekdayStats.map((w) => w.receita));
+
+  // Cancelamentos por motivo: códigos conhecidos viram rótulo; motivo em
+  // texto livre aparece como foi escrito; sem registro tem balde próprio.
+  const cancelStats = useMemo(() => {
+    const CANCEL_LABELS: Record<string, string> = {
+      client_request: "Cliente pediu",
+      pix_expirado: "Pix expirado",
+      out_of_stock: "Falta de estoque",
+      store_closed: "Loja fechada",
+      other: "Outro motivo",
+    };
+    const map = new Map<string, number>();
+    let total = 0;
+    for (const o of extraOrders || []) {
+      if (o.status !== "cancelado") continue;
+      total += 1;
+      const raw = String(o.cancel_reason || "").trim();
+      const label = !raw ? "Sem motivo registrado" : CANCEL_LABELS[raw.toLowerCase()] || raw;
+      map.set(label, (map.get(label) || 0) + 1);
+    }
+    const sorted = [...map.entries()].sort((a, b) => b[1] - a[1]);
+    const top = sorted.slice(0, 8).map(([label, count]) => ({ label, count }));
+    const rest = sorted.slice(8).reduce((s, [, c]) => s + c, 0);
+    if (rest > 0) top.push({ label: "Outros motivos", count: rest });
+    return { total, rows: top };
+  }, [extraOrders]);
 
   function exportCSV() {
     const lines: string[] = [];
@@ -352,6 +413,50 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
                   <HourlyBarChart data={hourlyChart} />
                 </Suspense>
               </div>
+            </div>
+          )}
+
+          {(sub === "overview" || sub === "hours") && weekdayMaxReceita > 0 && (
+            <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-3">📅 Dias da Semana</p>
+              <div className="space-y-2">
+                {weekdayStats.map((w) => {
+                  const pct = weekdayMaxReceita > 0 ? (w.receita / weekdayMaxReceita) * 100 : 0;
+                  const isBest = w.receita === weekdayMaxReceita && w.receita > 0;
+                  return (
+                    <div key={w.dow} className="flex items-center gap-3">
+                      <span className={`text-xs font-bold w-10 ${isBest ? "text-primary" : "text-foreground"}`}>{w.label}</span>
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[11px] text-muted-foreground w-16 text-right">{w.pedidos}x</span>
+                      <span className="text-xs font-bold text-foreground w-24 text-right">{formatCurrency(w.receita)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-3">A semana inteira do período — o dia em destaque é o que mais vende.</p>
+            </div>
+          )}
+
+          {(sub === "overview" || sub === "sales") && cancelStats.total > 0 && (
+            <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-3">❌ Cancelamentos por Motivo ({cancelStats.total})</p>
+              <div className="space-y-2">
+                {cancelStats.rows.map((r) => {
+                  const pct = cancelStats.total > 0 ? (r.count / cancelStats.total) * 100 : 0;
+                  return (
+                    <div key={r.label} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-foreground flex-1 min-w-0 truncate" title={r.label}>{r.label}</span>
+                      <div className="w-28 h-2 bg-muted rounded-full overflow-hidden shrink-0">
+                        <div className="h-full bg-destructive rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[11px] text-muted-foreground w-16 text-right shrink-0">{r.count}x · {pct.toFixed(0)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-3">Por que os pedidos do período foram cancelados — é aqui que aparece o vazamento pra corrigir.</p>
             </div>
           )}
 
