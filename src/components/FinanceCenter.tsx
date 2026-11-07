@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { LayoutDashboard, Receipt, Truck, Info } from "lucide-react";
+import { LayoutDashboard, Receipt, Truck, Info, Scale } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StoreFinancePanel from "./StoreFinancePanel";
 import StoreFinanceBasic from "./StoreFinanceBasic";
 import FinancialStatement from "./FinancialStatement";
 import RepasseHistory from "./RepasseHistory";
+import FinanceConciliation from "./finance/FinanceConciliation";
 import PlatformFeeCycleBlock from "./PlatformFeeCycleBlock";
 import PlanSummaryCard from "./finance/PlanSummaryCard";
 import ValorAPagarCard from "./finance/ValorAPagarCard";
@@ -41,6 +42,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
         <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0">
           <TabsTrigger value="summary" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><LayoutDashboard className="h-4 w-4" />Resumo</TabsTrigger>
           <TabsTrigger value="history" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Receipt className="h-4 w-4" />Extrato</TabsTrigger>
+          <TabsTrigger value="conciliacao" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Scale className="h-4 w-4" />Conciliação</TabsTrigger>
           <TabsTrigger value="repasse" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Cobranças</TabsTrigger>
         </TabsList>
 
@@ -61,6 +63,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
         </TabsContent>
 
         <TabsContent value="history" className="mt-5"><FinancialStatement storeId={storeId} storeName={storeName} /></TabsContent>
+        <TabsContent value="conciliacao" className="mt-5"><FinanceConciliation storeId={storeId} storeName={storeName} /></TabsContent>
         <TabsContent value="repasse" className="mt-5"><RepasseHistory storeId={storeId} /></TabsContent>
       </Tabs>
     </div>
