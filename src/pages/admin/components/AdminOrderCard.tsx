@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import {
   CheckCircle2, AlertTriangle, Timer, Bike, MapPin, ChevronDown, ChevronUp,
-  Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
+  Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer, Check
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { formatElapsedMinutes } from "@/lib/elapsedTime";
