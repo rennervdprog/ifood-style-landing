@@ -28,6 +28,7 @@ import {
   type ReceivableKind,
   type StoreReceivable,
 } from "@/lib/superAdminAReceber";
+import FailedChargesCard from "../components/FailedChargesCard";
 
 /* ─────────────────────────────────────────────────────────────
  * AReceberTabTeste — A Receber redesenhado (Fase 5).
@@ -277,6 +278,9 @@ const AReceberTabTeste = () => {
           </div>
         )}
       </section>
+
+      {/* Fase 5 do pacote Repasse — cobranças com falha (antes invisíveis). */}
+      <FailedChargesCard />
 
       {/* Fase 5 — confirmação antes da baixa manual (decisão do Renner, 28/10). */}
       <AlertDialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}>
