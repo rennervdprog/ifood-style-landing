@@ -16,7 +16,7 @@ const PaymentPieChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.PaymentPieChart }))
 );
 
-type SubTab = "overview" | "sales" | "products" | "hours";
+type SubTab = "overview" | "sales" | "products" | "hours" | "funil";
 
 // Mapas únicos de rótulos (o mapa local antigo não cobria os valores reais
 // do banco — cash, maquininha_pix, whatsapp_bot etc. vazavam crus na tela).
@@ -106,6 +106,48 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     enabled: !!storeId && !!startDate && !!endDate,
   });
 
+  // Funil da loja: eventos de page_views da loja no período (mesma margem
+  // de 1 dia + filtro pela data local da query de cancelamentos).
+  const { data: funnelRows } = useQuery({
+    queryKey: ["store-report-funnel", storeId, startDate, endDate],
+    queryFn: async () => {
+      const from = parseISO(startDate); from.setDate(from.getDate() - 1);
+      const to = parseISO(endDate); to.setDate(to.getDate() + 1);
+      const { data, error } = await supabase
+        .from("page_views")
+        .select("page, visitor_hash, created_at")
+        .eq("store_id", storeId)
+        .in("page", ["store_page", "product_view", "cart_view", "checkout"])
+        .gte("created_at", from.toISOString())
+        .lte("created_at", to.toISOString())
+        .limit(20000);
+      if (error) throw error;
+      return (data || []).filter((r: any) => {
+        const d = isoDate(new Date(r.created_at));
+        return d >= startDate && d <= endDate;
+      });
+    },
+    staleTime: 60_000,
+    enabled: !!storeId && !!startDate && !!endDate,
+  });
+
+  // Catálogo ativo da loja — base dos "nunca venderam no período".
+  const { data: catalogProducts } = useQuery({
+    queryKey: ["store-catalog-products", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name")
+        .eq("store_id", storeId)
+        .eq("is_available", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 300_000,
+    enabled: !!storeId,
+  });
+
   const resumo = data?.resumo || {};
   const prev = data?.resumo_anterior || {};
   const receita = Number(resumo.receita_total || 0);
@@ -178,6 +220,46 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     return { total, rows: top };
   }, [extraOrders]);
 
+  // Curva ABC sobre a receita de itens: A concentra até 80%, B até 95%.
+  const abc = useMemo(() => {
+    const sorted = [...produtos].sort((a, b) => Number(b.receita || 0) - Number(a.receita || 0));
+    const total = sorted.reduce((sum, p) => sum + Number(p.receita || 0), 0);
+    const byKey = new Map<string, "A" | "B" | "C">();
+    const counts = { A: 0, B: 0, C: 0 };
+    const rev = { A: 0, B: 0, C: 0 };
+    let cum = 0;
+    for (const p of sorted) {
+      const prevShare = total > 0 ? cum / total : 1;
+      const cls: "A" | "B" | "C" = prevShare < 0.8 ? "A" : prevShare < 0.95 ? "B" : "C";
+      byKey.set((p.product_id || "") + p.nome, cls);
+      counts[cls] += 1;
+      rev[cls] += Number(p.receita || 0);
+      cum += Number(p.receita || 0);
+    }
+    return { byKey, counts, rev, total };
+  }, [produtos]);
+
+  const neverSold = useMemo(() => {
+    const sold = new Set(produtos.map((p) => p.product_id).filter(Boolean));
+    return (catalogProducts || []).filter((p: any) => !sold.has(p.id));
+  }, [catalogProducts, produtos]);
+
+  // Etapas do funil: visualizações e visitantes únicos por evento.
+  const funnelStages = useMemo(() => {
+    const defs = [
+      { page: "store_page", label: "Visitaram a loja" },
+      { page: "product_view", label: "Viram um produto" },
+      { page: "cart_view", label: "Abriram o carrinho" },
+      { page: "checkout", label: "Foram ao checkout" },
+    ];
+    return defs.map((d) => {
+      const rows = (funnelRows || []).filter((r: any) => r.page === d.page);
+      const uniques = new Set(rows.map((r: any) => r.visitor_hash).filter(Boolean)).size;
+      return { ...d, views: rows.length, uniques };
+    });
+  }, [funnelRows]);
+  const funnelTop = Math.max(1, funnelStages[0]?.uniques || 0);
+
   function exportCSV() {
     const lines: string[] = [];
     lines.push(`Relatório - ${storeName || "Loja"}`);
@@ -227,6 +309,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     { key: "sales", label: "Vendas" },
     { key: "products", label: "Produtos" },
     { key: "hours", label: "Horários" },
+    { key: "funil", label: "Funil" },
   ];
 
   return (
@@ -324,7 +407,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         </div>
       )}
 
-      {!isLoading && pedidos === 0 && !error && (
+      {!isLoading && pedidos === 0 && !error && sub !== "funil" && (
         <div className="p-8 rounded-2xl bg-card/60 border border-border/40 text-center">
           <p className="text-sm font-bold text-foreground">Nenhuma venda no período</p>
           <p className="text-xs text-muted-foreground mt-1">Selecione outra data para ver os resultados.</p>
@@ -485,6 +568,16 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
             </div>
           )}
 
+          {sub === "products" && produtos.length > 0 && (
+            <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
+              <p className="text-xs font-bold text-foreground">
+                Curva ABC: <span className="text-primary">A = {abc.counts.A} produtos · {abc.total > 0 ? ((abc.rev.A / abc.total) * 100).toFixed(0) : 0}% da receita</span>
+                {" · "}B = {abc.counts.B} · C = {abc.counts.C}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">Poucos produtos pagam a conta: a classe A concentra a receita de itens do período. A etiqueta A/B/C aparece em cada produto da lista abaixo.</p>
+            </div>
+          )}
+
           {(sub === "overview" || sub === "products") && (
             <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
               <div className="flex items-center justify-between mb-4">
@@ -505,6 +598,12 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between text-xs mb-1 gap-2">
                             <span className="font-bold text-foreground truncate">{p.nome}</span>
+                            {(() => {
+                              const cls = abc.byKey.get((p.product_id || "") + p.nome);
+                              if (!cls) return null;
+                              const clsStyle = cls === "A" ? "bg-primary text-primary-foreground" : cls === "B" ? "bg-foreground text-background" : "bg-muted text-muted-foreground";
+                              return <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${clsStyle}`}>{cls}</span>;
+                            })()}
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="text-muted-foreground">{p.quantidade}x</span>
                               <span className="font-bold text-emerald-500">{formatCurrency(Number(p.receita))}</span>
@@ -524,7 +623,51 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
               )}
             </div>
           )}
+          {sub === "products" && neverSold.length > 0 && (
+            <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-2">💤 Sem Vendas no Período ({neverSold.length})</p>
+              <p className="text-[10px] text-muted-foreground mb-3">Produtos ativos do cardápio que não venderam nenhuma unidade no período — candidatos a sair do cardápio, virar combo ou ganhar destaque.</p>
+              <div className="flex flex-wrap gap-1.5">
+                {neverSold.map((p: any) => (
+                  <span key={p.id} className="text-[11px] font-semibold bg-muted text-muted-foreground px-2 py-1 rounded-full">{p.name}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {sub === "funil" && !isLoading && (
+        <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+          <p className="text-xs font-bold text-foreground mb-1">🧭 Funil da Loja</p>
+          <p className="text-[10px] text-muted-foreground mb-4">Do clique na vitrine ao checkout, no período selecionado. Visitantes = pessoas diferentes; visualizações = total de aberturas.</p>
+          <div className="space-y-3">
+            {funnelStages.map((st) => {
+              const pct = (st.uniques / funnelTop) * 100;
+              return (
+                <div key={st.page}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-bold text-foreground">{st.label}</span>
+                    <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{st.uniques}</strong> visitantes · {st.views} visualizações · {pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="h-2.5 bg-muted rounded-full overflow-hidden mt-1">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+            <div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-bold text-foreground">Viraram pedido</span>
+                <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{pedidos}</strong> pedidos · {((pedidos / funnelTop) * 100).toFixed(0)}%</span>
+              </div>
+              <div className="h-2.5 bg-muted rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-primary rounded-full" style={{ width: `${(pedidos / funnelTop) * 100}%` }} />
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-4">As etapas "viram um produto" e "abriram o carrinho" começaram a ser medidas agora — antes, só visita e checkout eram registrados. Os números dessas duas etapas crescem a partir de hoje.</p>
+        </div>
       )}
     </div>
   );
