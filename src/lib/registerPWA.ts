@@ -85,3 +85,48 @@ export async function registerPWA() {
     /* noop */
   }
 }
+
+/**
+ * Aplica uma atualização de SW que já esteja em "waiting", do jeito seguro:
+ * força uma checagem, pede SKIP_WAITING e espera o `controllerchange`
+ * antes de retornar — quem chama recarrega em seguida e cai no SW novo.
+ *
+ * NUNCA apaga caches aqui: o Cache Storage é compartilhado por TODAS as
+ * abas abertas sob o mesmo SW. Apagar o precache com o SW antigo ainda no
+ * comando foi a causa do loop "Atualizando o app..." de 2026-11-07 — as
+ * abas sobreviventes ficavam sem os chunks antigos (apagados) e sem os
+ * novos (o SW novo ainda não assumira), e cada reload repetia o erro.
+ * Quem limpa precache antigo é o próprio SW novo, na ativação.
+ *
+ * Retorna true se havia um SW esperando e ele foi acionado.
+ */
+export async function applyServiceWorkerUpdate(timeoutMs = 4000): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return false;
+    try {
+      await reg.update();
+    } catch {
+      /* rede intermitente — segue com o que houver */
+    }
+    const waiting = reg.waiting;
+    if (!waiting) return false;
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(finish, timeoutMs);
+      function finish() {
+        clearTimeout(timer);
+        navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+        resolve();
+      }
+      function onChange() {
+        finish();
+      }
+      navigator.serviceWorker.addEventListener("controllerchange", onChange);
+      waiting.postMessage({ type: "SKIP_WAITING" });
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
