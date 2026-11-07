@@ -17,6 +17,21 @@ const statusStyle: Record<string, { label: string; cls: string; Icon: any }> = {
   failed: { label: "Falhou", cls: "bg-red-500/10 text-red-600", Icon: XCircle },
 };
 
+
+function mondayOfWeek(d: Date) {
+  const x = new Date(d);
+  const diff = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function fmtDM(d: Date) {
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+function fmtFull(d: Date) {
+  return d.toLocaleDateString("pt-BR");
+}
+
 export default function RepassePendingCharges({ storeId }: Props) {
   const { data: charges = [], isLoading } = useQuery({
     queryKey: ["repasse-charges", storeId],
@@ -75,7 +90,16 @@ export default function RepassePendingCharges({ storeId }: Props) {
               <div className="flex items-center gap-2">
                 <QrCode className="h-5 w-5 text-primary" />
                 <h3 className="text-xl font-extrabold text-foreground tracking-tight">
-                  Repasse — pagamento via PIX
+                  {(() => {
+                    const ref = String(pending.reference_code || "");
+                    if (ref.startsWith("#REP")) {
+                      const seg = mondayOfWeek(new Date(pending.created_at));
+                      const dom = new Date(seg); dom.setDate(dom.getDate() + 6);
+                      return `Repasse da semana de ${fmtDM(seg)} a ${fmtDM(dom)}`;
+                    }
+                    if (ref.startsWith("#MENS") || ref.startsWith("#ASSIN")) return "Mensalidade da loja";
+                    return "Repasse — pagamento via PIX";
+                  })()}
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground leading-tight pl-7">
@@ -125,17 +149,33 @@ export default function RepassePendingCharges({ storeId }: Props) {
               </Button>
             )}
 
-            {(pending.metadata as any)?.due_date && (
-              <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-amber-500/10 border border-amber-500/20">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-500" />
-                <p className="text-[11px] font-bold text-amber-800 dark:text-amber-400">
-                  Vencimento:{" "}
-                  <span className="underline decoration-amber-400">
-                    {new Date((pending.metadata as any).due_date).toLocaleDateString("pt-BR")}
-                  </span>
-                </p>
-              </div>
-            )}
+            {(() => {
+              const created = new Date(pending.created_at);
+              const due = (pending.metadata as any)?.due_date
+                ? new Date((pending.metadata as any).due_date)
+                : new Date(created.getTime() + 7 * 86400000);
+              const daysLeft = Math.ceil((due.getTime() - Date.now()) / 86400000);
+              const dueText =
+                daysLeft > 1 ? `Vence em ${daysLeft} dias (${fmtFull(due)})`
+                : daysLeft === 1 ? `Vence amanhã (${fmtFull(due)})`
+                : daysLeft === 0 ? `Vence hoje (${fmtFull(due)})`
+                : `Venceu em ${fmtFull(due)} — pague o quanto antes`;
+              const isRep = String(pending.reference_code || "").startsWith("#REP");
+              const limit30 = new Date(created.getTime() + 30 * 86400000);
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-muted/50 border border-border">
+                    <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-[11px] font-bold text-foreground">{dueText}</p>
+                  </div>
+                  {isRep && (
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      Se ficar 30 dias sem pagar (até {fmtDM(limit30)}), as vendas pausam.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       ))}

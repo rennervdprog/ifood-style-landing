@@ -1,4 +1,4 @@
-import { Banknote, CheckCircle2, Crown, CalendarClock, Info } from "lucide-react";
+import { Banknote, CheckCircle2, Crown, Info } from "lucide-react";
 import RepasseAlert from "@/components/repasse/RepasseAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
@@ -38,25 +38,6 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
           ? `Comissão ${storePlan.commissionRate}%`
           : "Sem comissão");
 
-  // Previsão do próximo repasse semanal (toda segunda-feira)
-  const nextMonday = (() => {
-    const d = new Date();
-    const day = d.getDay(); // 0=Dom .. 6=Sab
-    const diff = day === 1 ? 7 : (8 - day) % 7 || 7;
-    d.setDate(d.getDate() + diff);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-  const daysUntil = Math.max(
-    0,
-    Math.ceil((nextMonday.getTime() - Date.now()) / 86400000),
-  );
-  const nextMondayLabel = nextMonday.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  });
-
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-1">
@@ -89,10 +70,11 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
           <div>
             <p className="text-sm font-bold text-foreground">Como funciona</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Durante a semana, tudo que você vende fica com você. Toda segunda-feira, o ItaSuper
-              cobra via PIX o que acumulou: R$ 0,99 por entrega + R$ 1,99 por pedido pago em PIX —
-              só quando o acumulado passa de R$ 150. Se a dívida chegar a R$ 500, as vendas pausam
-              até quitar. Hoje sua loja tem{" "}
+              Durante a semana, tudo que você vende fica com você — só junta a parte do ItaSuper
+              (R$ 0,99 por entrega + R$ 1,99 por pedido em PIX). Toda segunda-feira, se o acumulado
+              passou de R$ 150, geramos o PIX pra você quitar. Se a segunda chegar com o saldo
+              acima de R$ 500 e ele não for quitado, as vendas pausam até o pagamento. Cobrança
+              sem pagar por 30 dias também pausa. Pagou, volta na hora. Hoje sua loja tem{" "}
               <strong className="text-foreground">{formatBRL(displayTotal)}</strong> a repassar.
             </p>
           </div>
@@ -124,36 +106,6 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
         <span className="text-xs text-foreground">{deliveryTxt}</span>
         <span className="text-muted-foreground text-xs">·</span>
         <span className="text-xs text-foreground">{pixTxt}</span>
-      </div>
-
-      {/* 4. Informativo — próximo repasse previsto (neutro, azul) */}
-      <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-            <CalendarClock className="h-5 w-5 text-blue-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Próximo repasse previsto
-            </p>
-            <p className="text-sm font-bold text-foreground capitalize truncate">
-              {nextMondayLabel}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {daysUntil === 0
-                ? "Hoje é dia de repasse"
-                : `Em ${daysUntil} dia${daysUntil > 1 ? "s" : ""} · Repasses são processados toda segunda-feira`}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Acumulado
-            </p>
-            <p className={`text-base font-black ${displayTotal > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-              {formatBRL(displayTotal)}
-            </p>
-          </div>
-        </div>
       </div>
 
       {displayTotal <= 0 && !hasPendingCharge && (
