@@ -183,7 +183,7 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
           </button>
         ))}
         {preset === "custom" && (
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center gap-1.5">
             <input type="date" value={custom.from} onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))} className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-bold text-foreground" aria-label="Data inicial" />
             <span className="text-xs font-bold text-muted-foreground">até</span>
             <input type="date" value={custom.to} onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))} className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-bold text-foreground" aria-label="Data final" />
@@ -213,18 +213,18 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
               <p className="text-[11px] text-muted-foreground">{valid.length} pedidos válidos{cancelledCount > 0 ? ` · ${cancelledCount} cancelados fora da conta` : ""}</p>
             </div>
             <div className="space-y-2 px-4 py-3 text-sm">
-              <div className="flex items-center justify-between"><span className="text-muted-foreground">Vendas de itens</span><span className="font-bold tabular-nums">{formatBRL(sumItens)}</span></div>
-              <div className="flex items-center justify-between"><span className="text-muted-foreground">Taxas de entrega recebidas dos clientes</span><span className="font-bold tabular-nums">{formatBRL(sumEntrega)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Vendas de itens</span><span className="font-bold tabular-nums">{formatBRL(sumItens)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Taxas de entrega recebidas dos clientes</span><span className="font-bold tabular-nums">{formatBRL(sumEntrega)}</span></div>
               {Math.abs(residual) > 0.005 && (
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">{residual < 0 ? "Descontos (cupons e ajustes)" : "Acréscimos"}</span><span className="font-bold tabular-nums">{formatBRL(residual)}</span></div>
+                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{residual < 0 ? "Descontos (cupons e ajustes)" : "Acréscimos"}</span><span className="font-bold tabular-nums">{formatBRL(residual)}</span></div>
               )}
-              <div className="flex items-center justify-between border-t border-border pt-2 text-base"><span className="font-black">Total que entrou pra loja</span><span className="font-black tabular-nums text-primary">{formatBRL(sumTotal)}</span></div>
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-base"><span className="font-black">Total que entrou pra loja</span><span className="font-black tabular-nums text-primary">{formatBRL(sumTotal)}</span></div>
             </div>
             <div className="border-t border-border px-4 py-3">
               <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-muted-foreground">Por forma de pagamento</p>
               <div className="space-y-1.5">
                 {byPayment.map(([label, v]) => (
-                  <div key={label} className="flex items-center justify-between text-sm">
+                  <div key={label} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">{label} <span className="text-[11px]">({v.count}x)</span></span>
                     <span className="font-bold tabular-nums">{formatBRL(v.total)}</span>
                   </div>
@@ -232,7 +232,7 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
               </div>
             </div>
             <div className="border-t border-border px-4 py-3 text-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">Repasse ItaSuper acumulado (hoje)</span>
                 <span className="font-bold tabular-nums">{formatBRL(repassePendente + comissaoPendente)}</span>
               </div>
