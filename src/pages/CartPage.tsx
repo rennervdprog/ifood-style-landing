@@ -18,6 +18,12 @@ const CartPage = () => {
   const storeId = items[0]?.store_id;
   const isNative = Capacitor.isNativePlatform?.() === true;
 
+  // Tracking de abertura do carrinho (funil da loja)
+  useEffect(() => {
+    if (!storeId) return;
+    import("@/lib/pageView").then((m) => m.trackPageView("cart_view", { storeId }));
+  }, [storeId]);
+
   // Pré-carrega o chunk da próxima tela (auth/checkout/guest)
   useEffect(() => {
     if (user) import("./CheckoutPage");
