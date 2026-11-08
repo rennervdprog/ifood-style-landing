@@ -66,10 +66,9 @@ const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
-const MenuTabTeste = lazy(() => import("./admin/tabs/MenuTabTeste"));
-const StockTab = lazy(() => import("./admin/tabs/StockTab"));
+const MenuTabReorg = lazy(() => import("./admin/tabs/MenuTabReorg"));
 const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTeste"));
-const AddonsTabTeste = lazy(() => import("./admin/tabs/AddonsTabTeste"));
+const AddonsTabReorg = lazy(() => import("./admin/tabs/AddonsTabReorg"));
 const BordasTabTeste = lazy(() => import("./admin/tabs/BordasTabTeste"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
@@ -234,7 +233,7 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
  * CÓPIA DE TESTE (/admin-teste) de AdminDashboardV2.
  * Idêntica ao original, EXCETO:
  *  - a aba Pedidos renderiza OrdersSectionTeste (correções do relatório);
- *  - a aba Cardápio renderiza MenuTabTeste (Tela 3: selo de status no
+ *  - a aba Cardápio renderiza MenuTabReorg (Tela 3: selo de status no
  *    card, pausar em 1 toque, "Editar" com rótulo, foto em destaque,
  *    preço rotulado, seção obrigatória, erro inline no campo);
  *  - os badges de "Novos" do shell usam vermelho (coerente com o novo sinal
@@ -1999,6 +1998,7 @@ const AdminDashboardReorg = () => {
                 {dashboardTab === "orders" && `${orderCounters.total} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
+                {dashboardTab === "stock" && "Gerencie seu cardápio"}
                 {dashboardTab === "addons" && "Grupos de adicionais do cardápio"}
                 {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
@@ -2338,11 +2338,11 @@ const AdminDashboardReorg = () => {
             <div className="p-4 lg:p-6 w-full">
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
-                {dashboardTab === "menu" && <MenuTabTeste storeId={store.id} storeCategory={store.category} />}
-                {dashboardTab === "stock" && <StockTab storeId={store.id} />}
+                {dashboardTab === "menu" && <MenuTabReorg key="cardapio" storeId={store.id} storeCategory={store.category} initialView="cardapio" />}
+                {dashboardTab === "stock" && <MenuTabReorg key="estoque" storeId={store.id} storeCategory={store.category} initialView="estoque" />}
                 {dashboardTab === "cash_register" && <CashRegisterTabTeste storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisPanel key={helpSection ?? "geral"} initialSection={helpSection ?? undefined} />}
-                {dashboardTab === "addons" && <AddonsTabTeste storeId={store.id} />}
+                {dashboardTab === "addons" && <AddonsTabReorg storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTabTeste storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
