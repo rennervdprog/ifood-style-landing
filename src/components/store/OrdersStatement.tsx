@@ -137,8 +137,12 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
   // Filtros finos (os mesmos da aba Pedidos, via ordersReport): pagamento,
   // origem, entrega × retirada, bairro, produto e faixa de valor. O resumo,
   // a lista, o relatório e o CSV passam a valer pro recorte filtrado.
+  // Opções agrupadas pelo RÓTULO: valores crus diferentes com o mesmo nome
+  // (ex.: 'dinheiro' e 'cash' → "Dinheiro") viram uma opção só, como a
+  // Conciliação já agrupa. O filtro guarda o rótulo, não o valor cru.
   const paymentOptions = useMemo(
-    () => [...new Set((orders || []).map((o: any) => String(o.payment_method || "")).filter(Boolean))],
+    () =>
+      [...new Set((orders || []).map((o: any) => String(o.payment_method || "")).filter(Boolean).map((m: string) => paymentLabel(m)))].sort(),
     [orders]
   );
   const neighborhoodOptions = useMemo(
@@ -153,7 +157,10 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
   const filtered = useMemo(
     () =>
       (orders || []).filter(
-        (o: any) => matchesExtraFilters(o, filters) && (sourceFilter === "all" || classifyOrderSource(o) === sourceFilter)
+        (o: any) =>
+          matchesExtraFilters(o, { ...filters, payment: "" }) &&
+          (!filters.payment || paymentLabel(o.payment_method) === filters.payment) &&
+          (sourceFilter === "all" || classifyOrderSource(o) === sourceFilter)
       ),
     [orders, filters, sourceFilter]
   );
@@ -161,7 +168,7 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
     sourceFilter !== "all" || JSON.stringify(filters) !== JSON.stringify(EMPTY_EXTRA_FILTERS);
   const filtersLabel = useMemo(() => {
     const parts: string[] = [];
-    if (filters.payment) parts.push(`Pagamento: ${paymentLabel(filters.payment)}`);
+    if (filters.payment) parts.push(`Pagamento: ${filters.payment}`);
     if (sourceFilter !== "all") parts.push(`Origem: ${SOURCE_LABELS[sourceFilter]}`);
     if (filters.fulfillment === "delivery") parts.push("Só entregas");
     if (filters.fulfillment === "pickup") parts.push("Só retiradas");
@@ -258,8 +265,8 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
           className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
         >
           <option value="">Pagamento: todos</option>
-          {paymentOptions.map((m) => (
-            <option key={m} value={m}>{paymentLabel(m)}</option>
+          {paymentOptions.map((label) => (
+            <option key={label} value={label}>{label}</option>
           ))}
         </select>
         <select
