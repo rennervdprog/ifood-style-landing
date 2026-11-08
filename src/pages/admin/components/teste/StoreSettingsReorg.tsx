@@ -120,7 +120,7 @@ const ToggleTeste = ({ value, onChange, label }: { value: boolean; onChange: () 
 const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
   section: string; savingSection: string | null; onSave: () => void; label: string;
 }) => (
-  <div className="sticky bottom-3 z-20 rounded-2xl border border-border bg-card/95 p-2 shadow-lg backdrop-blur">
+  <div className="fixed inset-x-3 bottom-[84px] z-40 rounded-2xl border border-border bg-card/95 p-2 shadow-lg backdrop-blur lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[400px]">
     <button
       type="button"
       onClick={onSave}
