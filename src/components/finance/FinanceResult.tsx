@@ -137,6 +137,25 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
     enabled: !!storeId,
   });
 
+  // Resumo semanal mais recente (Fase 4: gerado toda segunda pela função
+  // weekly-store-summary e também enviado ao lojista por push).
+  const { data: weeklySummary } = useQuery({
+    queryKey: ["weekly-summary", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_weekly_summaries" as any)
+        .select("week_start, week_end, summary_text")
+        .eq("store_id", storeId)
+        .order("week_start", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    staleTime: 300_000,
+    enabled: !!storeId,
+  });
+
   // Mês atual (base do ponto de equilíbrio, que é mensal por natureza).
   const monthStart = useMemo(() => {
     const n = new Date();
@@ -334,6 +353,12 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
 
   return (
     <div className="space-y-5">
+      {weeklySummary && (
+        <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+          <p className="text-xs font-bold text-foreground mb-2">📬 Resumo da semana <span className="font-semibold text-muted-foreground">— gerado toda segunda de manhã e enviado a você por notificação</span></p>
+          <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-foreground">{weeklySummary.summary_text}</pre>
+        </div>
+      )}
       {/* Período único (mesmo padrão dos Relatórios) */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {presets.map((p) => (
