@@ -120,7 +120,7 @@ const ToggleTeste = ({ value, onChange, label }: { value: boolean; onChange: () 
 const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
   section: string; savingSection: string | null; onSave: () => void; label: string;
 }) => (
-  <div className="fixed inset-x-3 bottom-[84px] z-40 rounded-2xl border border-border bg-card/95 p-2 shadow-lg backdrop-blur lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[400px]">
+  <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 border-t border-border bg-card px-3 py-3 lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[400px] lg:rounded-2xl lg:border lg:p-2 lg:shadow-lg">
     <button
       type="button"
       onClick={onSave}
@@ -543,20 +543,20 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
   const showSection = (sec: StoreSettingsSectionKey) => !onlySection || onlySection === sec;
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-44">
       {showSection("loja") && (<>
       {/* Logo Upload */}
-      <div id="config-loja" className="flex flex-col items-center gap-4 scroll-mt-24">
+      <div id="config-loja" className="flex items-center gap-4 scroll-mt-24">
         <div className="relative">
-          <div className="w-28 h-28 rounded-full bg-muted border-4 border-border overflow-hidden flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
             {imageUrl ? (
               <img loading="lazy" decoding="async" src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <Store className="h-10 w-10 text-muted-foreground/70" />
+              <Store className="h-6 w-6 text-muted-foreground/70" />
             )}
           </div>
-          <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform">
-            <Camera className="h-4 w-4" />
+          <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform">
+            <Camera className="h-3.5 w-3.5" />
             <input
               type="file"
               accept="image/*"
@@ -565,9 +565,12 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
             />
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {uploading ? "Enviando..." : "Toque no ícone para alterar a logo"}
-        </p>
+        <div>
+          <p className="text-sm font-bold text-foreground/80">Logo da loja</p>
+          <p className="text-xs text-muted-foreground">
+            {uploading ? "Enviando..." : "Toque na câmera para alterar a logo"}
+          </p>
+        </div>
       </div>
 
       {/* Store Name */}
@@ -582,7 +585,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Nata Lanches"
           maxLength={100}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
       </div>
 
@@ -595,7 +598,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
         <p className="text-xs text-muted-foreground">
           Selecione todas as categorias que sua loja atende. A <strong>categoria principal</strong> é usada como destaque.
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-2">
           {CATEGORY_OPTIONS.map((opt) => {
             const checked = categories.includes(opt.value);
             const isPrimary = category === opt.value;
@@ -618,18 +621,18 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
                     if (categories.length === 0) setCategory(opt.value);
                   }
                 }}
-                className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-xs font-bold transition-all active:scale-95 ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full border text-xs font-bold transition-all active:scale-95 ${
                   checked
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-secondary text-muted-foreground hover:border-primary/40"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40"
                 }`}
               >
-                <span className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${checked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
-                  {checked && <span className="text-primary-foreground text-xs leading-none">✓</span>}
-                </span>
+                {checked && (
+                  <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary text-[10px] leading-none text-primary-foreground">✓</span>
+                )}
                 <span className="truncate">{opt.label}</span>
                 {isPrimary && checked && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wide">
+                  <span className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wide">
                     Principal
                   </span>
                 )}
@@ -643,7 +646,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
+              className="w-full bg-card border border-border rounded-xl px-3 py-2 text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
             >
               {categories.map((c) => {
                 const opt = CATEGORY_OPTIONS.find((o) => o.value === c);
@@ -669,7 +672,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
           value={whatsapp} 
           onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))} 
           placeholder="(14) 99999-9999" 
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" 
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" 
         />
         <p className="text-xs text-muted-foreground">Este é o WhatsApp de atendimento: o número que aparece na vitrine para clientes e entregadores chamarem a loja. Ele é diferente do número conectado para avisos automáticos (pedido aceito, pronto, saiu para entrega), que você conecta na aba WhatsApp.</p>
       </div>
@@ -747,7 +750,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
           value={googleReviewUrl}
           onChange={(e) => setGoogleReviewUrl(e.target.value)}
           placeholder="https://g.page/r/..."
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
         <p className="text-xs text-muted-foreground/70">
           Opcional. Com o link preenchido, ao concluir o pedido o cliente recebe no WhatsApp o convite para avaliar sua loja no Google, e o botão "Avaliar no Google" aparece no app após a avaliação. Pegue o link no Perfil da Empresa no Google, em "Solicitar avaliações".
@@ -811,6 +814,7 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
           Endereço físico para entregadores navegarem até sua loja. O CEP é usado para calcular a taxa de entrega.
         </p>
         {/* CEP field */}
+        <label className="mb-1 block text-xs font-bold text-foreground/70">CEP</label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -846,68 +850,82 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
             {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="col-span-2">
+        <div>
+          <label className="mb-1 block text-xs font-bold text-foreground/70">Rua / Avenida</label>
+          <input
+            type="text"
+            value={addressStreet}
+            onChange={(e) => setAddressStreet(e.target.value)}
+            maxLength={200}
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+          />
+        </div>
+        <div className="grid grid-cols-[1fr_2fr] gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">Número</label>
             <input
               type="text"
-              value={addressStreet}
-              onChange={(e) => setAddressStreet(e.target.value)}
-              placeholder="Rua / Avenida"
+              value={addressNumber}
+              onChange={(e) => setAddressNumber(e.target.value)}
+              inputMode="numeric"
+              maxLength={10}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">Complemento (opcional)</label>
+            <input
+              type="text"
+              value={addressComplement}
+              onChange={(e) => setAddressComplement(e.target.value)}
+              maxLength={100}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">Bairro</label>
+            <input
+              type="text"
+              value={addressNeighborhood}
+              onChange={(e) => setAddressNeighborhood(e.target.value)}
+              maxLength={100}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">Ponto de referência (opcional)</label>
+            <input
+              type="text"
+              value={addressReference}
+              onChange={(e) => setAddressReference(e.target.value)}
               maxLength={200}
               className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
             />
           </div>
-          <input
-            type="text"
-            value={addressNumber}
-            onChange={(e) => setAddressNumber(e.target.value)}
-            placeholder="Nº"
-            inputMode="numeric"
-            maxLength={10}
-            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-          />
         </div>
-        <input
-          type="text"
-          value={addressComplement}
-          onChange={(e) => setAddressComplement(e.target.value)}
-          placeholder="Complemento (opcional)"
-          maxLength={100}
-          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-        />
-        <input
-          type="text"
-          value={addressNeighborhood}
-          onChange={(e) => setAddressNeighborhood(e.target.value)}
-          placeholder="Bairro"
-          maxLength={100}
-          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-        />
-        <input
-          type="text"
-          value={addressReference}
-          onChange={(e) => setAddressReference(e.target.value)}
-          placeholder="Ponto de referência (opcional)"
-          maxLength={200}
-          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            type="text"
-            value={addressCity}
-            onChange={(e) => setAddressCity(e.target.value)}
-            placeholder="Cidade"
-            maxLength={100}
-            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-          />
-          <input
-            type="text"
-            value={addressState}
-            onChange={(e) => setAddressState(e.target.value.toUpperCase().slice(0, 2))}
-            placeholder="UF"
-            maxLength={2}
-            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
-          />
+        <div className="grid grid-cols-[2fr_1fr] gap-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">Cidade</label>
+            <input
+              type="text"
+              value={addressCity}
+              onChange={(e) => setAddressCity(e.target.value)}
+              maxLength={100}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold text-foreground/70">UF</label>
+            <input
+              type="text"
+              value={addressState}
+              onChange={(e) => setAddressState(e.target.value.toUpperCase().slice(0, 2))}
+              maxLength={2}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
         </div>
         {addressStreet && addressNumber && (
           <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
@@ -947,16 +965,16 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
             </div>
              <div className="flex flex-col gap-2">
                <label className="text-xs font-bold text-foreground/80">Modelo de Cobrança</label>
-               <div className="grid grid-cols-2 gap-2">
+               <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
                  <button
                    onClick={() => setDeliveryFeeType("fixed")}
-                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "fixed" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all ${deliveryFeeType === "fixed" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
                  >
                    Taxa Fixa
                  </button>
                  <button
                    onClick={() => setDeliveryFeeType("km")}
-                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "km" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all ${deliveryFeeType === "km" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
                  >
                    Por KM
                  </button>
