@@ -713,11 +713,11 @@ export function TutorialStepsList({ section }: { section: TutorialSection }) {
   );
 }
 
-const TutoriaisPanel = () => {
+const TutoriaisPanel = ({ initialSection }: { initialSection?: string } = {}) => {
   const { user } = useAuth();
   const storageKey = user?.id ? `${STORAGE_KEY_BASE}:${user.id}` : STORAGE_KEY_BASE;
   const [search, setSearch] = useState("");
-  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(initialSection ?? null);
   const [activeCategory, setActiveCategory] = useState<TutorialCategory | "all">("all");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
