@@ -109,7 +109,6 @@ const NEON_COLORS = {
   cyan: "#06b6d4",
 };
 
-const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
  const StoreFinancePanel = ({ storeId, storeName, hideHistory = false }: StoreFinancePanelProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
@@ -385,29 +384,6 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         ? dbComissaoPendente
         : 0;
   const manualChargeAmount = Number((dbBalanceBilled + dbPdvPendente).toFixed(2));
-
-  // Chart data: daily sales
-  const chartData = useMemo(() => {
-    if (!completedOrders.length) return [];
-    const dayMap: Record<string, number> = {};
-    completedOrders.forEach((order) => {
-      const day = format(new Date(order.created_at), "dd/MM");
-      dayMap[day] = (dayMap[day] || 0) + Number(order.subtotal);
-    });
-    return Object.entries(dayMap).map(([day, value]) => ({ day, value: Math.round(value * 100) / 100 }));
-  }, [completedOrders]);
-
-  // Donut data: payment method distribution
-  const donutData = useMemo(() => {
-    const pix = completedOrders.filter(o => o.payment_method === "pix").length;
-    const card = completedOrders.filter(o => o.payment_method === "cartao").length;
-    const cash = completedOrders.filter(o => o.payment_method !== "pix" && o.payment_method !== "cartao").length;
-    return [
-      { name: "PIX", value: pix },
-      { name: "Cartão", value: card },
-      { name: "Dinheiro", value: cash },
-    ].filter(d => d.value > 0);
-  }, [completedOrders]);
 
   // Commission transactions
   const commissionTransactions = useMemo(
@@ -811,82 +787,6 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                 </div>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* ── GRÁFICO DE VOLUME (legado, mantido por compatibilidade) ── */}
-      {chartData.length > 1 && (
-        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
-          <p className="text-xs font-bold text-foreground mb-4">Volume de Vendas (Delivery)</p>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={NEON_COLORS.pink} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <RechartsTooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "12px",
-                    fontSize: "12px",
-                    color: "hsl(var(--foreground))",
-                  }}
-                  formatter={(value: number) => [`${formatBRL(value)}`, "Vendas"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={NEON_COLORS.pink}
-                  strokeWidth={2.5}
-                  fill="url(#salesGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Donut Chart: Payment Distribution */}
-      {donutData.length > 0 && (
-        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
-          <p className="text-xs font-bold text-foreground mb-4">Distribuição por Pagamento</p>
-          <div className="flex items-center gap-4">
-            <div className="w-28 h-28 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    innerRadius={30}
-                    outerRadius={50}
-                    paddingAngle={4}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
-                    {donutData.map((_, index) => (
-                      <Cell key={index} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-2">
-              {donutData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }} />
-                    <span className="text-xs text-muted-foreground">{entry.name}</span>
-                  </div>
-                  <span className="text-xs font-bold text-foreground">{entry.value} pedidos</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
