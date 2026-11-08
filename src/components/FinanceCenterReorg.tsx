@@ -1,5 +1,5 @@
 // Fase 4 da reorganização do painel (2026-11-08) — cópia Reorg, SOMENTE /admin-teste.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LayoutDashboard, Receipt, Truck, Info, Scale, Target } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StoreFinancePanelReorg from "./StoreFinancePanelReorg";
@@ -13,6 +13,7 @@ import PlanSummaryCard from "./finance/PlanSummaryCard";
 import ValorAPagarCard from "./finance/ValorAPagarCard";
 import RecebidoNoMesCard from "./finance/RecebidoNoMesCard";
 import ComoFuncionaCobranca from "./finance/ComoFuncionaCobranca";
+import { readUrlParam, writeUrlParam } from "@/pages/admin/urlParams";
 
 interface FinanceCenterProps {
   storeId: string;
@@ -22,7 +23,16 @@ interface FinanceCenterProps {
 }
 
 export default function FinanceCenterReorg({ storeId, storeName, hasCommission }: FinanceCenterProps) {
-  const [activeTab, setActiveTab] = useState("summary");
+  const FIN_TABS = ["summary", "history", "conciliacao", "repasse", "resultado"];
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // URL por tela: abre direto na aba pedida (?fin=resultado etc.).
+    const fromUrl = readUrlParam("fin");
+    return fromUrl && FIN_TABS.includes(fromUrl) ? fromUrl : "summary";
+  });
+  // Espelha a aba atual em ?fin= (recarregar volta pra mesma aba).
+  useEffect(() => {
+    writeUrlParam("fin", activeTab === "summary" ? null : activeTab);
+  }, [activeTab]);
 
   return (
     <div className="w-full space-y-5 px-4 pb-6 pt-5 lg:px-6">
