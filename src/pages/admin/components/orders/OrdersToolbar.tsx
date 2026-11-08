@@ -1,9 +1,6 @@
 import { Calendar, ChevronDown, Download, FileText, Search, XCircle } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
-import {
-  paymentLabel,
-  type OrdersExtraFilters,
-} from "./ordersReport";
+import { type OrdersExtraFilters } from "./ordersReport";
 
 export type PeriodKey = "today" | "yesterday" | "7d" | "30d" | "custom" | "all";
 export type SourceKey = "all" | "delivery" | "pdv" | "manual" | "whatsapp";
@@ -244,7 +241,7 @@ export default function OrdersToolbar({
             >
               <option value="">Pagamento: todas</option>
               {(paymentOptions || []).map((p) => (
-                <option key={p} value={p}>{paymentLabel(p)}</option>
+                <option key={p} value={p}>{p}</option>
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

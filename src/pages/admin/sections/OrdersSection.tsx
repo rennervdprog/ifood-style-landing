@@ -243,6 +243,14 @@ export default function OrdersSection(props: Props) {
     return { from: -Infinity, to: Infinity };
   }, [period, customRange]);
 
+  // O filtro de pagamento guarda o RÓTULO (ex.: "Dinheiro"), que pode cobrir
+  // mais de um valor cru ('dinheiro' + 'cash') — as opções são agrupadas pelo
+  // rótulo, como na Conciliação e no Extrato. Os demais filtros seguem no
+  // matchesExtraFilters compartilhado.
+  const matchesFilters = (o: any) =>
+    matchesExtraFilters(o, { ...extraFilters, payment: "" }) &&
+    (!extraFilters.payment || paymentLabel(o.payment_method) === extraFilters.payment);
+
   const finalOrders = useMemo(() => {
     return filteredOrders.filter((o: any) => {
       // Pedidos PIX direto aguardando comprovante ficam invisíveis pro lojista
@@ -258,7 +266,7 @@ export default function OrdersSection(props: Props) {
       if (sourceFilter !== "all") {
         if (classifyOrderSource(o) !== sourceFilter) return false;
       }
-      if (!matchesExtraFilters(o, extraFilters)) return false;
+      if (!matchesFilters(o)) return false;
       return true;
     });
   }, [filteredOrders, periodRange, sourceFilter, extraFilters]);
@@ -278,7 +286,7 @@ export default function OrdersSection(props: Props) {
       if (o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") return false;
       const t = new Date(o.created_at).getTime();
       if (t < periodRange.from || t >= periodRange.to) return false;
-      return matchesExtraFilters(o, extraFilters);
+      return matchesFilters(o);
     });
     const base = inRange.filter((o: any) => o.status !== "cancelado");
     let total = 0, pdvCount = 0, pdvTotal = 0, deliveryCount = 0, deliveryTotal = 0, manualCount = 0, manualTotal = 0, whatsappCount = 0, whatsappTotal = 0;
@@ -300,7 +308,7 @@ export default function OrdersSection(props: Props) {
   }, [reportBase, periodRange, extraFilters]);
 
   const paymentOptions = useMemo(
-    () => [...new Set((reportBase || []).map((o: any) => o.payment_method).filter(Boolean))].sort() as string[],
+    () => [...new Set((reportBase || []).map((o: any) => o.payment_method).filter(Boolean).map((m: any) => paymentLabel(m)))].sort() as string[],
     [reportBase]
   );
   const neighborhoodOptions = useMemo(
@@ -325,7 +333,7 @@ export default function OrdersSection(props: Props) {
       const t = new Date(o.created_at).getTime();
       if (t < periodRange.from || t >= periodRange.to) return false;
       if (sourceFilter !== "all" && classifyOrderSource(o) !== sourceFilter) return false;
-      if (!matchesExtraFilters(o, extraFilters)) return false;
+      if (!matchesFilters(o)) return false;
       if (search) {
         const phone = (getClientWhatsApp(o.client_id) || "").replace(/\D/g, "");
         const hit =
@@ -363,7 +371,7 @@ export default function OrdersSection(props: Props) {
   const filtersLabelText = useMemo(() => {
     const parts: string[] = [];
     if (sourceFilter !== "all") parts.push(`origem ${{ delivery: "Delivery", whatsapp: "WhatsApp", pdv: "PDV", manual: "Manual" }[sourceFilter]}`);
-    if (extraFilters.payment) parts.push(`pagamento ${paymentLabel(extraFilters.payment)}`);
+    if (extraFilters.payment) parts.push(`pagamento ${extraFilters.payment}`);
     if (extraFilters.fulfillment === "delivery") parts.push("só entrega");
     if (extraFilters.fulfillment === "pickup") parts.push("só retirada");
     if (extraFilters.neighborhood) parts.push(`bairro ${extraFilters.neighborhood}`);
