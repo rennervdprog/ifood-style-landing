@@ -178,11 +178,20 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
   const hourlyChart = horarios
     .map((h) => ({ hour: `${String(h.hora).padStart(2, "0")}h`, pedidos: h.pedidos }))
     .filter((h) => h.pedidos > 0 || (parseInt(h.hour) >= 8 && parseInt(h.hour) <= 23));
-  const paymentPie = pagamentos.map((p) => ({
-    name: PAYMENT_LABELS[p.metodo] || p.metodo || "Outros",
-    value: p.pedidos,
-    total: Number(p.receita || 0),
-  }));
+  // Agrupa pelo RÓTULO: a RPC soma por valor cru, e valores diferentes com o
+  // mesmo nome ('dinheiro' + 'cash' → "Dinheiro") viram UMA fatia só — senão
+  // o gráfico e a legenda mostram "Dinheiro" duas vezes.
+  const paymentPie = (() => {
+    const byLabel = new Map<string, { name: string; value: number; total: number }>();
+    for (const p of pagamentos) {
+      const name = PAYMENT_LABELS[p.metodo] || p.metodo || "Outros";
+      const cur = byLabel.get(name) || { name, value: 0, total: 0 };
+      cur.value += Number(p.pedidos || 0);
+      cur.total += Number(p.receita || 0);
+      byLabel.set(name, cur);
+    }
+    return [...byLabel.values()];
+  })();
   const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#a855f7", "#ef4444", "#0ea5e9"];
 
   const totalProdReceita = produtos.reduce((s, p) => s + Number(p.receita || 0), 0);
@@ -334,7 +343,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     lines.push("");
     lines.push("PAGAMENTOS");
     lines.push("Método,Pedidos,Receita");
-    pagamentos.forEach((p) => lines.push(`${PAYMENT_LABELS[p.metodo] || p.metodo},${p.pedidos},${formatCurrency(Number(p.receita))}`));
+    paymentPie.forEach((p) => lines.push(`${p.name},${p.value},${formatCurrency(p.total)}`));
     lines.push("");
     lines.push("ORIGEM DOS PEDIDOS");
     lines.push("Origem,Pedidos,Receita");
