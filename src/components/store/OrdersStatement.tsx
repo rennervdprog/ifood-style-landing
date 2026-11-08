@@ -8,11 +8,15 @@ import { printThermalReceipt } from "@/lib/thermalPrint";
 import {
   buildOrdersCsv,
   classifyOrderSource,
+  matchesExtraFilters,
+  EMPTY_EXTRA_FILTERS,
   openOrdersReport,
   orderDisplayCode,
   paymentLabel,
   statusLabel,
   SOURCE_LABELS,
+  type OrdersExtraFilters,
+  type OrderSourceBucket,
 } from "@/pages/admin/components/orders/ordersReport";
 
 /**
@@ -52,6 +56,8 @@ const PERIODS: { key: Days; label: string }[] = [
 
 export default function OrdersStatement({ storeId, storeName }: { storeId: string; storeName: string }) {
   const [days, setDays] = useState<Days>(7);
+  const [filters, setFilters] = useState<OrdersExtraFilters>(EMPTY_EXTRA_FILTERS);
+  const [sourceFilter, setSourceFilter] = useState<"all" | OrderSourceBucket>("all");
   const range = useMemo(() => {
     const end = new Date();
     const start = new Date();
@@ -128,8 +134,46 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
     enabled: !!storeId,
   });
 
-  const valid = useMemo(() => (orders || []).filter((o: any) => o.status !== "cancelado"), [orders]);
-  const cancelledCount = (orders || []).length - valid.length;
+  // Filtros finos (os mesmos da aba Pedidos, via ordersReport): pagamento,
+  // origem, entrega × retirada, bairro, produto e faixa de valor. O resumo,
+  // a lista, o relatório e o CSV passam a valer pro recorte filtrado.
+  const paymentOptions = useMemo(
+    () => [...new Set((orders || []).map((o: any) => String(o.payment_method || "")).filter(Boolean))],
+    [orders]
+  );
+  const neighborhoodOptions = useMemo(
+    () => [...new Set((orders || []).map((o: any) => String(o.neighborhood || "")).filter(Boolean))].sort(),
+    [orders]
+  );
+  const productOptions = useMemo(
+    () =>
+      [...new Set((orders || []).flatMap((o: any) => (o.order_items || []).map((i: any) => i?.products?.name).filter(Boolean)))].sort(),
+    [orders]
+  );
+  const filtered = useMemo(
+    () =>
+      (orders || []).filter(
+        (o: any) => matchesExtraFilters(o, filters) && (sourceFilter === "all" || classifyOrderSource(o) === sourceFilter)
+      ),
+    [orders, filters, sourceFilter]
+  );
+  const hasFilters =
+    sourceFilter !== "all" || JSON.stringify(filters) !== JSON.stringify(EMPTY_EXTRA_FILTERS);
+  const filtersLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.payment) parts.push(`Pagamento: ${paymentLabel(filters.payment)}`);
+    if (sourceFilter !== "all") parts.push(`Origem: ${SOURCE_LABELS[sourceFilter]}`);
+    if (filters.fulfillment === "delivery") parts.push("Só entregas");
+    if (filters.fulfillment === "pickup") parts.push("Só retiradas");
+    if (filters.neighborhood) parts.push(`Bairro: ${filters.neighborhood === "RETIRADA" ? "Retirada" : filters.neighborhood}`);
+    if (filters.product) parts.push(`Produto: ${filters.product}`);
+    if (filters.minValue) parts.push(`Valor mín: R$ ${filters.minValue}`);
+    if (filters.maxValue) parts.push(`Valor máx: R$ ${filters.maxValue}`);
+    return parts.length ? parts.join(" · ") : "Sem filtros";
+  }, [filters, sourceFilter]);
+
+  const valid = useMemo(() => filtered.filter((o: any) => o.status !== "cancelado"), [filtered]);
+  const cancelledCount = filtered.length - valid.length;
   const revenue = valid.reduce((s: number, o: any) => s + Number(o.total_price || 0), 0);
   const ticket = valid.length ? revenue / valid.length : 0;
 
@@ -159,15 +203,15 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
     const ok = openOrdersReport({
       storeName: storeName || "Loja",
       periodLabel: `${fmtPtBR(range.start)} a ${fmtPtBR(range.end)} (${days} dias)`,
-      filtersLabel: "Sem filtros",
-      orders: orders || [],
+      filtersLabel,
+      orders: filtered,
       getters,
     });
     if (!ok) toast.error("Não consegui abrir o relatório. Libere as janelas pop-up e tente de novo.");
   };
 
   const handleCsv = () => {
-    const csv = buildOrdersCsv(orders || [], getters);
+    const csv = buildOrdersCsv(filtered, getters);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -206,17 +250,106 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
         <strong className="text-foreground">{fmtPtBR(range.end)}</strong>
       </p>
 
+      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+        <select
+          value={filters.payment}
+          onChange={(e) => setFilters((f) => ({ ...f, payment: e.target.value }))}
+          aria-label="Filtrar por pagamento"
+          className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
+        >
+          <option value="">Pagamento: todos</option>
+          {paymentOptions.map((m) => (
+            <option key={m} value={m}>{paymentLabel(m)}</option>
+          ))}
+        </select>
+        <select
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value as "all" | OrderSourceBucket)}
+          aria-label="Filtrar por origem"
+          className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
+        >
+          <option value="all">Origem: todas</option>
+          <option value="delivery">Delivery</option>
+          <option value="pdv">PDV</option>
+          <option value="manual">Manual</option>
+          <option value="whatsapp">WhatsApp</option>
+        </select>
+        <select
+          value={filters.fulfillment}
+          onChange={(e) => setFilters((f) => ({ ...f, fulfillment: e.target.value as OrdersExtraFilters["fulfillment"] }))}
+          aria-label="Filtrar por entrega ou retirada"
+          className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
+        >
+          <option value="all">Entrega e retirada</option>
+          <option value="delivery">Só entrega</option>
+          <option value="pickup">Só retirada</option>
+        </select>
+        <select
+          value={filters.neighborhood}
+          onChange={(e) => setFilters((f) => ({ ...f, neighborhood: e.target.value }))}
+          aria-label="Filtrar por bairro"
+          className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
+        >
+          <option value="">Bairro: todos</option>
+          {neighborhoodOptions.map((n) => (
+            <option key={n} value={n}>{n === "RETIRADA" ? "Retirada" : n}</option>
+          ))}
+        </select>
+        <select
+          value={filters.product}
+          onChange={(e) => setFilters((f) => ({ ...f, product: e.target.value }))}
+          aria-label="Filtrar por produto"
+          className="px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground max-w-[170px]"
+        >
+          <option value="">Produto: todos</option>
+          {productOptions.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="0"
+          placeholder="Valor mín"
+          value={filters.minValue}
+          onChange={(e) => setFilters((f) => ({ ...f, minValue: e.target.value }))}
+          aria-label="Valor mínimo"
+          className="w-24 px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground"
+        />
+        <input
+          type="number"
+          min="0"
+          placeholder="Valor máx"
+          value={filters.maxValue}
+          onChange={(e) => setFilters((f) => ({ ...f, maxValue: e.target.value }))}
+          aria-label="Valor máximo"
+          className="w-24 px-3 py-1.5 rounded-full bg-card border border-border/60 text-[11px] font-bold text-foreground"
+        />
+        {hasFilters && (
+          <button
+            onClick={() => { setFilters(EMPTY_EXTRA_FILTERS); setSourceFilter("all"); }}
+            className="text-[11px] font-bold text-primary underline underline-offset-2"
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+      {hasFilters && (
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Mostrando <strong className="text-foreground">{filtered.length}</strong> de {(orders || []).length} pedidos do período — resumo, relatório e CSV valem pro recorte.
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-2 mt-3">
         <button
           onClick={handleReport}
-          disabled={isLoading || (orders || []).length === 0}
+          disabled={isLoading || filtered.length === 0}
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
         >
           <FileText className="h-3.5 w-3.5" /> Gerar relatório
         </button>
         <button
           onClick={handleCsv}
-          disabled={isLoading || (orders || []).length === 0}
+          disabled={isLoading || filtered.length === 0}
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card border border-border text-foreground text-xs font-bold disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" /> Exportar CSV
@@ -248,8 +381,14 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
             ))}
           </div>
 
+          {filtered.length === 0 ? (
+            <div className="mt-4 p-8 rounded-xl bg-card border border-border/40 text-center">
+              <p className="text-sm font-bold text-foreground">Nenhum pedido com esses filtros</p>
+              <p className="text-xs text-muted-foreground mt-1">Ajuste ou limpe os filtros pra ver os pedidos do período.</p>
+            </div>
+          ) : (
           <div className="mt-4 divide-y divide-border/50 rounded-xl border border-border/40 bg-card overflow-hidden">
-            {(orders || []).map((o: any) => {
+            {filtered.map((o: any) => {
               const cancelled = o.status === "cancelado";
               return (
                 <div key={o.id} className={`flex items-center gap-2.5 px-3.5 py-2.5 ${cancelled ? "opacity-60" : ""}`}>
@@ -289,6 +428,7 @@ export default function OrdersStatement({ storeId, storeName }: { storeId: strin
               );
             })}
           </div>
+          )}
         </>
       )}
     </div>
