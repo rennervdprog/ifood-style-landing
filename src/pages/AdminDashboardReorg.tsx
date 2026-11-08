@@ -106,6 +106,7 @@ import { useAvisosCount } from "./admin/useAvisosCount";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { useAttendantRequests } from "./admin/useAttendantRequests";
 import { useRepassePending } from "./admin/useRepassePending";
+import { writeUrlParam } from "./admin/urlParams";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import {
   ALERT_SOUND_URL,
@@ -279,6 +280,11 @@ const AdminDashboardReorg = () => {
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>(
     initialTabParam || "dashboard",
   );
+  // URL por tela: espelha a tela atual em ?tab= (sem historico, sem
+  // recarregar) — recarregar a pagina volta pra mesma tela.
+  useEffect(() => {
+    writeUrlParam("tab", dashboardTab === "dashboard" ? null : dashboardTab);
+  }, [dashboardTab]);
   // Pedido manual aberto direto da Visão Geral (botão na home)
   const [manualFlowOpen, setManualFlowOpen] = useState(false);
   const [isPendingTab, startTabTransition] = useTransition();
