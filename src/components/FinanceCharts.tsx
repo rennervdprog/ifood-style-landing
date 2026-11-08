@@ -374,7 +374,6 @@ export function useFinanceChartData(orders: any[], pdvMovements?: any[]) {
     });
 
     // ── Por método de pagamento ──
-    const paymentMap: Record<string, number> = {};
     const paymentLabels: Record<string, string> = {
       pix: "PIX Online", dinheiro: "Dinheiro",
       cartao: "Cartão Entrega", card_delivery: "Cartão Entrega",
@@ -388,17 +387,23 @@ export function useFinanceChartData(orders: any[], pdvMovements?: any[]) {
       maquininha_credito: "#6366f1", maquininha_debito: "#8b5cf6",
       maquininha_pix: "#f59e0b",
     };
+    // Agrupa pelo RÓTULO: valores crus com o mesmo nome ('dinheiro', 'cash' e
+    // 'money' → "Dinheiro") viram uma fatia só — senão o gráfico mostra o
+    // mesmo método duas vezes. A cor é a do primeiro valor com cor conhecida.
+    const paymentByLabel: Record<string, { value: number; color: string }> = {};
     orders.forEach(o => {
       const m = o.payment_method || "outros";
-      paymentMap[m] = (paymentMap[m] || 0) + Number(o.total_price || 0);
+      const name = paymentLabels[m] || paymentMethodLabel(m);
+      const cur = paymentByLabel[name] || { value: 0, color: "" };
+      cur.value += Number(o.total_price || 0);
+      if (!cur.color || cur.color === CHART_COLORS.neutral) {
+        cur.color = paymentColors[m] || cur.color || CHART_COLORS.neutral;
+      }
+      paymentByLabel[name] = cur;
     });
-    const paymentData: PaymentData[] = Object.entries(paymentMap)
-      .filter(([, v]) => v > 0)
-      .map(([k, v]) => ({
-        name: paymentLabels[k] || paymentMethodLabel(k),
-        value: v,
-        color: paymentColors[k] || CHART_COLORS.neutral,
-      }))
+    const paymentData: PaymentData[] = Object.entries(paymentByLabel)
+      .filter(([, v]) => v.value > 0)
+      .map(([name, v]) => ({ name, value: v.value, color: v.color }))
       .sort((a, b) => b.value - a.value);
 
     // ── Horário de pico (usa pdvMovements se disponível para PDV, orders para delivery) ──
