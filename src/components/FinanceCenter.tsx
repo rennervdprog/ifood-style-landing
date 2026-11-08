@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { LayoutDashboard, Receipt, Truck, Info, Scale } from "lucide-react";
+import { LayoutDashboard, Receipt, Truck, Info, Scale, Target } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StoreFinancePanel from "./StoreFinancePanel";
 import StoreFinanceBasic from "./StoreFinanceBasic";
 import FinancialStatement from "./FinancialStatement";
 import RepasseHistory from "./RepasseHistory";
 import FinanceConciliation from "./finance/FinanceConciliation";
+import FinanceResult from "./finance/FinanceResult";
 import PlatformFeeCycleBlock from "./PlatformFeeCycleBlock";
 import PlanSummaryCard from "./finance/PlanSummaryCard";
 import ValorAPagarCard from "./finance/ValorAPagarCard";
@@ -44,6 +45,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
           <TabsTrigger value="history" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Receipt className="h-4 w-4" />Extrato</TabsTrigger>
           <TabsTrigger value="conciliacao" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Scale className="h-4 w-4" />Conciliação</TabsTrigger>
           <TabsTrigger value="repasse" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Cobranças</TabsTrigger>
+          <TabsTrigger value="resultado" className="shrink-0 whitespace-nowrap gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Target className="h-4 w-4" />Resultado</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="mt-5 space-y-5">
@@ -65,6 +67,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
         <TabsContent value="history" className="mt-5"><FinancialStatement storeId={storeId} storeName={storeName} /></TabsContent>
         <TabsContent value="conciliacao" className="mt-5"><FinanceConciliation storeId={storeId} storeName={storeName} /></TabsContent>
         <TabsContent value="repasse" className="mt-5"><RepasseHistory storeId={storeId} /></TabsContent>
+        <TabsContent value="resultado" className="mt-5"><FinanceResult storeId={storeId} storeName={storeName} /></TabsContent>
       </Tabs>
     </div>
   );
