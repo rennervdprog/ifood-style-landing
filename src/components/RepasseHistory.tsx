@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CheckCircle2, Clock, AlertCircle, Copy, ChevronDown, ChevronUp,
-  History, Banknote, Truck, TrendingDown, Zap, Loader2
+  History, Banknote, Truck, TrendingDown, Zap, Loader2, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { REPASSE_RULES } from "@/lib/repasseRules";
@@ -226,6 +226,31 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
   const { total: pendingAmount, isLoading: pendingLoading } = usePendingRepasse(storeId);
   const pendingCount = records?.filter(r => r.status === "charged").length || 0;
 
+  const exportCsv = () => {
+    const esc = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const header = ["Semana início", "Semana fim", "Repasse entregas", "Comissão vendas físicas", "Total", "Status", "Cobrada em", "Paga em"];
+    const lines = (records || []).map((r) =>
+      [
+        formatDate(r.period_start),
+        formatDate(r.period_end),
+        formatBRL(r.repasse_amount),
+        formatBRL(r.comissao_amount),
+        formatBRL(r.total_amount),
+        STATUS_CONFIG[r.status].label,
+        r.charged_at ? new Date(r.charged_at).toLocaleDateString("pt-BR") : "",
+        r.paid_at ? new Date(r.paid_at).toLocaleDateString("pt-BR") : "",
+      ].map(esc).join(";")
+    );
+    const blob = new Blob(["\uFEFF" + [header.map(esc).join(";"), ...lines].join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "historico-cobrancas.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Cobranças exportadas!");
+  };
+
   return (
     <div className="space-y-4">
       {/* Saldo acumulando */}
@@ -282,6 +307,11 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
       <div className="flex items-center gap-2">
         <History className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-sm font-bold text-foreground">Histórico de cobranças semanais</h3>
+        {records && records.length > 0 && (
+          <Button size="sm" variant="outline" className="ml-auto h-8 text-[11px]" onClick={exportCsv}>
+            <Download className="h-3 w-3 mr-1.5" /> Exportar CSV
+          </Button>
+        )}
       </div>
 
       {isLoading ? (

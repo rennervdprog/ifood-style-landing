@@ -48,12 +48,19 @@ function presetRange(p: Preset): { start: string; end: string } {
 }
 
 const PRESETS: { key: Preset; label: string }[] = [
-  { key: "mes_atual", label: "Mês atual" },
+  { key: "mes_atual", label: "Este mês" },
   { key: "mes_passado", label: "Mês passado" },
   { key: "30d", label: "30 dias" },
   { key: "90d", label: "90 dias" },
   { key: "custom", label: "Personalizado" },
 ];
+
+const DONUT_COLORS = ["#FF6A00", "#3A3A3C", "#FFB27A", "#8E8E93", "#D8D8DC", "#FF8A3D", "#55565B"];
+
+function fmtShort(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${d}/${m}`;
+}
 
 export default function FinanceConciliation({ storeId, storeName }: { storeId: string; storeName: string }) {
   const [preset, setPreset] = useState<Preset>("mes_atual");
@@ -65,26 +72,46 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
     return presetRange(preset);
   }, [preset, custom]);
 
+  const fetchRange = async (r: { start: string; end: string }) => {
+    const from = new Date(`${r.start}T00:00:00`); from.setDate(from.getDate() - 1);
+    const to = new Date(`${r.end}T00:00:00`); to.setDate(to.getDate() + 1);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("id, order_number, created_at, status, payment_method, order_source, neighborhood, subtotal, delivery_fee, total_price")
+      .eq("store_id", storeId)
+      .gte("created_at", from.toISOString())
+      .lte("created_at", to.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    if (error) throw error;
+    return (data || []).filter((o: any) => {
+      if (o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") return false;
+      const d = isoDate(new Date(o.created_at));
+      return d >= r.start && d <= r.end;
+    });
+  };
+
   const { data: orders, isLoading } = useQuery({
     queryKey: ["finance-conciliation", storeId, range.start, range.end],
-    queryFn: async () => {
-      const from = new Date(`${range.start}T00:00:00`); from.setDate(from.getDate() - 1);
-      const to = new Date(`${range.end}T00:00:00`); to.setDate(to.getDate() + 1);
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, order_number, created_at, status, payment_method, order_source, neighborhood, subtotal, delivery_fee, total_price")
-        .eq("store_id", storeId)
-        .gte("created_at", from.toISOString())
-        .lte("created_at", to.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(2000);
-      if (error) throw error;
-      return (data || []).filter((o: any) => {
-        if (o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") return false;
-        const d = isoDate(new Date(o.created_at));
-        return d >= range.start && d <= range.end;
-      });
-    },
+    queryFn: () => fetchRange(range),
+    staleTime: 60_000,
+    enabled: !!storeId,
+  });
+
+  // Período anterior de mesma duração, logo antes do atual — base do
+  // comparativo (o Financeiro não comparava nada; Relatórios já comparava).
+  const prevRange = useMemo(() => {
+    const start = new Date(`${range.start}T00:00:00`);
+    const end = new Date(`${range.end}T00:00:00`);
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    const prevEnd = new Date(start); prevEnd.setDate(start.getDate() - 1);
+    const prevStart = new Date(prevEnd); prevStart.setDate(prevEnd.getDate() - (days - 1));
+    return { start: isoDate(prevStart), end: isoDate(prevEnd) };
+  }, [range]);
+
+  const { data: prevOrders } = useQuery({
+    queryKey: ["finance-conciliation-prev", storeId, prevRange.start, prevRange.end],
+    queryFn: () => fetchRange(prevRange),
     staleTime: 60_000,
     enabled: !!storeId,
   });
@@ -135,6 +162,21 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
     }
     return [...map.entries()].sort((a, b) => b[1].total - a[1].total);
   }, [valid]);
+
+  const prevValid = useMemo(() => (prevOrders || []).filter((o: any) => o.status !== "cancelado"), [prevOrders]);
+  const prevTotal = prevValid.reduce((s: number, o: any) => s + Number(o.total_price || 0), 0);
+  const deltaPct = prevTotal > 0 ? ((sumTotal - prevTotal) / prevTotal) * 100 : sumTotal > 0 ? 100 : 0;
+
+  const donutSegments = useMemo(() => {
+    const C = 326.7;
+    let acc = 0;
+    return byPayment.map(([label, v], i) => {
+      const frac = sumTotal > 0 ? v.total / sumTotal : 0;
+      const seg = { label, color: DONUT_COLORS[i % DONUT_COLORS.length], len: Math.max(0, frac * C - 1.5), offset: acc };
+      acc += frac * C;
+      return seg;
+    });
+  }, [byPayment, sumTotal]);
 
   const splitEfetivo = Number(publicStore?.platform_split_effective ?? 0.99);
   const repassePendente = Number(balance?.repasse_pendente || 0);
@@ -219,16 +261,49 @@ export default function FinanceConciliation({ storeId, storeName }: { storeId: s
                 <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{residual < 0 ? "Descontos (cupons e ajustes)" : "Acréscimos"}</span><span className="font-bold tabular-nums">{formatBRL(residual)}</span></div>
               )}
               <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-base"><span className="font-black">Total que entrou pra loja</span><span className="font-black tabular-nums text-primary">{formatBRL(sumTotal)}</span></div>
+              <p className="text-[11px] text-muted-foreground">
+                Período anterior ({fmtShort(prevRange.start)} a {fmtShort(prevRange.end)}):{" "}
+                {prevValid.length > 0 ? (
+                  <>
+                    <strong className="text-foreground">{formatBRL(prevTotal)}</strong> em {prevValid.length} pedidos ·{" "}
+                    <span className={`font-bold ${deltaPct >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                      {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(1).replace(".", ",")}%
+                    </span>
+                  </>
+                ) : (
+                  "sem vendas registradas"
+                )}
+              </p>
             </div>
             <div className="border-t border-border px-4 py-3">
               <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-muted-foreground">Por forma de pagamento</p>
-              <div className="space-y-1.5">
-                {byPayment.map(([label, v]) => (
-                  <div key={label} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-muted-foreground">{label} <span className="text-[11px]">({v.count}x)</span></span>
-                    <span className="font-bold tabular-nums">{formatBRL(v.total)}</span>
-                  </div>
-                ))}
+              <div className="flex flex-wrap items-center gap-4">
+                <svg width="132" height="132" viewBox="0 0 150 150" className="shrink-0" role="img" aria-label="Gráfico de pagamentos do período">
+                  <circle cx="75" cy="75" r="52" fill="none" stroke="#F1F1F3" strokeWidth="22" />
+                  {donutSegments.map((s) => (
+                    <circle
+                      key={s.label}
+                      cx="75" cy="75" r="52" fill="none"
+                      stroke={s.color} strokeWidth="22"
+                      strokeDasharray={`${s.len.toFixed(1)} 326.7`}
+                      strokeDashoffset={-s.offset}
+                      transform="rotate(-90 75 75)"
+                    />
+                  ))}
+                  <text x="75" y="72" textAnchor="middle" fontSize="12.5" fontWeight="800" className="fill-foreground">{formatBRL(sumTotal)}</text>
+                  <text x="75" y="89" textAnchor="middle" fontSize="9.5" className="fill-muted-foreground">total que entrou</text>
+                </svg>
+                <div className="flex-1 space-y-1.5 min-w-[180px]">
+                  {byPayment.map(([label, v], i) => (
+                    <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-muted-foreground">
+                        <span className="mr-2 inline-block h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                        {label} <span className="text-[11px]">({v.count}x)</span>
+                      </span>
+                      <span className="font-bold tabular-nums">{formatBRL(v.total)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="border-t border-border px-4 py-3 text-sm">
