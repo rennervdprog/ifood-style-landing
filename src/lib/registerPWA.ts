@@ -86,74 +86,116 @@ export async function registerPWA() {
   }
 }
 
-/**
- * Aplica uma atualização de SW, do jeito seguro: força uma checagem,
- * espera a versão nova terminar de instalar (se ainda estiver baixando),
- * pede SKIP_WAITING ao SW em "waiting" e espera o `controllerchange`
- * antes de retornar — quem chama recarrega em seguida e cai no SW novo.
- *
- * NUNCA apaga caches aqui: o Cache Storage é compartilhado por TODAS as
- * abas abertas sob o mesmo SW. Apagar o precache com o SW antigo ainda no
- * comando foi a causa do loop "Atualizando o app..." de 2026-11-07 — as
- * abas sobreviventes ficavam sem os chunks antigos (apagados) e sem os
- * novos (o SW novo ainda não assumira), e cada reload repetia o erro.
- * Quem limpa precache antigo é o próprio SW novo, na ativação.
- *
- * Correção 2026-11-07 (botão "Atualizar" que parecia não fazer nada): a
- * versão anterior lia `reg.waiting` UMA vez, logo após `reg.update()`.
- * Quando a versão nova ainda estava BAIXANDO/INSTALANDO (o precache tem
- * ~6 MB), `waiting` vinha null e a função desistia na hora — o clique só
- * fechava o aviso e a página seguia na versão velha. Agora a checagem
- * tem teto de tempo (uma chamada travada não segura o clique) e, havendo
- * instalação em andamento, a função ESPERA ela virar "waiting" (até
- * `installWaitMs`) antes de desistir.
- *
- * Retorna true se havia um SW esperando e ele foi acionado.
- */
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function waitForWaitingWorker(
+/**
+ * Espera o SW da versão nova terminar de instalar e ficar em "waiting"
+ * (baixado e pronto para assumir). Resolve com o worker em espera, ou
+ * null se o prazo acabar. Quem espera aqui NÃO está segurando nenhuma
+ * interação do usuário — é trabalho de fundo.
+ */
+export async function waitForWaitingWorker(
   reg: ServiceWorkerRegistration,
   timeoutMs: number,
 ): Promise<ServiceWorker | null> {
+  if (reg.waiting) return reg.waiting;
   const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (reg.waiting) return reg.waiting;
-    await sleep(300);
-  }
-  return reg.waiting ?? null;
+  return new Promise<ServiceWorker | null>((resolve) => {
+    let done = false;
+    const finish = (w: ServiceWorker | null) => {
+      if (done) return;
+      done = true;
+      try {
+        reg.removeEventListener("updatefound", onUpdateFound);
+      } catch {}
+      resolve(w);
+    };
+    const trackInstalling = (worker: ServiceWorker | null) => {
+      if (!worker) return;
+      worker.addEventListener("statechange", () => {
+        if (worker.state === "installed" && reg.waiting) finish(reg.waiting);
+      });
+    };
+    const onUpdateFound = () => trackInstalling(reg.installing);
+    try {
+      reg.addEventListener("updatefound", onUpdateFound);
+    } catch {}
+    trackInstalling(reg.installing);
+    // Rede de segurança: checagem periódica (alguns navegadores não
+    // disparam todos os eventos com a aba em segundo plano).
+    void (async () => {
+      while (!done) {
+        if (reg.waiting) return finish(reg.waiting);
+        if (Date.now() >= deadline) return finish(null);
+        await sleep(1000);
+      }
+    })();
+  });
 }
 
-export async function applyServiceWorkerUpdate(timeoutMs = 4000, installWaitMs = 20000): Promise<boolean> {
+/**
+ * Dispara a checagem de atualização do SW e espera a versão nova ficar
+ * PRONTA (baixada e instalada, em "waiting"). O versionWatcher usa isto
+ * para só avisar o usuário quando a troca é instantânea — o aviso nunca
+ * aparece enquanto a versão nova ainda está baixando.
+ */
+export async function ensureUpdateReady(timeoutMs = 300_000): Promise<boolean> {
   if (!("serviceWorker" in navigator)) return false;
   try {
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg) return false;
-    // Checagem de atualização com teto de tempo: se a rede travar a
-    // chamada, seguimos com o que houver em vez de segurar o clique.
     try {
-      await Promise.race([reg.update(), sleep(3000)]);
+      await reg.update();
     } catch {
-      /* rede intermitente — segue com o que houver */
+      /* rede intermitente — a espera observa o que houver */
     }
-    const waiting = (await waitForWaitingWorker(reg, installWaitMs)) ?? reg.waiting;
+    return (await waitForWaitingWorker(reg, timeoutMs)) != null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Aplica a atualização cujo SW já está em "waiting": pede SKIP_WAITING
+ * e espera o `controllerchange`. Retorna true SOMENTE se o SW novo
+ * assumiu de verdade — quem chama só recarrega nesse caso.
+ *
+ * NUNCA apagar caches aqui: o Cache Storage é compartilhado por TODAS
+ * as abas abertas sob o mesmo SW (foi a causa do loop "Atualizando o
+ * app..." de 2026-11-07 de manhã). Quem limpa o precache antigo é o
+ * próprio SW novo, na ativação.
+ *
+ * Correção 2026-11-07 (noite — loop do "Atualizando…"): a versão anterior
+ * esperava a instalação DEPOIS do clique (até 20 s) e quem chamava
+ * recarregava a página MESMO quando a troca não acontecia. Com o
+ * precache de ~6 MB numa rede móvel lenta, a instalação estourava o
+ * prazo, o reload devolvia a página na versão velha (SW antigo no
+ * comando) e o aviso reaparecia — loop infinito. Agora a instalação é
+ * aguardada em segundo plano, ANTES do aviso (ensureUpdateReady), e
+ * esta função só confirma uma troca que já está pronta.
+ */
+export async function applyServiceWorkerUpdate(timeoutMs = 8000): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return false;
+    const waiting = reg.waiting ?? (await waitForWaitingWorker(reg, 5000));
     if (!waiting) return false;
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(finish, timeoutMs);
-      function finish() {
+    return await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      function finish(ok: boolean) {
         clearTimeout(timer);
         navigator.serviceWorker.removeEventListener("controllerchange", onChange);
-        resolve();
+        resolve(ok);
       }
       function onChange() {
-        finish();
+        finish(true);
       }
       navigator.serviceWorker.addEventListener("controllerchange", onChange);
       waiting.postMessage({ type: "SKIP_WAITING" });
     });
-    return true;
   } catch {
     return false;
   }
