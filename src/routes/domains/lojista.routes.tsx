@@ -4,6 +4,7 @@ import { LojistaHomeLayout } from "@/routes/layouts/LojistaLayout";
 import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
+  AdminDashboardReorg,
   AdminDashboardV2Teste,
   MatrizDashboard,
   MatrizDashboardV2,
@@ -29,9 +30,11 @@ export const lojistaRoutes = (
       <Route element={<LojistaHomeLayout />}>
         <Route path="/admin" element={<AdminDashboardV2Teste />} />
       </Route>
-      {/* /admin-teste — mesmo painel, mesma árvore (mount permanente) */}
+      {/* /admin-teste — casca REORG (reorganização do painel, 2026-11-08):
+          mount de comparação ao vivo; o /admin oficial segue na árvore Teste.
+          Rollback = voltar este element para <AdminDashboardV2Teste />. */}
       <Route element={<LojistaHomeLayout />}>
-        <Route path="/admin-teste" element={<AdminDashboardV2Teste />} />
+        <Route path="/admin-teste" element={<AdminDashboardReorg />} />
       </Route>
     </Route>
     <Route path="/admin2" element={<Navigate to="/admin" replace />} />

@@ -27,6 +27,7 @@ export const AuthPage = lazy(() => import("@/pages/AuthPage"));
 export const PartnerLogin = lazy(() => import("@/pages/PartnerLogin"));
 export const AdminDashboardV2 = lazy(() => import("@/pages/AdminDashboardV2"));
 export const AdminDashboardV2Teste = lazy(() => import("@/pages/AdminDashboardV2Teste"));
+export const AdminDashboardReorg = lazy(() => import("@/pages/AdminDashboardReorg"));
 export const MatrizDashboard = lazy(() => import("@/pages/MatrizDashboard"));
 export const MatrizDashboardV2 = lazy(() => import("@/pages/MatrizDashboardV2"));
 export const ConviteRede = lazy(() => import("@/pages/ConviteRede"));
