@@ -22,6 +22,8 @@
  *    Configurações → Geral); o atalho Ctrl+K continua funcionando.
  * 4. Breadcrumb: AdminBreadcrumbReorg mostra "Grupo › Sub-aba" acima
  *    do conteúdo, para o lojista saber onde está sem decorar caminhos.
+ * 5. Fase 3 (Cardápio): a sub-aba "Estoque" some da navegação — a tela
+ *    de Cardápio (MenuTabReorg) ganha o alternador Cardápio/Estoque.
  *
  * Nenhuma aba deixa de existir e nenhuma passa a usar outro componente:
  * as demais abas continuam reutilizando os componentes originais, e a
@@ -53,14 +55,20 @@ const normalize = (s: string) =>
  * Regra da Tela 1: Repasse existe SÓ no Financeiro. Remove a duplicata
  * do grupo Início; grupos que ficarem sem sub-aba somem da navegação.
  * Não altera rótulos, ícones nem regras de visibilidade originais.
+ * Fase 3: a sub-aba "Estoque" sai do grupo Cardápio — Produtos e Estoque
+ * são duas visualizações da mesma tela (MenuTabReorg).
  */
 export function filterReorgNavGroups(groups: DashboardGroup[]): DashboardGroup[] {
   return groups
-    .map((g) =>
-      g.key === "inicio"
-        ? { ...g, subTabs: g.subTabs.filter((s) => s.key !== "repasse") }
-        : g,
-    )
+    .map((g) => {
+      if (g.key === "inicio")
+        return { ...g, subTabs: g.subTabs.filter((s) => s.key !== "repasse") };
+      // Fase 3: Estoque não é mais sub-aba — virou visualização da tela
+      // única de Cardápio (alternador Cardápio/Estoque no MenuTabReorg).
+      if (g.key === "cardapio")
+        return { ...g, subTabs: g.subTabs.filter((s) => s.key !== "stock") };
+      return g;
+    })
     .filter((g) => g.subTabs.length > 0);
 }
 
@@ -71,6 +79,9 @@ export function getReorgActiveGroup(
   groups: DashboardGroup[],
   tab: DashboardTab,
 ): DashboardGroup | undefined {
+  // Fase 3: "stock" não é mais sub-aba, mas a aba continua alcançável
+  // (link direto) — o grupo ativo dela é o Cardápio.
+  if (tab === "stock") return groups.find((g) => g.key === "cardapio");
   return groups.find((g) => g.subTabs.some((s) => s.key === tab));
 }
 
