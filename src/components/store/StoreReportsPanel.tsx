@@ -1,4 +1,4 @@
-import { useMemo, useState, lazy, Suspense } from "react";
+import { useMemo, useState, lazy, Suspense, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
@@ -24,6 +24,7 @@ type SubTab = "overview" | "sales" | "products" | "hours" | "funil" | "extrato";
 import { PAYMENT_METHOD_LABELS as PAYMENT_LABELS, ORDER_SOURCE_LABELS as SOURCE_LABELS } from "@/lib/orderLabels";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS_FULL = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
 
 function isoDate(d: Date) {
   const y = d.getFullYear();
@@ -44,7 +45,7 @@ function growth(cur: number, prev: number) {
   return cur > 0 ? 100 : 0;
 }
 
-type Preset = "hoje" | "ontem" | "7d" | "14d" | "30d" | "90d" | "custom";
+type Preset = "hoje" | "ontem" | "7d" | "30d" | "mes" | "mespassado" | "custom";
 
 export default function StoreReportsPanel({ storeId, storeName }: { storeId: string; storeName?: string }) {
   const today = useMemo(() => isoDate(new Date()), []);
@@ -61,9 +62,12 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     if (p === "hoje") { /* same day */ }
     else if (p === "ontem") { start.setDate(now.getDate() - 1); end.setDate(now.getDate() - 1); }
     else if (p === "7d") start.setDate(now.getDate() - 6);
-    else if (p === "14d") start.setDate(now.getDate() - 13);
     else if (p === "30d") start.setDate(now.getDate() - 29);
-    else if (p === "90d") start.setDate(now.getDate() - 89);
+    else if (p === "mes") { start = new Date(now.getFullYear(), now.getMonth(), 1); }
+    else if (p === "mespassado") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+    }
     else return; // custom: mantém datas escolhidas
     setStartDate(isoDate(start));
     setEndDate(isoDate(end));
@@ -93,7 +97,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
       const to = parseISO(endDate); to.setDate(to.getDate() + 1);
       const { data, error } = await supabase
         .from("orders")
-        .select("created_at, status, cancel_reason")
+        .select("created_at, status, cancel_reason, total_price")
         .eq("store_id", storeId)
         .gte("created_at", from.toISOString())
         .lte("created_at", to.toISOString());
@@ -205,21 +209,65 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
       store_closed: "Loja fechada",
       other: "Outro motivo",
     };
-    const map = new Map<string, number>();
+    const map = new Map<string, { count: number; amount: number }>();
     let total = 0;
+    let totalAmount = 0;
     for (const o of extraOrders || []) {
       if (o.status !== "cancelado") continue;
       total += 1;
+      const amount = Number((o as any).total_price || 0);
+      totalAmount += amount;
       const raw = String(o.cancel_reason || "").trim();
       const label = !raw ? "Sem motivo registrado" : CANCEL_LABELS[raw.toLowerCase()] || raw;
-      map.set(label, (map.get(label) || 0) + 1);
+      const cur = map.get(label) || { count: 0, amount: 0 };
+      cur.count += 1;
+      cur.amount += amount;
+      map.set(label, cur);
     }
-    const sorted = [...map.entries()].sort((a, b) => b[1] - a[1]);
-    const top = sorted.slice(0, 8).map(([label, count]) => ({ label, count }));
-    const rest = sorted.slice(8).reduce((s, [, c]) => s + c, 0);
-    if (rest > 0) top.push({ label: "Outros motivos", count: rest });
-    return { total, rows: top };
+    const sorted = [...map.entries()].sort((a, b) => b[1].amount - a[1].amount);
+    const top = sorted.slice(0, 8).map(([label, v]) => ({ label, count: v.count, amount: v.amount }));
+    const restRows = sorted.slice(8);
+    if (restRows.length > 0) {
+      top.push({
+        label: "Outros motivos",
+        count: restRows.reduce((s, [, v]) => s + v.count, 0),
+        amount: restRows.reduce((s, [, v]) => s + v.amount, 0),
+      });
+    }
+    return { total, totalAmount, rows: top };
   }, [extraOrders]);
+
+  const noReasonRow = cancelStats.rows.find((r) => r.label === "Sem motivo registrado");
+  const noReasonShare = noReasonRow && cancelStats.total > 0 ? noReasonRow.count / cancelStats.total : 0;
+
+  // Mapa de calor dia × hora: cruza os pedidos brutos do período (a mesma
+  // base dos cancelamentos), contando só os pedidos válidos.
+  const heatmap = useMemo(() => {
+    const grid: number[][] = WEEKDAYS.map(() => Array(24).fill(0));
+    let max = 0;
+    let peak = { dow: -1, hour: -1, count: 0 };
+    for (const o of extraOrders || []) {
+      if (o.status === "cancelado" || o.status === "aguardando_pagamento" || o.status === "aguardando_comprovante") continue;
+      const d = new Date(o.created_at);
+      const dow = d.getDay();
+      const hour = d.getHours();
+      grid[dow][hour] += 1;
+      if (grid[dow][hour] > max) {
+        max = grid[dow][hour];
+        peak = { dow, hour, count: max };
+      }
+    }
+    return { grid, max, peak };
+  }, [extraOrders]);
+
+  const heatBestDay = weekdayStats.reduce(
+    (a, w) => (w.pedidos > (a?.pedidos || 0) ? w : a),
+    null as null | { dow: number; pedidos: number }
+  );
+  const heatPeakHour = horarios.reduce(
+    (a, h) => (h.pedidos > (a?.pedidos || 0) ? h : a),
+    null as null | { hora: number; pedidos: number }
+  );
 
   // Curva ABC sobre a receita de itens: A concentra até 80%, B até 95%.
   const abc = useMemo(() => {
@@ -287,6 +335,28 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     lines.push("PAGAMENTOS");
     lines.push("Método,Pedidos,Receita");
     pagamentos.forEach((p) => lines.push(`${PAYMENT_LABELS[p.metodo] || p.metodo},${p.pedidos},${formatCurrency(Number(p.receita))}`));
+    lines.push("");
+    lines.push("ORIGEM DOS PEDIDOS");
+    lines.push("Origem,Pedidos,Receita");
+    origem.forEach((o) => lines.push(`${SOURCE_LABELS[o.origem] || o.origem},${o.pedidos},${formatCurrency(Number(o.receita))}`));
+    lines.push("");
+    lines.push("PEDIDOS POR HORÁRIO");
+    lines.push("Hora,Pedidos,Receita");
+    horarios.forEach((h) => lines.push(`${String(h.hora).padStart(2, "0")}:00,${h.pedidos},${formatCurrency(Number(h.receita))}`));
+    lines.push("");
+    lines.push("DIAS DA SEMANA");
+    lines.push("Dia,Pedidos,Receita");
+    weekdayStats.forEach((w) => lines.push(`${WEEKDAYS[w.dow]},${w.pedidos},${formatCurrency(w.receita)}`));
+    lines.push("");
+    lines.push("CANCELAMENTOS POR MOTIVO");
+    lines.push("Motivo,Pedidos,Valor perdido");
+    cancelStats.rows.forEach((r) => lines.push(`${r.label},${r.count},${formatCurrency(r.amount)}`));
+    lines.push(`Total perdido,,${formatCurrency(cancelStats.totalAmount)}`);
+    lines.push("");
+    lines.push("FUNIL DA LOJA");
+    lines.push("Etapa,Visitantes,Visualizações");
+    funnelStages.forEach((s) => lines.push(`${s.label},${s.uniques},${s.views}`));
+    lines.push(`Viraram pedido,${pedidos},`);
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -301,9 +371,9 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     { key: "hoje", label: "Hoje" },
     { key: "ontem", label: "Ontem" },
     { key: "7d", label: "7 dias" },
-    { key: "14d", label: "14 dias" },
     { key: "30d", label: "30 dias" },
-    { key: "90d", label: "90 dias" },
+    { key: "mes", label: "Este mês" },
+    { key: "mespassado", label: "Mês passado" },
   ];
   const subs: { key: SubTab; label: string }[] = [
     { key: "overview", label: "Visão geral" },
@@ -331,7 +401,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
       </div>
 
       {/* Preset chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <CalIcon className="h-4 w-4 text-muted-foreground shrink-0" />
         {presets.map((p) => (
           <button
@@ -347,6 +417,17 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
             {p.label}
           </button>
         ))}
+        <button
+          onClick={() => setPreset("custom")}
+          aria-pressed={preset === "custom"}
+          className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+            preset === "custom"
+              ? "bg-primary text-primary-foreground shadow shadow-primary/20"
+              : "bg-card text-muted-foreground border border-border/60 hover:bg-accent"
+          }`}
+        >
+          Personalizado
+        </button>
       </div>
 
       {/* Custom date range */}
@@ -377,7 +458,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {subs.map((s) => (
           <button
             key={s.key}
@@ -490,6 +571,53 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
             </div>
           )}
 
+          {sub === "hours" && heatmap.max > 0 && (
+            <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-3">🌡️ Mapa de calor — pedidos por dia × hora</p>
+              <div className="overflow-x-auto pb-1 -mx-1 px-1">
+                <div className="min-w-[540px]">
+                  <div className="grid gap-[3px]" style={{ gridTemplateColumns: "2rem repeat(24, minmax(0, 1fr))" }}>
+                    <span />
+                    {Array.from({ length: 24 }, (_, h) => (
+                      <span key={h} className="text-[9px] text-muted-foreground text-center">
+                        {h % 3 === 0 ? h : ""}
+                      </span>
+                    ))}
+                    {[1, 2, 3, 4, 5, 6, 0].map((dow) => (
+                      <Fragment key={dow}>
+                        <span className="text-[10px] font-semibold text-muted-foreground text-right pr-1 self-center">
+                          {WEEKDAYS[dow]}
+                        </span>
+                        {heatmap.grid[dow].map((n, h) => (
+                          <span
+                            key={h}
+                            title={`${WEEKDAYS[dow]} ${String(h).padStart(2, "0")}h: ${n} pedidos`}
+                            className={`h-3.5 rounded-[3px] ${n === 0 ? "bg-muted" : ""}`}
+                            style={
+                              n > 0
+                                ? { backgroundColor: `rgba(255, 106, 0, ${(0.14 + 0.86 * (n / heatmap.max)).toFixed(2)})` }
+                                : undefined
+                            }
+                          />
+                        ))}
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {heatmap.peak.dow >= 0 && (
+                <p className="text-[11px] text-muted-foreground mt-3">
+                  📌 <strong className="text-foreground">
+                    Seu pico é {WEEKDAYS_FULL[heatmap.peak.dow]} às {String(heatmap.peak.hour).padStart(2, "0")}h ({heatmap.peak.count} pedidos).
+                  </strong>
+                  {heatBestDay && heatPeakHour
+                    ? ` Na semana, o dia mais forte é ${WEEKDAYS_FULL[heatBestDay.dow]} e a hora mais forte é ${String(heatPeakHour.hora).padStart(2, "0")}h.`
+                    : ""}
+                </p>
+              )}
+            </div>
+          )}
+
           {(sub === "overview" || sub === "hours") && hourlyChart.length > 0 && (
             <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
               <p className="text-xs font-bold text-foreground mb-4">🕐 Pedidos por Horário</p>
@@ -527,21 +655,34 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
           {(sub === "overview" || sub === "sales") && cancelStats.total > 0 && (
             <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
               <p className="text-xs font-bold text-foreground mb-3">❌ Cancelamentos por Motivo ({cancelStats.total})</p>
+              <div className="mb-3">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Perdido com cancelamentos</p>
+                <p className="text-xl font-black text-destructive">
+                  {formatCurrency(cancelStats.totalAmount)}{" "}
+                  <span className="text-xs font-bold text-muted-foreground">em {cancelStats.total} pedidos</span>
+                </p>
+              </div>
               <div className="space-y-2">
                 {cancelStats.rows.map((r) => {
-                  const pct = cancelStats.total > 0 ? (r.count / cancelStats.total) * 100 : 0;
+                  const pct = cancelStats.totalAmount > 0 ? (r.amount / cancelStats.totalAmount) * 100 : 0;
                   return (
                     <div key={r.label} className="flex items-center gap-3">
                       <span className="text-xs font-bold text-foreground flex-1 min-w-0 truncate" title={r.label}>{r.label}</span>
                       <div className="w-28 h-2 bg-muted rounded-full overflow-hidden shrink-0">
                         <div className="h-full bg-destructive rounded-full" style={{ width: `${pct}%` }} />
                       </div>
-                      <span className="text-[11px] text-muted-foreground w-16 text-right shrink-0">{r.count}x · {pct.toFixed(0)}%</span>
+                      <span className="text-[11px] text-muted-foreground w-28 text-right shrink-0">{formatCurrency(r.amount)} · {r.count}x</span>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-3">Por que os pedidos do período foram cancelados — é aqui que aparece o vazamento pra corrigir.</p>
+              {noReasonShare >= 0.3 ? (
+                <p className="text-[10px] text-muted-foreground mt-3">
+                  📌 <strong className="text-foreground">{Math.round(noReasonShare * 100)}% dos cancelamentos não têm motivo registrado</strong> — sem o motivo, não dá pra corrigir a causa.
+                </p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground mt-3">Por que os pedidos do período foram cancelados — é aqui que aparece o vazamento pra corrigir.</p>
+              )}
             </div>
           )}
 
