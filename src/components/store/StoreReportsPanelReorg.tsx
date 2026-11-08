@@ -1,5 +1,6 @@
 // Fase 4 da reorganização do painel (2026-11-08) — cópia Reorg, SOMENTE /admin-teste.
-import { useMemo, useState, lazy, Suspense, Fragment } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense, Fragment } from "react";
+import { readUrlParam, writeUrlParam } from "@/pages/admin/urlParams";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
@@ -53,7 +54,16 @@ export default function StoreReportsPanelReorg({ storeId, storeName }: { storeId
   const [preset, setPreset] = useState<Preset>("hoje");
   const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>(today);
-  const [sub, setSub] = useState<SubTab>("overview");
+  const [sub, setSub] = useState<SubTab>(() => {
+    // URL por tela: abre direto no recorte pedido (?rel=clientes etc.).
+    const fromUrl = readUrlParam("rel");
+    const valid: SubTab[] = ["overview", "sales", "products", "hours", "bairros", "clientes", "funil", "extrato"];
+    return fromUrl && valid.includes(fromUrl as SubTab) ? (fromUrl as SubTab) : "overview";
+  });
+  // Espelha o recorte atual em ?rel= (recarregar volta pro mesmo recorte).
+  useEffect(() => {
+    writeUrlParam("rel", sub === "overview" ? null : sub);
+  }, [sub]);
 
   function applyPreset(p: Preset) {
     setPreset(p);
