@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { openWhatsApp } from "@/lib/whatsapp";
 import TutorialHelpButton from "@/components/TutorialHelp";
 import OrdersStatement from "@/components/store/OrdersStatement";
 
@@ -17,7 +18,7 @@ const PaymentPieChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.PaymentPieChart }))
 );
 
-type SubTab = "overview" | "sales" | "products" | "hours" | "funil" | "extrato";
+type SubTab = "overview" | "sales" | "products" | "hours" | "bairros" | "clientes" | "funil" | "extrato";
 
 // Mapas únicos de rótulos (o mapa local antigo não cobria os valores reais
 // do banco — cash, maquininha_pix, whatsapp_bot etc. vazavam crus na tela).
@@ -97,7 +98,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
       const to = parseISO(endDate); to.setDate(to.getDate() + 1);
       const { data, error } = await supabase
         .from("orders")
-        .select("created_at, status, cancel_reason, total_price")
+        .select("id, created_at, status, cancel_reason, total_price, neighborhood, client_lat, client_lng, client_id")
         .eq("store_id", storeId)
         .gte("created_at", from.toISOString())
         .lte("created_at", to.toISOString());
@@ -148,6 +149,47 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         .order("name");
       if (error) throw error;
       return data || [];
+    },
+    staleTime: 300_000,
+    enabled: !!storeId,
+  });
+
+  // Histórico completo da loja (leve) + contatos — base da aba Clientes
+  // (chave = telefone) e da lista de sumidos.
+  const { data: historyData } = useQuery({
+    queryKey: ["store-report-history", storeId],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("orders")
+        .select("id, created_at, status, total_price, client_id")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: true })
+        .limit(10000);
+      if (error) throw error;
+      const orders = rows || [];
+      const contacts: Record<string, { name: string; phone: string }> = {};
+      const ids = orders.slice(-2000).map((o: any) => o.id);
+      if (ids.length) {
+        try {
+          const { data: cts } = await supabase.rpc("get_delivery_contacts" as any, { _order_ids: ids });
+          for (const c of (cts as any[]) || []) {
+            if (c?.user_id) contacts[c.user_id] = { name: c.full_name || "", phone: c.whatsapp_number || c.phone || "" };
+          }
+        } catch { /* sem contatos: a aba Clientes mostra a cobertura menor */ }
+      }
+      return { orders, contacts };
+    },
+    staleTime: 60_000,
+    enabled: !!storeId,
+  });
+
+  // Slug + coordenadas da loja (link do cardápio no "chamar de volta" e
+  // marcador da loja no mapa de calor).
+  const { data: storeMeta } = useQuery({
+    queryKey: ["store-report-meta", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("slug, latitude, longitude").eq("id", storeId).maybeSingle();
+      return data as any;
     },
     staleTime: 300_000,
     enabled: !!storeId,
@@ -318,6 +360,154 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
   }, [funnelRows]);
   const funnelTop = Math.max(1, funnelStages[0]?.uniques || 0);
 
+  // ─── Fase 2: Bairros (ranking normalizado + mapa de calor geográfico) ───
+  const isValidOrder = (o: any) =>
+    o.status !== "cancelado" && o.status !== "aguardando_pagamento" && o.status !== "aguardando_comprovante";
+
+  const bairrosStats = useMemo(() => {
+    const buckets = new Map<string, { count: number; revenue: number; spellings: Map<string, number> }>();
+    for (const o of extraOrders || []) {
+      if (!isValidOrder(o)) continue;
+      const raw = String(o.neighborhood || "").trim();
+      const key = raw.toLowerCase();
+      const b = buckets.get(key) || { count: 0, revenue: 0, spellings: new Map<string, number>() };
+      b.count += 1;
+      b.revenue += Number(o.total_price || 0);
+      if (raw) b.spellings.set(raw, (b.spellings.get(raw) || 0) + 1);
+      buckets.set(key, b);
+    }
+    const rows = [...buckets.entries()].map(([key, b]) => {
+      let label: string;
+      if (key === "retirada") label = "Retirada";
+      else if (key === "") label = "Sem bairro registrado";
+      else if (key === "balcão" || key === "balcao") label = "Balcão (venda no local)";
+      else label = [...b.spellings.entries()].sort((a, c) => c[1] - a[1])[0]?.[0] || key;
+      return { label, count: b.count, revenue: b.revenue };
+    });
+    rows.sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+    return rows;
+  }, [extraOrders]);
+  const bairrosMax = Math.max(1, ...bairrosStats.map((b) => b.count));
+
+  const mapData = useMemo(() => {
+    const pts = (extraOrders || []).filter(
+      (o: any) => isValidOrder(o) && o.client_lat != null && o.client_lng != null
+    );
+    const total = (extraOrders || []).length;
+    const withCoords = (extraOrders || []).filter((o: any) => o.client_lat != null && o.client_lng != null).length;
+    const empty = { points: [] as { x: number; y: number; n: number }[], withCoords, total, store: null as null | { x: number; y: number } };
+    if (!pts.length) return empty;
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const o of pts) {
+      minLat = Math.min(minLat, Number(o.client_lat)); maxLat = Math.max(maxLat, Number(o.client_lat));
+      minLng = Math.min(minLng, Number(o.client_lng)); maxLng = Math.max(maxLng, Number(o.client_lng));
+    }
+    if (storeMeta?.latitude != null && storeMeta?.longitude != null) {
+      minLat = Math.min(minLat, Number(storeMeta.latitude)); maxLat = Math.max(maxLat, Number(storeMeta.latitude));
+      minLng = Math.min(minLng, Number(storeMeta.longitude)); maxLng = Math.max(maxLng, Number(storeMeta.longitude));
+    }
+    const padLat = Math.max((maxLat - minLat) * 0.15, 0.002);
+    const padLng = Math.max((maxLng - minLng) * 0.15, 0.002);
+    minLat -= padLat; maxLat += padLat; minLng -= padLng; maxLng += padLng;
+    const agg = new Map<string, { x: number; y: number; n: number }>();
+    for (const o of pts) {
+      const x = ((Number(o.client_lng) - minLng) / (maxLng - minLng)) * 300;
+      const y = (1 - (Number(o.client_lat) - minLat) / (maxLat - minLat)) * 210;
+      const k = `${Math.round(x / 8)}:${Math.round(y / 8)}`;
+      const cur = agg.get(k) || { x, y, n: 0 };
+      cur.n += 1;
+      agg.set(k, cur);
+    }
+    const store = storeMeta?.latitude != null && storeMeta?.longitude != null
+      ? { x: ((Number(storeMeta.longitude) - minLng) / (maxLng - minLng)) * 300, y: (1 - (Number(storeMeta.latitude) - minLat) / (maxLat - minLat)) * 210 }
+      : null;
+    return { points: [...agg.values()], withCoords, total, store };
+  }, [extraOrders, storeMeta]);
+
+  // ─── Fase 2: Clientes (chave = telefone) ───
+  const clientesStats = useMemo(() => {
+    const orders = (historyData?.orders || []).filter(isValidOrder);
+    const contacts = historyData?.contacts || {};
+    const normPhone = (raw: string) => {
+      const d = String(raw || "").replace(/\D/g, "");
+      if (d.length === 10 || d.length === 11) return `55${d}`;
+      if ((d.length === 12 || d.length === 13) && d.startsWith("55")) return d;
+      return "";
+    };
+    type ClientAgg = {
+      phone: string; name: string; clientId: string;
+      first: string; last: string; totalOrders: number; totalSpent: number;
+      periodOrders: number; periodSpent: number; dates: string[];
+    };
+    const byPhone = new Map<string, ClientAgg>();
+    let periodValid = 0;
+    let periodIdentified = 0;
+    for (const o of orders) {
+      const day = isoDate(new Date(o.created_at));
+      const inPeriod = day >= startDate && day <= endDate;
+      if (inPeriod) periodValid += 1;
+      const c = o.client_id ? contacts[o.client_id] : null;
+      const phone = c ? normPhone(c.phone) : "";
+      if (!phone) continue;
+      if (inPeriod) periodIdentified += 1;
+      const cur = byPhone.get(phone) || {
+        phone, name: c?.name || "", clientId: o.client_id,
+        first: day, last: day, totalOrders: 0, totalSpent: 0, periodOrders: 0, periodSpent: 0, dates: [] as string[],
+      };
+      if (c?.name && !cur.name) cur.name = c.name;
+      if (day < cur.first) cur.first = day;
+      if (day > cur.last) cur.last = day;
+      cur.totalOrders += 1;
+      cur.totalSpent += Number(o.total_price || 0);
+      cur.dates.push(day);
+      if (inPeriod) { cur.periodOrders += 1; cur.periodSpent += Number(o.total_price || 0); }
+      byPhone.set(phone, cur);
+    }
+    const clients = [...byPhone.values()];
+    const novos = clients.filter((c) => c.first >= startDate && c.first <= endDate).length;
+    const recorrentes = clients.filter((c) => c.first < startDate && c.periodOrders > 0).length;
+    const recompra = [30, 60, 90].map((w) => {
+      const from = new Date(parseISO(endDate)); from.setDate(from.getDate() - (w - 1));
+      const fromIso = isoDate(from);
+      let active = 0, repeat = 0;
+      for (const c of clients) {
+        const n = c.dates.filter((d) => d >= fromIso && d <= endDate).length;
+        if (n >= 1) active += 1;
+        if (n >= 2) repeat += 1;
+      }
+      return { window: w, active, repeat, pct: active ? (repeat / active) * 100 : 0 };
+    });
+    const endMs = parseISO(endDate).getTime();
+    const sumidos = clients
+      .filter((c) => c.periodOrders === 0)
+      .map((c) => ({ ...c, daysAgo: Math.floor((endMs - parseISO(c.last).getTime()) / 86400000) }))
+      .filter((c) => c.daysAgo >= 30)
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 15);
+    return {
+      periodValid, periodIdentified,
+      coveragePct: periodValid ? (periodIdentified / periodValid) * 100 : 0,
+      identifiedClients: clients.length,
+      novos, recorrentes, recompra, sumidos,
+    };
+  }, [historyData, startDate, endDate]);
+
+  const handleRecall = async (client: { phone: string; name: string; clientId: string }) => {
+    try {
+      await supabase.from("client_recall_logs" as any).insert({
+        store_id: storeId,
+        client_id: client.clientId,
+        client_phone: String(client.phone || "").replace(/\D/g, ""),
+        segment: "inactive",
+        coupon_code: null,
+      });
+    } catch { /* o registro é apoio; a conversa abre mesmo assim */ }
+    const first = (client.name || "").split(" ")[0] || "tudo bem";
+    const link = storeMeta?.slug ? `https://itasuper.com.br/loja/${storeMeta.slug}` : "https://itasuper.com.br";
+    openWhatsApp(client.phone, `Oi ${first}! Aqui é da ${storeName || "loja"} 😊 Sentimos sua falta! Dá uma olhada no cardápio e faz seu pedido por aqui: ${link} — esperamos você!`);
+    toast.success("Boa! Agora é só apertar enviar na conversa que abriu.");
+  };
+
   function exportCSV() {
     const lines: string[] = [];
     lines.push(`Relatório - ${storeName || "Loja"}`);
@@ -366,6 +556,16 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     lines.push("Etapa,Visitantes,Visualizações");
     funnelStages.forEach((s) => lines.push(`${s.label},${s.uniques},${s.views}`));
     lines.push(`Viraram pedido,${pedidos},`);
+    lines.push("");
+    lines.push("BAIRROS");
+    lines.push("Bairro,Pedidos,Receita");
+    bairrosStats.forEach((b) => lines.push(`${b.label},${b.count},${formatCurrency(b.revenue)}`));
+    lines.push("");
+    lines.push("CLIENTES");
+    lines.push(`Identificados pelo telefone,${clientesStats.periodIdentified} de ${clientesStats.periodValid} pedidos do período`);
+    lines.push(`Novos no período,${clientesStats.novos}`);
+    lines.push(`Recorrentes no período,${clientesStats.recorrentes}`);
+    clientesStats.recompra.forEach((r) => lines.push(`Recompra ${r.window} dias,${r.active ? r.pct.toFixed(1) : "0"}% (${r.repeat} de ${r.active} clientes)`));
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -389,6 +589,8 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     { key: "sales", label: "Vendas" },
     { key: "products", label: "Produtos" },
     { key: "hours", label: "Horários" },
+    { key: "bairros", label: "Bairros" },
+    { key: "clientes", label: "Clientes" },
     { key: "funil", label: "Funil" },
     { key: "extrato", label: "Extrato de pedidos" },
   ];
@@ -499,7 +701,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         </div>
       )}
 
-      {!isLoading && pedidos === 0 && !error && sub !== "funil" && sub !== "extrato" && (
+      {!isLoading && pedidos === 0 && !error && sub !== "funil" && sub !== "extrato" && sub !== "clientes" && (
         <div className="p-8 rounded-2xl bg-card/60 border border-border/40 text-center">
           <p className="text-sm font-bold text-foreground">Nenhuma venda no período</p>
           <p className="text-xs text-muted-foreground mt-1">Selecione outra data para ver os resultados.</p>
@@ -786,6 +988,54 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
               </div>
             </div>
           )}
+          {sub === "bairros" && (
+            <div className="space-y-4">
+              <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+                <p className="text-xs font-bold text-foreground mb-1">📍 De onde vêm seus pedidos</p>
+                <p className="text-[10px] text-muted-foreground mb-4">Pedidos válidos do período por bairro — grafias parecidas foram juntadas, e balcão e retirada ficam separados.</p>
+                {bairrosStats.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum pedido válido no período.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {bairrosStats.map((b) => (
+                      <div key={b.label}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-foreground">{b.label}</span>
+                          <span className="text-xs text-muted-foreground"><strong className="text-foreground text-sm">{b.count}</strong> pedidos · {formatCurrency(b.revenue)}</span>
+                        </div>
+                        <div className="h-2.5 bg-muted rounded-full overflow-hidden mt-1">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${(b.count / bairrosMax) * 100}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+                <p className="text-xs font-bold text-foreground mb-1">🗺️ Mapa de calor dos pedidos</p>
+                <p className="text-[10px] text-muted-foreground mb-3">Onde os pedidos do período foram entregues — quanto mais pedidos no mesmo lugar, mais forte o laranja. O ponto escuro é a sua loja.</p>
+                {mapData.points.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum pedido do período tem coordenada de entrega. O mapa acende conforme os endereços são resolvidos no checkout.</p>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 300 210" className="w-full rounded-xl bg-muted/50 border border-border/40">
+                      {mapData.points.map((pt, i) => (
+                        <g key={i}>
+                          <circle cx={pt.x} cy={pt.y} r={10 + Math.min(14, pt.n * 3)} fill="#FF6A00" opacity={0.16} />
+                          <circle cx={pt.x} cy={pt.y} r={3.5} fill="#FF6A00" opacity={0.65} />
+                        </g>
+                      ))}
+                      {mapData.store && (
+                        <circle cx={mapData.store.x} cy={mapData.store.y} r={7} fill="#1c1c1e" stroke="#fff" strokeWidth={2.5} />
+                      )}
+                    </svg>
+                    <p className="text-[10px] text-muted-foreground mt-2">{mapData.withCoords} de {mapData.total} pedidos do período têm coordenadas ({mapData.total ? Math.round((mapData.withCoords / mapData.total) * 100) : 0}%) — o mapa acende nos pedidos válidos. O ranking por bairro, acima, vale pra todos os pedidos.</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -824,6 +1074,62 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
 
       {sub === "extrato" && (
         <OrdersStatement storeId={storeId} storeName={storeName || "Loja"} />
+      )}
+
+      {sub === "clientes" && !isLoading && (
+        <div className="space-y-4">
+          <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+            <p className="text-xs font-bold text-foreground mb-1">👥 Clientes do período</p>
+            <p className="text-[10px] text-muted-foreground mb-4">A ligação é pelo telefone — é o que amarra pedido logado, pedido guest e WhatsApp. Cobertura: {clientesStats.periodIdentified} de {clientesStats.periodValid} pedidos válidos do período têm cliente identificado ({clientesStats.coveragePct.toFixed(0)}%).</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-muted/60 p-3">
+                <p className="text-[10px] font-bold text-muted-foreground">NOVOS NO PERÍODO</p>
+                <p className="text-xl font-black text-foreground">{clientesStats.novos}</p>
+                <p className="text-[10px] text-muted-foreground">fizeram a primeira compra na loja</p>
+              </div>
+              <div className="rounded-xl bg-muted/60 p-3">
+                <p className="text-[10px] font-bold text-muted-foreground">RECORRENTES</p>
+                <p className="text-xl font-black text-foreground">{clientesStats.recorrentes}</p>
+                <p className="text-[10px] text-muted-foreground">já compravam e voltaram no período</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-3">
+              {clientesStats.recompra.map((r) => (
+                <div key={r.window} className="rounded-xl bg-muted/60 p-3 text-center">
+                  <p className="text-[10px] font-bold text-muted-foreground">RECOMPRA {r.window}D</p>
+                  <p className="text-lg font-black text-foreground">{r.active ? `${r.pct.toFixed(0)}%` : "—"}</p>
+                  <p className="text-[10px] text-muted-foreground">{r.repeat} de {r.active} clientes</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3">Recompra = clientes que compraram 2 ou mais vezes dentro da janela, entre os que compraram nela.</p>
+          </div>
+
+          <div className="bg-card/60 rounded-2xl p-5 border border-border/30">
+            <p className="text-xs font-bold text-foreground mb-1">💤 Sumidos há 30+ dias ({clientesStats.sumidos.length})</p>
+            <p className="text-[10px] text-muted-foreground mb-4">Quem já comprou e não pede há mais de 30 dias, contando até o fim do período selecionado. O botão abre o WhatsApp com a mensagem pronta — quem envia é você.</p>
+            {clientesStats.sumidos.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Ninguém sumido por enquanto. 🎉</p>
+            ) : (
+              <div className="space-y-2">
+                {clientesStats.sumidos.map((c) => (
+                  <div key={c.phone} className="flex items-center gap-3 rounded-xl border border-border/50 bg-card px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground truncate">{c.name || "Cliente"}</p>
+                      <p className="text-[10px] text-muted-foreground">Último pedido {fmtPtBR(c.last)} · há {c.daysAgo} dias · {c.totalOrders} pedidos · {formatCurrency(c.totalSpent)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleRecall(c)}
+                      className="shrink-0 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold hover:bg-primary/90"
+                    >
+                      Chamar de volta
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
