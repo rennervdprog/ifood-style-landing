@@ -70,24 +70,24 @@ const MenuTabReorg = lazy(() => import("./admin/tabs/MenuTabReorg"));
 const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTeste"));
 const AddonsTabReorg = lazy(() => import("./admin/tabs/AddonsTabReorg"));
 const BordasTabTeste = lazy(() => import("./admin/tabs/BordasTabTeste"));
-const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
-const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
-const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
-const MotoboysMapTab = lazy(() => import("./admin/tabs/MotoboysMapTab"));
+const HoursTabReorg = lazy(() => import("./admin/tabs/HoursTabReorg"));
+const FinanceTabReorg = lazy(() => import("./admin/tabs/FinanceTabReorg"));
+const DriversTabReorg = lazy(() => import("./admin/tabs/DriversTabReorg"));
+const MotoboysMapTabReorg = lazy(() => import("./admin/tabs/MotoboysMapTabReorg"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
-const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
+const CouponsTabReorg = lazy(() => import("./admin/tabs/CouponsTabReorg"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
-const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
+const ReviewsTabReorg = lazy(() => import("./admin/tabs/ReviewsTabReorg"));
 const DashboardOverviewSectionReorg = lazy(() => import("./admin/sections/DashboardOverviewSectionReorg"));
 const ManualOrderFlow = lazy(() => import("@/components/orders/ManualOrderFlow"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
-const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
+const RepasseSectionReorg = lazy(() => import("./admin/sections/RepasseSectionReorg"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
-import ClientsTab from "./admin/components/ClientsTab";
+import ClientsTabReorg from "./admin/components/ClientsTabReorg";
 import ErrorBoundary from "@/components/ErrorBoundary";
-const StoreReportsPanel = lazy(() => import("@/components/store/StoreReportsPanel"));
+const StoreReportsPanelReorg = lazy(() => import("@/components/store/StoreReportsPanelReorg"));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
@@ -2254,7 +2254,7 @@ const AdminDashboardReorg = () => {
           {dashboardTab === "repasse" && store && (
             <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
-              <RepasseSection
+              <RepasseSectionReorg
                 store={store}
                 storePlan={storePlan}
                 setDashboardTab={setDashboardTab}
@@ -2266,7 +2266,7 @@ const AdminDashboardReorg = () => {
 
           {/* ══════ CLIENTS TAB ══════ */}
           {dashboardTab === "clients" && store && (
-            <ClientsTab
+            <ClientsTabReorg
               clientFilter={clientFilter}
               setClientFilter={setClientFilter}
               clientSearch={clientSearch}
@@ -2344,10 +2344,10 @@ const AdminDashboardReorg = () => {
                 {dashboardTab === "tutoriais" && <TutoriaisPanel key={helpSection ?? "geral"} initialSection={helpSection ?? undefined} />}
                 {dashboardTab === "addons" && <AddonsTabReorg storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTabTeste storeId={store.id} category={store.category} categories={(store as any).categories} />}
-                {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
+                {dashboardTab === "hours" && <HoursTabReorg storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
                 {dashboardTab === "finance" && (
-                  <FinanceTab
+                  <FinanceTabReorg
                     storeId={store.id}
                     storeName={store.name}
                     hasCommission={storePlan.hasCommission}
@@ -2360,18 +2360,18 @@ const AdminDashboardReorg = () => {
                 {dashboardTab === "loyalty" && (
                   <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
                 )}
-                {dashboardTab === "coupons" && <CouponsTab storeId={store.id} />}
+                {dashboardTab === "coupons" && <CouponsTabReorg storeId={store.id} />}
                 {dashboardTab === "promotions" && <PromotionsTab storeId={store.id} />}
-                {dashboardTab === "reviews" && <ReviewsTab storeId={store.id} />}
-                {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
-                {dashboardTab === "motoboys_map" && store && <MotoboysMapTab storeId={store.id} />}
+                {dashboardTab === "reviews" && <ReviewsTabReorg storeId={store.id} />}
+                {dashboardTab === "drivers" && store && <DriversTabReorg storeId={store.id} />}
+                {dashboardTab === "motoboys_map" && store && <MotoboysMapTabReorg storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>
               </ErrorBoundary>
               {dashboardTab === "reports" && (
                 <ErrorBoundary key={dashboardTab}>
                 <Suspense fallback={<TabFallback />}>
-                  <StoreReportsPanel storeId={store.id} storeName={store.name} />
+                  <StoreReportsPanelReorg storeId={store.id} storeName={store.name} />
                 </Suspense>
                 </ErrorBoundary>
               )}
