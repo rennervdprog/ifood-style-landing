@@ -142,8 +142,8 @@ const SettingsTabReorg = ({ store }: Props) => {
 
   return (
   <div className="space-y-6">
-    <TabHeader title="Configurações da loja" subtitle="Dados da loja, entrega, pagamentos e as conversas do WhatsApp" tutorialId="settings" />
-    <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+    <TabHeader title="Configurações da loja" subtitle="Loja, entrega, pagamentos e WhatsApp" />
+    <div className="flex flex-wrap gap-1.5 px-1 pb-1">
       {([
         { key: "loja" as SubTab, label: "Loja", icon: StoreIcon },
         { key: "endereco" as SubTab, label: "Endereço", icon: MapPin },
