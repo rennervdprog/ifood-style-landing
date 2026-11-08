@@ -1,4 +1,5 @@
 import StoreSettingsReorg, { type StoreSettingsSectionKey } from "../components/teste/StoreSettingsReorg";
+import { readUrlParam, writeUrlParam } from "../urlParams";
 import TabHeader from "@/components/TabHeader";
 import WhatsAppSetupTeste from "../components/teste/WhatsAppSetupTeste";
 import WhatsAppConversationsTeste, { CONVERSATION_OPEN_EVENT } from "../components/teste/WhatsAppConversationsTeste";
@@ -41,7 +42,21 @@ type SubTab = StoreSettingsSectionKey | "whatsapp" | "conversas" | "kds";
 const SettingsTabReorg = ({ store }: Props) => {
   const storePlan = useStorePlan(store?.id);
   const isPdvOnly = storePlan.planType === "pdv_only";
-  const [subTab, setSubTab] = useState<SubTab>("loja");
+  const [subTab, setSubTab] = useState<SubTab>(() => {
+    // URL por tela: abre direto na secao pedida (?secao=entrega etc.).
+    const fromUrl = readUrlParam("secao");
+    const valid: SubTab[] = ["loja", "endereco", "entrega", "pagamentos", "notificacoes", "impressao", "whatsapp", "conversas", "kds"];
+    return fromUrl && valid.includes(fromUrl as SubTab) ? (fromUrl as SubTab) : "loja";
+  });
+  // Espelha a sub-aba atual em ?secao= (recarregar volta pra mesma secao).
+  useEffect(() => {
+    writeUrlParam("secao", subTab === "loja" ? null : subTab);
+  }, [subTab]);
+  // Loja PDV Only nao tem WhatsApp/Conversas: se a URL pediu uma delas,
+  // volta pra Loja em vez de mostrar tela vazia.
+  useEffect(() => {
+    if (isPdvOnly && (subTab === "whatsapp" || subTab === "conversas")) setSubTab("loja");
+  }, [isPdvOnly, subTab]);
   const [openPhone, setOpenPhone] = useState<string | null>(null);
   const [kdsToken, setKdsToken] = useState<string>("");
   const [kdsLoading, setKdsLoading] = useState(false);
