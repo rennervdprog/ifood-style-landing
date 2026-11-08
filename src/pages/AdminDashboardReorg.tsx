@@ -75,7 +75,7 @@ const FinanceTabReorg = lazy(() => import("./admin/tabs/FinanceTabReorg"));
 const DriversTabReorg = lazy(() => import("./admin/tabs/DriversTabReorg"));
 const MotoboysMapTabReorg = lazy(() => import("./admin/tabs/MotoboysMapTabReorg"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
-const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
+const SettingsTabReorg = lazy(() => import("./admin/tabs/SettingsTabReorg"));
 const CouponsTabReorg = lazy(() => import("./admin/tabs/CouponsTabReorg"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTabReorg = lazy(() => import("./admin/tabs/ReviewsTabReorg"));
@@ -239,7 +239,7 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
  *  - os badges de "Novos" do shell usam vermelho (coerente com o novo sinal
  *    de "Novo"), não âmbar;
  *  - a query de pedidos expõe o erro para a seção (estado de erro com retry).
- *  - a aba Configurações renderiza SettingsTabTeste (Tela 5: salvar por
+ *  - a aba Configurações renderiza SettingsTabReorg (Reorg Fase 5 sobre a Tela 5: salvar por
  *    seção, navegação única, dois WhatsApps explicados, toggles com estado
  *    visível, resposta nas conversas dentro do painel, prévia de mídia e
  *    Chat do pedido sem sair do painel).
@@ -2345,7 +2345,7 @@ const AdminDashboardReorg = () => {
                 {dashboardTab === "addons" && <AddonsTabReorg storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTabTeste storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTabReorg storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-                {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
+                {dashboardTab === "settings" && <SettingsTabReorg store={store} />}
                 {dashboardTab === "finance" && (
                   <FinanceTabReorg
                     storeId={store.id}
