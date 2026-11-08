@@ -658,11 +658,11 @@ const NEON_COLORS = {
           </div>
         </div>
 
-        {/* Lucro Líquido */}
+        {/* Receita após taxas da plataforma (nome honesto: lucro de verdade fica na aba Resultado, com custos) */}
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
           <div className="relative">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Líquido</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Receita após taxas da plataforma</p>
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
               {formatBRL(storePart)}
             </p>
