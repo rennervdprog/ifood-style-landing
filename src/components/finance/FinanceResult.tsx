@@ -80,7 +80,7 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
       const to = parseISO(endDate); to.setDate(to.getDate() + 1);
       const { data, error } = await supabase
         .from("orders")
-        .select("created_at, status, total_price, subtotal, payment_method")
+        .select("created_at, status, total_price, subtotal, payment_method, delivery_fee")
         .eq("store_id", storeId)
         .gte("created_at", from.toISOString())
         .lte("created_at", to.toISOString());
@@ -94,23 +94,31 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
     enabled: !!storeId && !!startDate && !!endDate,
   });
 
-  // Taxas de entrega que a plataforma acumulou no período (valor exato).
-  const { data: accrualsSum } = useQuery({
-    queryKey: ["result-accruals", storeId, startDate, endDate],
+  // Plano + taxa efetiva da loja — MESMA regra do RecebidoNoMesCard:
+  // a tabela platform_fee_accruals é fechada por RLS (só service_role lê),
+  // então as taxas do DRE são calculadas dos pedidos entregues do período.
+  const { data: planInfo } = useQuery({
+    queryKey: ["result-plan", storeId],
     queryFn: async () => {
-      const from = parseISO(startDate);
-      const to = parseISO(endDate); to.setHours(23, 59, 59, 999);
-      const { data, error } = await supabase
-        .from("platform_fee_accruals" as any)
-        .select("amount")
-        .eq("store_id", storeId)
-        .gte("created_at", from.toISOString())
-        .lte("created_at", to.toISOString());
-      if (error) throw error;
-      return (data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+      const [planRes, cfgRes, pubRes] = await Promise.all([
+        supabase.from("store_plans").select("plan_type, commission_rate, platform_delivery_split_override").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
+        supabase.from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle(),
+        (supabase as any).from("stores_public").select("platform_split_effective").eq("id", storeId).maybeSingle(),
+      ]);
+      const plan: any = planRes.data;
+      const effectiveSplit = Number((pubRes.data as any)?.platform_split_effective);
+      const configSplit = Number((cfgRes.data?.value as any)?.platform_split);
+      const globalSplit = Number.isFinite(effectiveSplit) && effectiveSplit >= 0
+        ? effectiveSplit
+        : Number.isFinite(configSplit) ? configSplit : 0.99;
+      return {
+        split: Number(plan?.platform_delivery_split_override ?? globalSplit),
+        isFixed: ["fixed", "supporter", "autonomy"].includes(plan?.plan_type),
+        commissionRate: Number(plan?.commission_rate ?? 0) / 100,
+      };
     },
-    staleTime: 60_000,
-    enabled: !!storeId && !!startDate && !!endDate,
+    staleTime: 300_000,
+    enabled: !!storeId,
   });
 
   // Cadastro de custos da loja.
@@ -140,7 +148,7 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
       const from = parseISO(monthStart); from.setDate(from.getDate() - 1);
       const { data, error } = await supabase
         .from("orders")
-        .select("created_at, status, total_price, payment_method")
+        .select("created_at, status, total_price, subtotal, payment_method, delivery_fee")
         .eq("store_id", storeId)
         .gte("created_at", from.toISOString());
       if (error) throw error;
@@ -149,21 +157,6 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
     staleTime: 60_000,
     enabled: !!storeId,
   });
-  const { data: monthAccruals } = useQuery({
-    queryKey: ["result-month-accruals", storeId, monthStart],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("platform_fee_accruals" as any)
-        .select("amount")
-        .eq("store_id", storeId)
-        .gte("created_at", parseISO(monthStart).toISOString());
-      if (error) throw error;
-      return (data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-    },
-    staleTime: 60_000,
-    enabled: !!storeId,
-  });
-
   // Agenda: saldos, plano e cobranças em aberto.
   const { data: agenda } = useQuery({
     queryKey: ["result-agenda", storeId],
@@ -189,8 +182,17 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
   const valid = (periodOrders || []).filter(isValid);
   const receita = valid.reduce((s, o: any) => s + Number(o.total_price || 0), 0);
   const itensSubtotal = valid.reduce((s, o: any) => s + Number(o.subtotal || 0), 0);
-  const pixCount = valid.filter((o: any) => o.payment_method === "pix" || o.payment_method === "pix_direto").length;
-  const taxas = Number(accrualsSum || 0) + pixCount * 1.99;
+  // Taxas da plataforma sobre os pedidos ENTREGUES da lista: split por
+  // entrega com taxa, R$ 1,99 por Pix (só planos fixos) e comissão do plano.
+  const feesOf = (list: any[]) => list.reduce((sum, o: any) => {
+    if (o.status !== "entregue" && o.status !== "finalizado") return sum;
+    let f = 0;
+    if (Number(o.delivery_fee ?? 0) > 0) f += planInfo?.split ?? 0.99;
+    if ((o.payment_method === "pix" || o.payment_method === "pix_direto") && planInfo?.isFixed) f += 1.99;
+    f += Number(o.subtotal || 0) * (planInfo?.commissionRate ?? 0);
+    return sum + f;
+  }, 0);
+  const taxas = feesOf(valid);
 
   const cmvRow = (costs || []).find((c) => c.cost_type === "cmv_percent");
   const cmvPct = cmvRow ? Number(cmvRow.amount || 0) : null;
@@ -208,8 +210,7 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
 
   // Ponto de equilíbrio (mês atual).
   const monthReceita = (monthOrders || []).reduce((s, o: any) => s + Number(o.total_price || 0), 0);
-  const monthPix = (monthOrders || []).filter((o: any) => o.payment_method === "pix" || o.payment_method === "pix_direto").length;
-  const monthTaxas = Number(monthAccruals || 0) + monthPix * 1.99;
+  const monthTaxas = feesOf(monthOrders || []);
   const monthTicket = (monthOrders || []).length ? monthReceita / (monthOrders || []).length : 0;
   const marginPct = cmvPct != null
     ? 1 - cmvPct / 100 - (monthReceita > 0 ? monthTaxas / monthReceita : 0)
@@ -367,7 +368,7 @@ export default function FinanceResult({ storeId, storeName }: { storeId: string;
               <span className="font-black text-foreground">{formatCurrency(receita)}</span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-muted-foreground">− Taxas da plataforma ItaSuper <span className="block text-[10px]">R$ 0,99 por entrega + R$ 1,99 por pedido Pix, no período</span></span>
+              <span className="text-muted-foreground">− Taxas da plataforma ItaSuper <span className="block text-[10px]">R$ 0,99 por entrega{(planInfo?.isFixed) ? " + R$ 1,99 por pedido Pix" : ""}{((planInfo?.commissionRate ?? 0) > 0) ? ` + comissão de ${((planInfo?.commissionRate || 0) * 100).toFixed(0)}%` : ""}, sobre os pedidos entregues no período</span></span>
               <span className="font-bold text-foreground">{formatCurrency(taxas)}</span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
