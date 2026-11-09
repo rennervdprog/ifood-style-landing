@@ -9,11 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.3",
+  version: "2.5.4",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.3.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.4.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Pedidos antigos com pagamento em dinheiro agora mostram a instrução certa no cartão: Dinheiro — cobrar na entrega",
     "Alerta que acorda: pedido novo toca som e vibra no padrão do app e acende a tela, mesmo com o celular bloqueado — e o valor vem escrito por extenso: Total do pedido",
     "Avisos na hora: pedido da sua rota cancelado, ou cliente que confirmou o recebimento pelo app dele, geram notificação — você não navega até a casa do cliente à toa",
     "Monte sua rota aos poucos: ficou pronto outro pedido da mesma loja enquanto você separa os primeiros? Aceite na hora — ele entra na mesma rota, sem precisar finalizar nada antes",
