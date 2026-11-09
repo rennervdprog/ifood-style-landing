@@ -12,7 +12,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
-import { downloadPdvReportPdf } from "@/lib/pdvReportPdf";
+// A pilha de PDF (jspdf + autotable + pako, ~650KB) NÃO é importada
+// estaticamente: ela só é usada no clique de "Exportar PDF" e entra via
+// import() dinâmico nesse clique (ver handleExportPdf). Com o import
+// estático, ela inchava o chunk compartilhado das páginas do PDV
+// (varredura de desempenho 2026-11-09, item 2). Os tipos seguem import
+// type (apagados na compilação, custo zero).
 import type { PdvReportStats, PdvReportOperator } from "@/lib/pdvReportPdf";
 import PdvTurnoConferenciaCard from "@/components/pdv/PdvTurnoConferenciaCard";
 import {
@@ -608,8 +613,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
    * cujo preview é um modal que prendia a página (e paginava o relatório
    * A4 na largura térmica de 80mm da sessão). Ver `@/lib/pdvReportPdf`.
    */
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!printStats) return;
+    const { downloadPdvReportPdf } = await import("@/lib/pdvReportPdf");
     downloadPdvReportPdf({
       storeName: storeName ?? "Loja",
       periodLabel: sessionId ? "Relatório do turno" : periodLabels[period],

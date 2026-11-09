@@ -165,7 +165,31 @@ export default defineConfig(({ mode }) => ({
       ],
       manifest: false, // já existe manifest manual no projeto
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        // Precache SÓ da casca do app (varredura de desempenho 2026-11-09,
+        // item 2): HTML, entry (app-*.js), CSS global, os chunks iniciais
+        // que o index.html pré-carrega, o workbox-window do registro e os
+        // ícones (includeAssets). Antes era "**/*" e a 1ª visita baixava
+        // ~7,3 MB (429 arquivos) — todas as rotas lazy, as 3 gerações do
+        // painel e a pilha de PDF do PDV. Chunk lazy NÃO entra aqui: ele
+        // carrega sob demanda pela rede/cache HTTP (assets com hash têm
+        // Cache-Control imutável de 1 ano) e pelo runtimeCaching de
+        // /assets/* abaixo.
+        globPatterns: [
+          "index.html",
+          "assets/app-*.js",
+          "assets/index-*.css",
+          "assets/vendor-*.js",
+          "assets/supabase-*.js",
+          "assets/query-*.js",
+          "assets/ui-*.js",
+          "assets/capacitor-*.js",
+          "assets/workbox-*.js",
+          // Placeholder de imagem usado em todo o site. Os ícones da
+          // casca (favicon, apple-touch-icon, icon-192/512) entram pelo
+          // includeAssets acima — NÃO repetir aqui: URL duplicada no
+          // manifesto do precache.
+          "placeholder.svg",
+        ],
         globIgnores: [
           "**/stats.html",
           // Chunks pesados ficam de fora do precache (servidos sob demanda)
@@ -174,7 +198,10 @@ export default defineConfig(({ mode }) => ({
           "**/leaflet*.js",
           "**/motion-*.js",
         ],
-        // Não pré-cacheia arquivos > 500KB — vão via cache runtime/network
+        // Limite alto de propósito: é só uma trava de segurança — quem
+        // enxuga o precache é a whitelist acima. Um limite baixo (ex.:
+        // 500KB) derrubaria o próprio entry (~533KB) do precache em
+        // silêncio.
         maximumFileSizeToCacheInBytes: 3_000_000,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
@@ -189,6 +216,20 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: false,
         clientsClaim: false,
         runtimeCaching: [
+          {
+            // Assets próprios com hash no nome (imutáveis por 1 ano no
+            // HTTP): chunks lazy fora do precache passam a viver neste
+            // cache na 1ª vez que a rota é visitada, em vez de serem
+            // pré-baixados pra todo visitante (item 2 da varredura).
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && url.pathname.startsWith("/assets/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-assets",
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             // Cardápio bootstrap servido pela Edge da Vercel
             urlPattern: ({ url }) => url.pathname.startsWith("/api/store/"),
@@ -235,6 +276,11 @@ export default defineConfig(({ mode }) => ({
     // e debugger statements. Reduz bundle e mantém DevTools limpo no APK.
     rollupOptions: {
       output: {
+        // Entry com nome próprio ("app" em vez de "index"): dezenas de
+        // chunks lazy também se chamam "index-*" (pacotes com módulo
+        // index), então sem um nome distinto não dá pra colocar SÓ o
+        // entry na whitelist do precache do SW (item 2 da varredura).
+        entryFileNames: "assets/app-[hash].js",
         // Forma de FUNÇÃO (não objeto): com objeto, o Rollup captura as
         // dependências compartilhadas do pacote pro chunk manual — o clsx
         // (usado pelo entry via lib/utils) foi parar dentro do chunk
