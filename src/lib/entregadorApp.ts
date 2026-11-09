@@ -9,11 +9,13 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.2",
+  version: "2.5.3",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.2.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.3.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Alerta que acorda: pedido novo toca som e vibra no padrão do app e acende a tela, mesmo com o celular bloqueado — e o valor vem escrito por extenso: Total do pedido",
+    "Avisos na hora: pedido da sua rota cancelado, ou cliente que confirmou o recebimento pelo app dele, geram notificação — você não navega até a casa do cliente à toa",
     "Monte sua rota aos poucos: ficou pronto outro pedido da mesma loja enquanto você separa os primeiros? Aceite na hora — ele entra na mesma rota, sem precisar finalizar nada antes",
     "Pedido novo durante a entrega não atrapalha mais: com a rota na rua, você recebe só uma notificação discreta de que tem pedido esperando — ele entra na sua próxima rota quando você voltar à loja",
     "Google Maps abrindo de verdade: corrigido o defeito que fazia a navegação cair sempre no Waze, mesmo com o Maps escolhido",
