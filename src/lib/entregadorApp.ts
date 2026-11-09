@@ -9,11 +9,13 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.1",
+  version: "2.5.2",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.1.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.2.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Monte sua rota aos poucos: ficou pronto outro pedido da mesma loja enquanto você separa os primeiros? Aceite na hora — ele entra na mesma rota, sem precisar finalizar nada antes",
+    "Pedido novo durante a entrega não atrapalha mais: com a rota na rua, você recebe só uma notificação discreta de que tem pedido esperando — ele entra na sua próxima rota quando você voltar à loja",
     "Google Maps abrindo de verdade: corrigido o defeito que fazia a navegação cair sempre no Waze, mesmo com o Maps escolhido",
     "Sua posição não some mais do mapa da loja quando você está parado — esperando na loja, no sinal ou falando com o cliente, o ponto continua lá",
     "Você no mapa da loja enquanto estiver ONLINE: agora sua posição aparece para suas lojas o turno inteiro — não só durante a entrega. Ficou offline, para na hora",
