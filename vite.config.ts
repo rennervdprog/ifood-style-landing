@@ -77,7 +77,10 @@ function preloadInitialRouteChunks(appMode: string) {
   const targetsByMode: Record<string, string[]> = {
     parceiro: ["PartnerLogin", "AdminDashboardV2", "DriverDashboardV2"],
     cliente:  ["StoreDirectory", "ClientHome"],
-    "":       ["StoreDirectory"],
+    // Web: sem preload de rota — a rota inicial varia (home, painel, PDV…) e
+    // o preload do StoreDirectory pesava em TODAS as páginas, inclusive no
+    // /admin-teste onde a vitrine nem aparece (varredura 2026-11-09).
+    "":       [],
   };
   const targets = targetsByMode[appMode] ?? targetsByMode[""];
   return {
@@ -232,32 +235,54 @@ export default defineConfig(({ mode }) => ({
     // e debugger statements. Reduz bundle e mantém DevTools limpo no APK.
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor:   ["react", "react-dom", "react-router-dom"],
-          query:    ["@tanstack/react-query"],
-          supabase: ["@supabase/supabase-js"],
-          // icons: lucide-react removido de manualChunks para permitir
-          // tree-shaking real — chunk único force o bundle inteiro no boot.
-          charts:   ["recharts"],
-          ui: [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-select",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-tooltip",
-          ],
-          forms: [
-            "react-hook-form",
-            "@hookform/resolvers",
-            "zod",
-          ],
-          motion: ["framer-motion"],
-          capacitor: [
-            "@capacitor/core",
-            "@capacitor/app",
-            "@capacitor/preferences",
-          ],
+        // Forma de FUNÇÃO (não objeto): com objeto, o Rollup captura as
+        // dependências compartilhadas do pacote pro chunk manual — o clsx
+        // (usado pelo entry via lib/utils) foi parar dentro do chunk
+        // "charts" e TODAS as páginas passaram a baixar os 411 KB do
+        // recharts no boot só por causa dele (varredura 2026-11-09).
+        // Aqui cada chunk recebe SÓ os pacotes nomeados; dependências
+        // compartilhadas (clsx, lodash…) caem nos chunks naturais.
+        manualChunks(id: string) {
+          // O helper virtual do plugin CommonJS é compartilhado por todos
+          // os pacotes CJS (react inclusive) — se ele cai no chunk do
+          // recharts, o entry importa o chunk inteiro só pelo helper.
+          if (id.includes("commonjsHelpers")) return "vendor";
+          if (!id.includes("node_modules")) return undefined;
+          const inPkg = (pkgs: string[]) =>
+            pkgs.some((p) => id.includes(`/node_modules/${p}/`));
+          // clsx fica no vendor: ele é dependência compartilhada (entry E
+          // recharts usam) e o Rollup o capturava pro chunk do recharts,
+          // criando a aresta entry→charts.
+          if (inPkg(["react", "react-dom", "react-router-dom", "clsx"]))
+            return "vendor";
+          if (inPkg(["@tanstack/react-query"])) return "query";
+          if (inPkg(["@supabase/supabase-js"])) return "supabase";
+          // icons: lucide-react fora de manualChunks para permitir
+          // tree-shaking real — chunk único força o bundle inteiro no boot.
+          if (inPkg(["recharts"])) return "charts";
+          if (
+            inPkg([
+              "@radix-ui/react-dialog",
+              "@radix-ui/react-popover",
+              "@radix-ui/react-tabs",
+              "@radix-ui/react-select",
+              "@radix-ui/react-dropdown-menu",
+              "@radix-ui/react-tooltip",
+            ])
+          )
+            return "ui";
+          if (inPkg(["react-hook-form", "@hookform/resolvers", "zod"]))
+            return "forms";
+          if (inPkg(["framer-motion"])) return "motion";
+          if (
+            inPkg([
+              "@capacitor/core",
+              "@capacitor/app",
+              "@capacitor/preferences",
+            ])
+          )
+            return "capacitor";
+          return undefined;
         },
       },
     },
