@@ -242,7 +242,12 @@ export default function MotoboysMapTab({ storeId }: { storeId: string }) {
       const locFresh =
         !!loc && isValidCoordinate(loc.latitude, loc.longitude) &&
         now - new Date(loc.updated_at).getTime() <= FRESH_MS;
-      const state: FleetState = order ? "delivering" : d?.is_online || locFresh ? "online" : "offline";
+      // "Online" de verdade (Fase 4.4 do motoboy): o is_online cru
+      // nunca desliga quando o app morre — vale a presença recente
+      // (posição fresca ou último sinal dentro da janela FRESH_MS).
+      const seenRecently =
+        !!d?.last_seen_at && now - new Date(d.last_seen_at).getTime() <= FRESH_MS;
+      const state: FleetState = order ? "delivering" : locFresh || seenRecently ? "online" : "offline";
       return {
         userId,
         name,
