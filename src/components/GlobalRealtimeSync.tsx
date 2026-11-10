@@ -208,6 +208,7 @@ const GlobalRealtimeSync = () => {
       [
         "store-orders",
         "store-all-orders",
+        "store-orders-full",
         "store-orders-lojista",
         "store-finance-orders",
         "store-finance-prev-orders",
