@@ -333,12 +333,17 @@ const AdminDashboardReorg = () => {
   }, []);
 
   // ── DATA QUERIES ──
+  // profiles: UMA busca só — mesma chave/busca de useUserRole
+  // (["user-role", …], superset is_approved/role/network_id/unit_store_id);
+  // aqui projetamos só is_approved/role. (Antes eram 3 leituras de profiles
+  // no mount: esta, a interna de my-store e a de useUserRole.)
   const { data: myProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ["my-profile-approval", user?.id],
+    queryKey: ["user-role", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("is_approved, role, network_id, unit_store_id").eq("user_id", user!.id).maybeSingle();
       return data;
     },
+    select: (d: any) => (d ? { is_approved: d.is_approved, role: d.role } : d),
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
   });
@@ -377,12 +382,27 @@ const AdminDashboardReorg = () => {
         if (error) throw error;
         return data;
       }
-      // Buscar profile para saber se é unidade (lojista_unidade tem unit_store_id)
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, unit_store_id")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+      // Profile (saber se é unidade): reaproveita a busca compartilhada
+      // ["user-role", …] via ensureQueryData (deduplica com useUserRole e
+      // com a query de aprovação); se ela falhar, volta à leitura direta.
+      let profile: any = null;
+      try {
+        profile = await queryClient.ensureQueryData({
+          queryKey: ["user-role", user!.id],
+          queryFn: async () => {
+            const { data } = await supabase.from("profiles").select("is_approved, role, network_id, unit_store_id").eq("user_id", user!.id).maybeSingle();
+            return data;
+          },
+          staleTime: 1000 * 60,
+        });
+      } catch {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role, unit_store_id")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+        profile = data;
+      }
 
       // Se for lojista_unidade, busca a loja pela unit_store_id
       let query = supabase.from("stores").select("*");
@@ -454,8 +474,7 @@ const AdminDashboardReorg = () => {
 
     await Promise.allSettled([
       queryClient.refetchQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["store-orders", store.id], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["store-all-orders", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-orders-full", store.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["store-hours-check", store.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["store-drivers-list", store.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["client-profiles", store.id], type: "active" }),
@@ -466,28 +485,12 @@ const AdminDashboardReorg = () => {
 
   
 
-  const { data: orders, isLoading, error: ordersError } = useQuery({
-    queryKey: ["store-orders", store?.id],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("orders")
-        .select("id, status, total_price, subtotal, delivery_fee, payment_method, created_at, confirmed_at, client_id, store_id, driver_id, delivery_pin, address_details, neighborhood, needs_change, change_for, scheduled_for, order_source, commission_rate, pix_proof_url, pix_proof_uploaded_at, pix_expires_at, order_items(id, quantity, unit_price, observations, addons, products(name))")
-        .eq("store_id", store!.id)
-        .neq("status", "aguardando_pagamento" as any)
-        .neq("status", "cancelado" as any)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!store,
-    staleTime: 10_000, // 10s — pedidos ativos
-    refetchOnReconnect: true,
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: allOrders } = useQuery({
-    queryKey: ["store-all-orders", store?.id],
+  // Pedidos: UMA busca só (superset = a antiga store-all-orders: 300, todas
+  // as colunas + itens/produtos). Chave NOVA só desta casca — as chaves
+  // antigas seguem com as cascas /admin (V2/V2Teste), sem contaminação.
+  // `allOrders` é o resultado integral; `orders` (ativos) é derivado abaixo.
+  const { data: allOrders, isLoading, error: ordersError } = useQuery({
+    queryKey: ["store-orders-full", store?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -499,10 +502,23 @@ const AdminDashboardReorg = () => {
       return data;
     },
     enabled: !!store,
-    staleTime: 30_000, // 30s — histórico de pedidos
+    staleTime: 10_000, // 10s — o menor dos dois staleTimes antigos
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });
+
+  // Ativos = mesmo recorte da antiga query store-orders (fora
+  // aguardando_pagamento/cancelado, mais recentes primeiro, teto 100),
+  // derivado da busca única — sem segunda ida à rede.
+  const orders = useMemo(
+    () =>
+      allOrders
+        ? allOrders
+            .filter((o: any) => o.status !== "aguardando_pagamento" && o.status !== "cancelado")
+            .slice(0, 100)
+        : undefined,
+    [allOrders],
+  );
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || !store?.id) return;
@@ -1059,31 +1075,23 @@ const AdminDashboardReorg = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload) => {
         const updated = payload.new as any;
         const previous = payload.old as any;
-        // Instant cache patch for active orders
-        ["store-orders", "store-all-orders"].forEach(key => {
-          queryClient.setQueryData([key, store.id], (old: any[] | undefined) => {
-            if (!old) return old;
-            const idx = old.findIndex((o: any) => o.id === updated.id);
-            const shouldShowInActiveList = key !== "store-orders"
-              ? true
-              : updated && updated.status !== "aguardando_pagamento" && updated.status !== "cancelado";
+        // Instant cache patch — busca única (store-orders-full, semântica
+        // do histórico: todas as linhas; a lista de ativos é derivada dela)
+        queryClient.setQueryData(["store-orders-full", store.id], (old: any[] | undefined) => {
+          if (!old) return old;
+          const idx = old.findIndex((o: any) => o.id === updated.id);
 
-            if (idx >= 0) {
-              if (!shouldShowInActiveList) {
-                return old.filter((o: any) => o.id !== updated.id);
-              }
+          if (idx >= 0) {
+            const c = [...old];
+            c[idx] = { ...c[idx], ...updated };
+            return c;
+          }
 
-              const c = [...old];
-              c[idx] = { ...c[idx], ...updated };
-              return c;
-            }
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            return [updated, ...old];
+          }
 
-            if ((payload.eventType === "INSERT" || payload.eventType === "UPDATE") && shouldShowInActiveList) {
-              return [updated, ...old];
-            }
-
-            return old;
-          });
+          return old;
         });
         // Refetch apenas para INSERT (novos pedidos precisam de relações order_items)
         // Para UPDATE, o patch do cache acima já é suficiente na maioria dos casos
@@ -1355,7 +1363,7 @@ const AdminDashboardReorg = () => {
       }
 
       // Invalidate and switch tab before toast
-      await queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["store-orders-full", store?.id] });
       
       // Remove redundância, já estamos trocando a aba no onClick para resposta imediata
       
@@ -1511,7 +1519,7 @@ const AdminDashboardReorg = () => {
       });
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["store-orders-full", store?.id] });
       setCancelConfirm(null);
       setCancelReason("");
 
@@ -2299,7 +2307,7 @@ const AdminDashboardReorg = () => {
                 historyOrders={allOrders}
                 isLoading={isLoading}
                 ordersError={ordersError || null}
-                onRetryOrders={() => queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] })}
+                onRetryOrders={() => queryClient.invalidateQueries({ queryKey: ["store-orders-full", store?.id] })}
                 filteredOrders={filteredOrders}
                 orderCounters={orderCounters}
                 orderTabs={orderTabs}
