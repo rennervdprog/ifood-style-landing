@@ -283,7 +283,7 @@ const ReviewsTabReorg = memo(({ storeId }: Props) => {
           <EmptyState
             icon={<Star className="h-10 w-10 text-muted-foreground/30" />}
             title="Nenhuma avaliação ainda"
-            description="Quando um cliente avaliar um pedido, a avaliação aparece aqui."
+            description="A avaliação chega depois que o pedido é entregue: o cliente dá a nota pela tela de acompanhamento. Responda por aqui em até 5 dias — responder mostra cuidado e passa confiança pra quem ainda não comprou."
           />
         ) : (
           <div className="space-y-4">
