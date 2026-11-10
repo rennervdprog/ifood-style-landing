@@ -5,7 +5,6 @@ import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardReorg,
-  AdminDashboardV2Teste,
   MatrizDashboard,
   MatrizDashboardV2,
   PdvPageTeste,
@@ -16,8 +15,10 @@ import {
 export const lojistaRoutes = (
   <>
     {/* /admin — dashboard raiz do lojista (com LojistaHomeRedirect).
-        Alinhamento 2026-11-02: monta a árvore Teste (AdminDashboardV2Teste),
-        a mesma de /admin-teste — árvore única, dois mounts. */}
+        Promoção 2026-11-10 (decisão do Renner): monta a casca REORG
+        (AdminDashboardReorg), a mesma de /admin-teste — árvore única,
+        dois mounts. Rollback = voltar este element para
+        <AdminDashboardV2Teste /> (a árvore Teste segue no repo). */}
     <Route
       element={
         <GuardedLayout
@@ -28,11 +29,11 @@ export const lojistaRoutes = (
       }
     >
       <Route element={<LojistaHomeLayout />}>
-        <Route path="/admin" element={<AdminDashboardV2Teste />} />
+        <Route path="/admin" element={<AdminDashboardReorg />} />
       </Route>
       {/* /admin-teste — casca REORG (reorganização do painel, 2026-11-08):
-          mount de comparação ao vivo; o /admin oficial segue na árvore Teste.
-          Rollback = voltar este element para <AdminDashboardV2Teste />. */}
+          mount de comparação ao vivo; desde a promoção de 2026-11-10 o
+          /admin oficial monta a MESMA casca Reorg. */}
       <Route element={<LojistaHomeLayout />}>
         <Route path="/admin-teste" element={<AdminDashboardReorg />} />
       </Route>
