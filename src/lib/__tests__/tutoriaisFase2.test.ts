@@ -71,7 +71,7 @@ describe("TutorialHelp — modal sem caminho morto, com saída para o suporte", 
 describe("Botão 'Como funciona' ligado nas telas Reorg (Fase 2)", () => {
   const casos: Array<[string, string]> = [
     ["pages/admin/sections/DashboardOverviewSectionReorg.tsx", 'tutorialId="dashboard"'],
-    ["pages/admin/tabs/MenuTabReorg.tsx", 'tutorialId="menu"'],
+    ["pages/admin/tabs/MenuTabReorg.tsx", 'tutorialId={view === "estoque" ? "stock" : "menu"}'],
     ["pages/admin/tabs/AddonsTabReorg.tsx", 'tutorialId="addons"'],
     ["pages/admin/tabs/DriversTabReorg.tsx", 'tutorialId="drivers"'],
     ["pages/admin/tabs/FinanceTabReorg.tsx", 'tutorialId="finance"'],
