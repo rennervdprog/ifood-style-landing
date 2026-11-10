@@ -61,6 +61,7 @@ import EssencialProgressCardReorg from "@/components/EssencialProgressCardReorg"
 import TabHeader from "@/components/TabHeader";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
 import SetupChecklistReorg from "../components/SetupChecklistReorg";
+import NovidadeCard from "../components/NovidadeCard";
 import type { SetupStep } from "../components/SetupChecklist";
 import {
   AdminBadgeReorg,
@@ -854,6 +855,9 @@ export default function DashboardOverviewSectionReorg(props: Props) {
     </div>
   </details>
   )}
+
+  {/* Cartão Novidade: 1 lançamento por vez, some no "Entendi" (Fase 4 dos tutoriais) */}
+  <NovidadeCard storeId={store.id} onNavigate={setDashboardTab} />
   </section>
 
   {/* ── FORA DO FLUXO PRINCIPAL: explicações e atalhos ── */}
