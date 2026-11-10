@@ -25,7 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink, Star } from "lucide-react";
+import { Camera, Upload, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink, Star, Volume2 } from "lucide-react";
+import { isVoiceSupported, speakText, newOrderSpeech, attendantSpeech } from "@/lib/voiceAlerts";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
@@ -1368,6 +1369,11 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
       {/* Notifications Section — avisos de pedidos online; oculto no PDV Only */}
       {!pdvOnly && showSection("notificacoes") && <NotificationSection />}
 
+      {/* Avisos por voz — o painel fala o pedido novo e o chamado de atendente */}
+      {!pdvOnly && showSection("notificacoes") && (
+        <VoiceAlertsSection storeId={storeId} storeSettings={storeSettings} />
+      )}
+
       {showSection("impressao") && (<>
       {/* Impressão térmica */}
       <div className="space-y-3">
@@ -1627,6 +1633,116 @@ const SectionSaveButtonReorg = ({ section, savingSection, onSave, label }: {
   );
 };
 
+
+const VoiceAlertsSection = ({ storeId, storeSettings }: {
+  storeId: string;
+  storeSettings?: Record<string, any> | null;
+}) => {
+  const queryClient = useQueryClient();
+  const [voiceOrders, setVoiceOrders] = useState<boolean>(
+    (storeSettings as any)?.voice_alerts_orders === true,
+  );
+  const [voiceAttendant, setVoiceAttendant] = useState<boolean>(
+    (storeSettings as any)?.voice_alerts_attendant === true,
+  );
+  const [savingVoice, setSavingVoice] = useState(false);
+  const supported = isVoiceSupported();
+
+  const saveVoice = async () => {
+    setSavingVoice(true);
+    const { error } = await (supabase.from("stores") as any)
+      .update({
+        settings: {
+          ...(storeSettings || {}),
+          voice_alerts_orders: voiceOrders,
+          voice_alerts_attendant: voiceAttendant,
+        },
+      })
+      .eq("id", storeId);
+    setSavingVoice(false);
+    if (error) {
+      toast.error("Erro ao salvar os avisos por voz.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["my-store"] });
+    toast.success("Avisos por voz salvos!");
+  };
+
+  const testVoice = () => {
+    speakText(newOrderSpeech(12, 45.9));
+    speakText(attendantSpeech());
+  };
+
+  return (
+    <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+      <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+        <Volume2 className="h-4 w-4 text-primary" />
+        Avisos por voz
+      </label>
+      <p className="text-xs text-muted-foreground">
+        Com o painel aberto e o som ativado, este aparelho fala os avisos em
+        voz alta — usando a voz do próprio computador ou celular, sem custo.
+      </p>
+
+      {!supported && (
+        <p className="text-xs text-destructive font-bold">
+          Este aparelho não tem voz disponível no navegador.
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-3 bg-background/60 border border-border rounded-xl p-3">
+        <div>
+          <p className="text-xs font-bold">Pedido novo</p>
+          <p className="text-[10px] text-muted-foreground">
+            Fala "Novo pedido", o número e o valor quando um pedido chega pelo
+            site ou pelo WhatsApp.
+          </p>
+        </div>
+        <ToggleTeste
+          value={voiceOrders}
+          onChange={() => setVoiceOrders((v) => !v)}
+          label="Voz de pedido novo"
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-3 bg-background/60 border border-border rounded-xl p-3">
+        <div>
+          <p className="text-xs font-bold">Atendimento no WhatsApp</p>
+          <p className="text-[10px] text-muted-foreground">
+            Fala "Cliente solicitando atendimento no WhatsApp" quando um
+            cliente pede um atendente.
+          </p>
+        </div>
+        <ToggleTeste
+          value={voiceAttendant}
+          onChange={() => setVoiceAttendant((v) => !v)}
+          label="Voz de atendimento no WhatsApp"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={testVoice}
+          disabled={!supported}
+          className="flex-1 border border-border bg-background font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          <Volume2 className="h-4 w-4" />
+          Ouvir teste
+        </button>
+        <button
+          type="button"
+          onClick={saveVoice}
+          disabled={savingVoice}
+          className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          {savingVoice ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {savingVoice ? "Salvando..." : "Salvar"}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const NotificationSection = () => {
   const [notifStatus, setNotifStatus] = useState<"checking" | "granted" | "denied" | "default" | "unsupported">("checking");

@@ -105,6 +105,7 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { useAttendantRequests } from "./admin/useAttendantRequests";
+import { speakText, newOrderSpeech, attendantSpeech } from "@/lib/voiceAlerts";
 import { useRepassePending } from "./admin/useRepassePending";
 import { writeUrlParam } from "./admin/urlParams";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
@@ -946,6 +947,18 @@ const AdminDashboardReorg = () => {
     return list;
   }, [clientAnalytics, clientFilter, clientSearch, clientSort]);
 
+  // ── VOZ (avisos falados) ──
+  // Configuração por loja em store.settings; os dois começam desligados.
+  // A voz respeita o mesmo portão do sino: som ativado neste aparelho e
+  // botão de mudo desligado.
+  const voiceOrdersEnabled = (store?.settings as any)?.voice_alerts_orders === true;
+  const voiceAttendantEnabled = (store?.settings as any)?.voice_alerts_attendant === true;
+  const voiceGateRef = useRef({ orders: false, sound: false });
+  voiceGateRef.current = {
+    orders: voiceOrdersEnabled,
+    sound: soundEnabled && !soundMuted,
+  };
+
   // ── SOUND SYSTEM ──
    const playAlert = useCallback(async () => {
      if (!soundEnabled || soundMuted) return;
@@ -991,6 +1004,33 @@ const AdminDashboardReorg = () => {
     }
     return () => { if (loopIntervalRef.current) { clearInterval(loopIntervalRef.current); loopIntervalRef.current = null; } };
   }, [orders, soundEnabled, soundMuted, playAlert]);
+
+  // ── VOZ: anuncia pedido novo que chegou de fora (delivery ou bot) ──
+  // Pedidos que a própria equipe lança (PDV e manual) não são anunciados.
+  // Na primeira carga, os pedidos existentes são marcados como vistos
+  // sem falar — a voz é só para o que chega com o painel aberto.
+  const seenOrderIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    seenOrderIdsRef.current = null;
+  }, [store?.id]);
+  useEffect(() => {
+    if (!orders) return;
+    if (seenOrderIdsRef.current === null) {
+      seenOrderIdsRef.current = new Set((orders as any[]).map((o: any) => o.id));
+      return;
+    }
+    const seen = seenOrderIdsRef.current;
+    for (const o of orders as any[]) {
+      if (!o?.id || seen.has(o.id)) continue;
+      seen.add(o.id);
+      if (o.status !== "pendente") continue;
+      if (o.order_source === "pdv" || o.order_source === "manual") continue;
+      const gate = voiceGateRef.current;
+      if (gate.orders && gate.sound) {
+        speakText(newOrderSpeech(o.order_number, Number(o.total_price)));
+      }
+    }
+  }, [orders]);
 
   // ── AUTO-PRINT HELPER ──
   // Único ponto de impressão automática para pedidos de delivery.
@@ -1651,9 +1691,16 @@ const AdminDashboardReorg = () => {
   const delayedPreparingCount = delayedOrders.filter(o => o.status === "preparando").length;
 
   // Chamados de atendimento humano (bot do WhatsApp): o som de alerta
-  // toca quando um chamado novo chega com o painel aberto.
+  // toca quando um chamado novo chega com o painel aberto; se a loja
+  // ligou os avisos por voz, a voz anuncia o chamado junto.
+  const handleAttendantAlert = useCallback(() => {
+    playAlert();
+    if (voiceAttendantEnabled && soundEnabled && !soundMuted) {
+      speakText(attendantSpeech());
+    }
+  }, [playAlert, voiceAttendantEnabled, soundEnabled, soundMuted]);
   const { requests: attendantRequests, resolve: resolveAttendant } =
-    useAttendantRequests(store?.id, playAlert);
+    useAttendantRequests(store?.id, handleAttendantAlert);
 
   const repassePending = useRepassePending(store?.id);
 
