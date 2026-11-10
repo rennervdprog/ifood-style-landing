@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Constants } from "@/integrations/supabase/types";
 import { maskWhatsApp, isValidWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
+import { getStoredReferralCode, clearStoredReferralCode } from "@/lib/affiliates";
 
 type PartnerType = "lojista" | "motoboy" | null;
 
@@ -214,12 +215,28 @@ const PartnerOnboarding = () => {
       const avatarUrl = await uploadImage();
       const formattedWhatsapp = formatWhatsAppNumber(whatsapp);
       if (partnerType === "lojista") {
-        const { error } = await supabase.rpc("register_as_lojista", {
+        const { data: createdStoreId, error } = await supabase.rpc("register_as_lojista", {
           _full_name: fullName.trim(), _document: document.trim(), _store_name: storeName.trim(),
           _store_category: storeCategory, _avatar_url: avatarUrl, _whatsapp: formattedWhatsapp,
           _selected_plan: selectedPlan || "fixed",
         } as any);
         if (error) throw error;
+        // Afiliados (item 1.2): se um código foi capturado do link (?ref)
+        // antes do login, vincula a loja recém-criada ao afiliado.
+        // Best-effort: qualquer falha é ignorada e NÃO bloqueia o cadastro.
+        const storedRefCode = getStoredReferralCode();
+        if (storedRefCode && typeof createdStoreId === "string") {
+          try {
+            await (supabase as any).rpc("bind_store_to_affiliate", {
+              p_store_id: createdStoreId,
+              p_code: storedRefCode,
+              p_source: "link",
+            });
+          } catch {
+            // Não bloqueia o cadastro
+          }
+          clearStoredReferralCode();
+        }
         toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaSuper. 🎉");
         navigate("/admin", { replace: true });
       } else {
