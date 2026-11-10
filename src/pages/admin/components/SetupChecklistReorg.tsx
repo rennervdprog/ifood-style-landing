@@ -9,6 +9,8 @@ export interface SetupStep {
   tab: DashboardTab;
   done: boolean;
   urgente: boolean;
+  /** Quando presente, o passo abre este link (nova aba) em vez de navegar. */
+  href?: string;
 }
 
 export interface SetupChecklistInput {
@@ -23,6 +25,13 @@ export interface SetupChecklistInput {
   hasLinkedDrivers: boolean;
   driversLoading: boolean;
   whatsappConnected: boolean;
+  /**
+   * Passo final "pedido de teste" (Primeiros passos): só entra na lista
+   * quando o chamador informa o sinal (hasAnyOrder !== undefined). As
+   * cascas antigas não passam o campo e seguem com os passos de sempre.
+   */
+  hasAnyOrder?: boolean;
+  storeSlug?: string | null;
 }
 
 /**
@@ -40,6 +49,10 @@ export interface SetupChecklistInput {
  *   durante o carregamento não conta como pendente, igual ao banner antigo)
  * - WhatsApp: store_whatsapp_config.status === 'connected' (mesmo sinal da
  *   query store-evo-connected do dashboard)
+ * - pedido de teste (passo final, só quando hasAnyOrder é informado):
+ *   a loja já recebeu algum pedido; o clique abre a vitrine pública da
+ *   loja (/{slug}) numa aba nova, pra lojista pedir como cliente e ver o
+ *   pedido chegar no painel — é a "formatura" dos Primeiros passos.
  */
 export function buildSetupSteps(input: SetupChecklistInput): SetupStep[] {
   const hoursDone =
@@ -106,6 +119,19 @@ export function buildSetupSteps(input: SetupChecklistInput): SetupStep[] {
       done: input.whatsappConnected,
       urgente: false,
     },
+    ...(input.hasAnyOrder !== undefined
+      ? [
+          {
+            key: "test-order",
+            label: "Faça um pedido de teste",
+            desc: "Peça na sua loja como cliente e veja o pedido chegar aqui no painel",
+            tab: "orders" as DashboardTab,
+            done: input.hasAnyOrder,
+            urgente: false,
+            href: input.storeSlug ? `/${input.storeSlug}` : undefined,
+          },
+        ]
+      : []),
   ];
   return steps;
 }
@@ -154,7 +180,7 @@ export default function SetupChecklistReorg({ storeId, steps, onNavigate }: Prop
         <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 p-3 flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
           <p className="flex-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-            Sua loja está pronta pra vender
+            Primeiros passos concluídos — sua loja está pronta pra vender
           </p>
           <button
             onClick={() => {
@@ -204,7 +230,7 @@ export default function SetupChecklistReorg({ storeId, steps, onNavigate }: Prop
                 temUrgente ? "text-red-700 dark:text-red-400" : "text-blue-700 dark:text-blue-400"
               }`}
             >
-              {temUrgente ? "Configure para começar a receber pedidos" : "Complete a configuração da sua loja"}
+              Primeiros passos
             </p>
             <p className="text-xs text-muted-foreground">
               {doneCount} de {total} concluídos · {pct}%
@@ -231,34 +257,46 @@ export default function SetupChecklistReorg({ storeId, steps, onNavigate }: Prop
                 <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{step.label}</p>
               </div>
             ) : (
-              <button
-                key={step.key}
-                onClick={() => onNavigate(step.tab)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all active:scale-[0.98] ${
+              (() => {
+                const stepClass = `w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all active:scale-[0.98] ${
                   step.urgente
                     ? "bg-red-100/70 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/15"
                     : "bg-blue-100/70 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/15"
-                }`}
-              >
-                <div
-                  className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${
-                    step.urgente ? "bg-red-500" : "bg-blue-500"
-                  }`}
-                >
-                  {step.urgente ? "!" : <ArrowRight className="h-3.5 w-3.5" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-xs font-bold ${
-                      step.urgente ? "text-red-800 dark:text-red-300" : "text-blue-800 dark:text-blue-300"
-                    }`}
-                  >
-                    {step.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{step.desc}</p>
-                </div>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </button>
+                }`;
+                const stepInner = (
+                  <>
+                    <div
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${
+                        step.urgente ? "bg-red-500" : "bg-blue-500"
+                      }`}
+                    >
+                      {step.urgente ? "!" : <ArrowRight className="h-3.5 w-3.5" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-xs font-bold ${
+                          step.urgente ? "text-red-800 dark:text-red-300" : "text-blue-800 dark:text-blue-300"
+                        }`}
+                      >
+                        {step.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{step.desc}</p>
+                    </div>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  </>
+                );
+                // Passo com link (ex.: pedido de teste abre a vitrine da
+                // loja numa aba nova) não navega dentro do painel.
+                return step.href ? (
+                  <a key={step.key} href={step.href} target="_blank" rel="noreferrer" className={stepClass}>
+                    {stepInner}
+                  </a>
+                ) : (
+                  <button key={step.key} onClick={() => onNavigate(step.tab)} className={stepClass}>
+                    {stepInner}
+                  </button>
+                );
+              })()
             ),
           )}
         </div>
