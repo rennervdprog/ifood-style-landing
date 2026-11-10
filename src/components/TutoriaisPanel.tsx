@@ -5,10 +5,11 @@ import {
   Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
   CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
   PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell,
-  Wallet, MapPin,
+  Wallet, MapPin, Package, MessagesSquare, Monitor, Printer,
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const SUPPORT_WHATSAPP = "22992796291";
 const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
@@ -535,6 +536,11 @@ export const TUTORIAIS: TutorialSection[] = [
         tip: "Em alguns Android (Xiaomi, Huawei), trave o app em 'Apps recentes' (cadeado) para não ser fechado automaticamente.",
       },
       {
+        title: "Avisos por voz no painel",
+        content: "Em Configurações → Notificações, o cartão Avisos por voz faz o painel FALAR: anuncia o pedido novo que chega de fora e o chamado de atendente no WhatsApp, usando a voz do aparelho. Vem desligado — ative os dois interruptores e toque em Ouvir teste para conferir o volume.",
+        tip: "A voz só fala com o som do painel ativado (sino) e o aparelho fora do mudo.",
+      },
+      {
         title: "Testar",
         content: "Faça um pedido de teste no app cliente (com outro número) e veja se o som toca e a notificação aparece. Se não funcionar, refaça os passos acima.",
       },
@@ -592,6 +598,198 @@ TUTORIAIS.push(
       {
         title: "Se o GPS divergir do CEP",
         content: "Se o cliente está logado mas o GPS aponta longe do endereço cadastrado, o sistema avisa no checkout pra ele confirmar. Evita fraude e endereço errado.",
+      },
+    ],
+  },
+);
+
+// Lições das áreas que não tinham conteúdo (Fase 3 dos tutoriais, 2026-11-10)
+TUTORIAIS.push(
+  {
+    id: "stock",
+    icon: Package,
+    title: "Estoque",
+    shortDesc: "Controle a quantidade de cada produto e nunca venda o que acabou",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Onde fica?",
+        content: "Na aba Cardápio, alterne a visualização para ESTOQUE (botão ao lado de Cardápio). É a mesma lista de produtos, mas com as quantidades na frente.",
+      },
+      {
+        title: "Ativar o controle",
+        content: "Toque em um produto e ative o controle de estoque informando a quantidade inicial. Você também pode cadastrar insumos — itens que só existem no estoque (embalagem, ingrediente) e não aparecem no cardápio.",
+      },
+      {
+        title: "Ajustar quantidades",
+        content: "Recebeu mercadoria? Registre a entrada. Perdeu ou venceu algo? Registre a saída. O sistema baixa sozinho a cada venda, e quando a quantidade chega no mínimo que você definiu, o produto fica destacado para você repor.",
+      },
+      {
+        title: "Produto zerado some do cardápio",
+        content: "Com o controle ativo, ao zerar a quantidade o produto sai do cardápio automaticamente — o cliente nunca pede o que acabou. Repôs? Ajuste a quantidade e ele volta.",
+        tip: "Produto sem controle ativado continua vendendo sem limite, como sempre.",
+      },
+    ],
+  },
+  {
+    id: "reviews",
+    icon: Star,
+    title: "Avaliações",
+    shortDesc: "Veja o que os clientes acharam e responda cada avaliação",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "vendas",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Onde ficam?",
+        content: "Em Clientes → Avaliações: a nota média da loja, quantas avaliações chegaram nos últimos 90 dias e a lista completa com o comentário de quem comprou.",
+      },
+      {
+        title: "Responder avaliação",
+        content: "Cada avaliação pode ser respondida aqui no painel — tem até respostas prontas para você só tocar e preencher. A sua resposta aparece junto da avaliação e passa confiança para quem está escolhendo onde pedir.",
+      },
+      {
+        title: "Prazo de 5 dias",
+        content: "O painel mostra quanto tempo falta para responder cada avaliação — o ideal é responder em até 5 dias. Passou do prazo? Ainda dá para responder, mas não deixe acumular.",
+      },
+      {
+        title: "Avaliação ruim não é o fim",
+        content: "Responda com educação, peça desculpas pelo que falhou e ofereça resolver. Quem lê uma resposta bem dada de uma avaliação ruim costuma dar uma chance à loja.",
+        tip: "Agradeça também as avaliações boas — cliente reconhecido volta e avalia de novo.",
+      },
+    ],
+  },
+  {
+    id: "motoboys_map",
+    icon: MapPin,
+    title: "Onde Estão Meus Motoboys",
+    shortDesc: "O mapa ao vivo com a posição de cada motoboy da loja",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 2,
+    steps: [
+      {
+        title: "O que o mapa mostra?",
+        content: "Em Operação → Onde Estão Meus Motoboys: todos os motoboys vinculados à loja, cada um com seu estado — EM ENTREGA (com a rota até o cliente no mapa), ONLINE aguardando pedido, ou OFFLINE.",
+      },
+      {
+        title: "Só posição recente aparece",
+        content: "Posição velha não vira ponto no mapa: se o motoboy parou de enviar a localização, ele aparece como offline e a lista mostra 'visto há X min'. Assim você nunca despacha olhando para um mapa mentiroso.",
+      },
+      {
+        title: "Para que usar?",
+        content: "Para decidir quem chama para a próxima entrega e acompanhar uma entrega em andamento sem precisar ligar para o motoboy.",
+      },
+    ],
+  },
+  {
+    id: "whatsapp",
+    icon: MessageCircle,
+    title: "WhatsApp da Loja",
+    shortDesc: "O número que fala com seus clientes: cardápio automático e avisos do pedido",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Conectar o número",
+        content: "Em Configurações → WhatsApp, conecte o número da loja escaneando o código QR com o aparelho desse número. É esse número que conversa com os clientes em nome da loja.",
+      },
+      {
+        title: "Resposta automática com o cardápio",
+        content: "Quem chama a loja no WhatsApp recebe automaticamente o link do cardápio e faz o pedido pelo site — você não precisa ficar mandando foto de cardápio nem anotando pedido na conversa.",
+      },
+      {
+        title: "Avisos automáticos do pedido",
+        content: "O cliente recebe no WhatsApp os avisos do pedido dele: aceito/em preparo, saiu para entrega e cancelado. Você não precisa avisar ninguém na mão.",
+      },
+      {
+        title: "Se aparecer desconectado",
+        content: "Sem conexão, a loja fica sem a resposta automática e sem os avisos. Volte em Configurações → WhatsApp e reconecte por esta tela — quanto antes, melhor: cliente que chama e não recebe o cardápio desiste da compra.",
+      },
+    ],
+  },
+  {
+    id: "conversations",
+    icon: MessagesSquare,
+    title: "Conversas do WhatsApp",
+    shortDesc: "Acompanhe as conversas dos clientes e os chamados de atendente",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Onde ficam?",
+        content: "Em Configurações → Conversas: as conversas dos clientes com o número da loja — o que eles mandaram e o que foi respondido automaticamente.",
+      },
+      {
+        title: "Chamado de atendente",
+        content: "Quando o cliente pede para falar com uma pessoa (ou a resposta automática não resolve), nasce um chamado de atendente: o painel avisa com som e no sino, e a conversa aparece aqui esperando você.",
+        tip: "Com os Avisos por voz ligados (Configurações → Notificações), o painel também FALA quando chega um chamado.",
+      },
+      {
+        title: "Como responder",
+        content: "A resposta continua sendo pelo WhatsApp da loja, normalmente. Use esta tela para acompanhar tudo em um lugar só e não deixar cliente esperando — resposta rápida é o que transforma dúvida em pedido.",
+      },
+    ],
+  },
+  {
+    id: "kds",
+    icon: Monitor,
+    title: "Display de Cozinha (KDS)",
+    shortDesc: "A tela da cozinha com os pedidos em tempo real, sem login",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 2,
+    steps: [
+      {
+        title: "O que é?",
+        content: "Uma tela pensada para um tablet ou TV na cozinha: mostra os pedidos chegando e em preparo em tempo real, sem precisar entrar no painel. A equipe acompanha a fila sem encostar no caixa.",
+      },
+      {
+        title: "Ativar o link",
+        content: "Em Configurações → KDS, gere o link e abra no aparelho da cozinha. Ele não pede login e não desconecta o painel principal.",
+        tip: "Trate o link como uma senha: quem tem o link vê os pedidos da loja.",
+      },
+      {
+        title: "Trocar o link",
+        content: "Se o aparelho sair da loja ou o link vazar, revogue e gere outro na mesma tela — o link antigo para de funcionar na hora.",
+      },
+    ],
+  },
+  {
+    id: "printing",
+    icon: Printer,
+    title: "Impressão de Pedidos",
+    shortDesc: "O pedido saindo sozinho na impressora térmica da loja",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "O agente de impressão",
+        content: "É um programa pequeno instalado no computador da loja. Ele recebe os pedidos do painel e imprime na impressora térmica, sem ninguém precisar clicar em imprimir — ideal para a cozinha não perder nenhum pedido.",
+      },
+      {
+        title: "Instalar e parear",
+        content: "Em Configurações → Impressão: baixe o agente (Windows), abra o programa no computador da loja e digite o código de pareamento de 6 dígitos gerado no painel. O código vale por 30 minutos.",
+      },
+      {
+        title: "Quando imprime?",
+        content: "Você escolhe: imprimir quando o pedido chega ou quando você aceita. Se o aceite automático estiver ligado, a impressão fica sempre no 'ao chegar o pedido' — os dois andam juntos.",
+      },
+      {
+        title: "Sem o agente",
+        content: "Sem o programa instalado, dá para imprimir pedido a pedido pelo botão IMPRIMIR em cada pedido, usando a impressora configurada no navegador.",
       },
     ],
   },
@@ -721,7 +919,7 @@ const TutoriaisPanel = ({ initialSection }: { initialSection?: string } = {}) =>
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
 
-  // Load completed tutorials from localStorage
+  // Load completed tutorials from localStorage (cache imediato)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -730,7 +928,34 @@ const TutoriaisPanel = ({ initialSection }: { initialSection?: string } = {}) =>
     } catch {}
   }, [storageKey]);
 
+  // Medição no servidor (Fase 3): o progresso mora em tutorial_progress.
+  // Ao abrir, une o que está no servidor com o cache local — concluir a
+  // lição num aparelho passa a valer nos outros.
+  useEffect(() => {
+    if (!user?.id) return;
+    let alive = true;
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from("tutorial_progress")
+        .select("section_id")
+        .eq("user_id", user.id);
+      if (!alive || error || !data) return;
+      const serverIds = (data as Array<{ section_id: string }>).map((r) => r.section_id);
+      setCompleted((prev) => {
+        const merged = new Set([...prev, ...serverIds]);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(Array.from(merged)));
+        } catch {}
+        return merged;
+      });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, storageKey]);
+
   const toggleCompleted = (id: string) => {
+    const willComplete = !completed.has(id);
     setCompleted((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -740,6 +965,23 @@ const TutoriaisPanel = ({ initialSection }: { initialSection?: string } = {}) =>
       } catch {}
       return next;
     });
+    // Grava no servidor junto (sem bloquear a tela; o cache local segura
+    // a interface se a rede falhar).
+    if (user?.id) {
+      if (willComplete) {
+        (supabase as any)
+          .from("tutorial_progress")
+          .upsert({ user_id: user.id, section_id: id }, { onConflict: "user_id,section_id" })
+          .then(() => {}, () => {});
+      } else {
+        (supabase as any)
+          .from("tutorial_progress")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("section_id", id)
+          .then(() => {}, () => {});
+      }
+    }
   };
 
   const filteredTutoriais = useMemo(() => {

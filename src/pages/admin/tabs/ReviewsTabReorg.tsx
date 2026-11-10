@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Star, MessageSquareReply, Loader2, Sparkles, Clock,
@@ -205,6 +206,9 @@ const ReviewsTabReorg = memo(({ storeId }: Props) => {
         <div>
           <h2 className="text-lg font-black text-foreground">Avaliações</h2>
           <p className="text-xs text-muted-foreground">O que seus clientes estão achando.</p>
+        </div>
+        <div className="ml-auto">
+          <TutorialHelpButton tutorialId="reviews" />
         </div>
       </div>
 
