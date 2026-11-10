@@ -1,6 +1,7 @@
 import StoreSettingsReorg, { type StoreSettingsSectionKey } from "../components/teste/StoreSettingsReorg";
 import { readUrlParam, writeUrlParam } from "../urlParams";
 import TabHeader from "@/components/TabHeader";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import WhatsAppSetupTeste from "../components/teste/WhatsAppSetupTeste";
 import WhatsAppConversationsTeste, { CONVERSATION_OPEN_EVENT } from "../components/teste/WhatsAppConversationsTeste";
 import { MessageCircle, MessagesSquare, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon, MapPin, Truck, CreditCard, Bell, Printer } from "lucide-react";
@@ -21,6 +22,15 @@ interface Props {
 }
 
 type SubTab = StoreSettingsSectionKey | "whatsapp" | "conversas" | "kds";
+
+/** Lição do "Como funciona" de cada sub-aba de Configurações (Fase 3). */
+const SETTINGS_SUBTAB_HELP: Partial<Record<SubTab, string>> = {
+  notificacoes: "notifications",
+  impressao: "printing",
+  whatsapp: "whatsapp",
+  conversas: "conversations",
+  kds: "kds",
+};
 
 /**
  * REORG FASE 5 — cópia de SettingsTabTeste.
@@ -167,6 +177,13 @@ const SettingsTabReorg = ({ store }: Props) => {
         </button>
       ))}
     </div>
+
+    {/* Ajuda da sub-aba atual (Fase 3 dos tutoriais, 2026-11-10) */}
+    {SETTINGS_SUBTAB_HELP[subTab] && (
+      <div className="flex justify-end px-1 -mt-3">
+        <TutorialHelpButton tutorialId={SETTINGS_SUBTAB_HELP[subTab]!} />
+      </div>
+    )}
 
     {subTab === "whatsapp" && !isPdvOnly && (
     <section id="config-whatsapp" className="rounded-2xl border border-border bg-card p-4 space-y-3 scroll-mt-24">
