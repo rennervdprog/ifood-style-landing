@@ -842,7 +842,6 @@ export default function DashboardOverviewSectionReorg(props: Props) {
         <h3 className="text-sm font-bold text-foreground">Primeiros passos</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
           {setupDoneCount} de {setupSteps.length} concluídos
-          {setupDoneCount < setupSteps.length ? " — toque para ver o que falta" : ""}
         </p>
       </div>
       {setupDoneCount < setupSteps.length && (
