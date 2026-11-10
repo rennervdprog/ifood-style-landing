@@ -9,11 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.5",
+  version: "2.5.6",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.5.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.6.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Som próprio do ItaSuper: o alerta de pedido novo agora toca o som exclusivo do ItaSuper — o alarme padrão do aparelho ficou pra trás",
     "Permissões em etapas: a configuração inicial virou um passo a passo guiado — uma permissão por tela, com explicação curta e progresso",
     "Sobreposição virou opcional: sem ela você entra no app normalmente e o alerta de pedido novo chega pela notificação, sem travar na tela de permissões",
     "Aviso de versão nova: quando sai uma atualização, um aviso no app mostra a novidade com o botão de baixar — sem precisar caçar o link",
