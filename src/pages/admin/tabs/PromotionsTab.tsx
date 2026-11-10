@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Flame, Plus, Trash2, Edit2, Save, X, Tag, Star, Loader2 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface Props {
@@ -81,6 +82,9 @@ const PromotionsTab = memo(({ storeId }: Props) => {
         <div>
           <h2 className="text-lg font-black text-foreground">Promoções</h2>
           <p className="text-xs text-muted-foreground">Crie ofertas com preço promocional e coleções temáticas.</p>
+        </div>
+        <div className="ml-auto">
+          <TutorialHelpButton tutorialId="coupons" />
         </div>
       </div>
 
