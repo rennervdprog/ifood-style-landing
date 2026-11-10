@@ -1765,6 +1765,7 @@ const AdminDashboardReorg = () => {
     setHelpSection(
       dashboardTab === "cash_register" ? "pdv"
       : dashboardTab === "repasse" ? "finance"
+      : dashboardTab === "promotions" ? "coupons"
       : dashboardTab,
     );
     handleTabChange("tutoriais");
