@@ -139,7 +139,7 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
         amount: Number(data?.amount ?? total),
         ref: data?.reference_code,
       });
-      qc.invalidateQueries({ queryKey: ["repasse-has-pending-charge", storeId] });
+      qc.invalidateQueries({ queryKey: ["dashboard-pending-charge", storeId] });
       toast.success("PIX gerado! Pague para quitar o repasse.");
     } catch (e: any) {
       toast.error(e?.message || "Erro ao gerar PIX. Tente novamente.");

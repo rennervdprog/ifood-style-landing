@@ -25,7 +25,9 @@ export function useUserRole(): UserRoleInfo {
       if (!user?.id) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("role, network_id, unit_store_id")
+        // Superset: inclui is_approved para a chave ["user-role", …] ser a
+        // fonte única de `profiles` do painel (casca Reorg lê via select).
+        .select("is_approved, role, network_id, unit_store_id")
         .eq("user_id", user.id)
         .maybeSingle();
       return data as any;

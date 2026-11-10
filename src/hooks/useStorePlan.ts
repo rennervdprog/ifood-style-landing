@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchStorePlanRow, storePlanRowQueryKey } from "@/hooks/storePlanRow";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
  export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter" | "autonomy" | "pdv_only";
@@ -125,21 +126,36 @@ PLAN_FEATURES.pdv_only = {
 };
 
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["store-plan", storeId],
     queryFn: async () => {
+      // Plano: linha crua COMPARTILHADA com usePendingRepasse
+      // (["store-plan-row", …]) — uma busca de rede pros dois hooks.
+      const planPromise = queryClient
+        .ensureQueryData({
+          queryKey: storePlanRowQueryKey(storeId),
+          queryFn: () => fetchStorePlanRow(storeId!),
+          staleTime: 0,
+        })
+        .then((plan) => ({ data: plan, error: null as any }));
+      // Loja: as cascas (Reorg/V2/V2Teste) já baixaram a linha inteira de
+      // `stores` na query ["my-store", …] — reaproveita do cache quando a
+      // linha desta loja está lá; fora das cascas, busca o subset como antes.
+      const cachedStore = queryClient
+        .getQueriesData({ queryKey: ["my-store"] })
+        .map(([, d]) => d as any)
+        .find((d) => d && d.id === storeId);
+      const storePromise = cachedStore
+        ? Promise.resolve({ data: cachedStore })
+        : supabase
+            .from("stores")
+            .select("address_city, delivery_mode, platform_fee_split")
+            .eq("id", storeId!)
+            .maybeSingle();
       const [planResult, storeResult, configResult] = await Promise.all([
-        supabase
-          .from("store_plans" as any)
-          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate, essencial_lifetime_free")
-          .eq("store_id", storeId!)
-          .eq("is_active", true)
-          .maybeSingle(),
-        supabase
-          .from("stores")
-          .select("address_city, delivery_mode, platform_fee_split")
-          .eq("id", storeId!)
-          .maybeSingle(),
+        planPromise,
+        storePromise,
         supabase
           .from("admin_settings")
           .select("value")

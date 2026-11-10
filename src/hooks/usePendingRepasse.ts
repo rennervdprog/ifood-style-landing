@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchStorePlanRow, storePlanRowQueryKey } from "@/hooks/storePlanRow";
 
 export interface PendingRepasseBreakdown {
   /** Comissão do plano sobre vendas (dinheiro/cartão/PIX manual). */
@@ -39,33 +40,35 @@ export function usePendingRepasse(storeId?: string): PendingRepasseResult {
     refetchInterval: 30_000,
   });
 
+  // Plano: mesma busca de rede de `useStorePlan` (linha crua compartilhada,
+  // chave ["store-plan-row", …]); aqui só projetamos os 2 campos usados.
   const { data: plan, isLoading: loadingPlan } = useQuery({
-    queryKey: ["repasse-plan-balance", storeId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("store_plans")
-        .select("plan_type, pdv_commission_pending")
-        .eq("store_id", storeId!)
-        .eq("is_active", true)
-        .maybeSingle();
-      return data;
-    },
+    queryKey: storePlanRowQueryKey(storeId),
+    queryFn: () => fetchStorePlanRow(storeId!),
+    select: (row: any) =>
+      row
+        ? { plan_type: row.plan_type, pdv_commission_pending: row.pdv_commission_pending }
+        : row,
     enabled,
     refetchInterval: 30_000,
   });
 
+  // Cobrança pendente: MESMA chave/busca da Visão Geral
+  // (["dashboard-pending-charge", …], superset id/amount/created_at) —
+  // uma busca só pros dois consumidores; aqui basta saber se existe.
   const { data: charge, isLoading: loadingCharge } = useQuery({
-    queryKey: ["repasse-has-pending-charge", storeId],
+    queryKey: ["dashboard-pending-charge", storeId],
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("financial_transactions")
-        .select("id")
+        .select("id, amount, created_at")
         .eq("store_id", storeId!)
         .eq("transaction_kind", "commission_charge")
         .eq("status", "pending")
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return !!data;
+      return data;
     },
     enabled,
     refetchInterval: 30_000,
