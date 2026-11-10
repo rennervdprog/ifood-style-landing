@@ -9,6 +9,8 @@ export interface SetupStep {
   tab: DashboardTab;
   done: boolean;
   urgente: boolean;
+  /** Quando presente, o passo abre este link (nova aba) em vez de navegar. */
+  href?: string;
 }
 
 export interface SetupChecklistInput {
@@ -23,6 +25,13 @@ export interface SetupChecklistInput {
   hasLinkedDrivers: boolean;
   driversLoading: boolean;
   whatsappConnected: boolean;
+  /**
+   * Passo final "pedido de teste" (Primeiros passos): só entra na lista
+   * quando o chamador informa o sinal (hasAnyOrder !== undefined). As
+   * cascas antigas não passam o campo e seguem com os passos de sempre.
+   */
+  hasAnyOrder?: boolean;
+  storeSlug?: string | null;
 }
 
 /**
@@ -40,6 +49,10 @@ export interface SetupChecklistInput {
  *   durante o carregamento não conta como pendente, igual ao banner antigo)
  * - WhatsApp: store_whatsapp_config.status === 'connected' (mesmo sinal da
  *   query store-evo-connected do dashboard)
+ * - pedido de teste (passo final, só quando hasAnyOrder é informado):
+ *   a loja já recebeu algum pedido; o clique abre a vitrine pública da
+ *   loja (/{slug}) numa aba nova, pra lojista pedir como cliente e ver o
+ *   pedido chegar no painel — é a "formatura" dos Primeiros passos.
  */
 export function buildSetupSteps(input: SetupChecklistInput): SetupStep[] {
   const hoursDone =
@@ -106,6 +119,19 @@ export function buildSetupSteps(input: SetupChecklistInput): SetupStep[] {
       done: input.whatsappConnected,
       urgente: false,
     },
+    ...(input.hasAnyOrder !== undefined
+      ? [
+          {
+            key: "test-order",
+            label: "Faça um pedido de teste",
+            desc: "Peça na sua loja como cliente e veja o pedido chegar aqui no painel",
+            tab: "orders" as DashboardTab,
+            done: input.hasAnyOrder,
+            urgente: false,
+            href: input.storeSlug ? `/${input.storeSlug}` : undefined,
+          },
+        ]
+      : []),
   ];
   return steps;
 }
