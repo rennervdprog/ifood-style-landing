@@ -10,7 +10,7 @@ import {
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 
-const SUPPORT_WHATSAPP = "22992796291";
+export const SUPPORT_WHATSAPP = "22992796291";
 const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
 
 interface TutorialStep {
@@ -57,9 +57,8 @@ export const TUTORIAIS: TutorialSection[] = [
         content: "Esta é a sua página inicial. Ela mostra um resumo de tudo que está acontecendo na sua loja AGORA: quantos pedidos novos chegaram hoje, quanto dinheiro você já fez no dia, quantos clientes pediram, e o status atual da sua loja (aberta ou fechada).",
       },
       {
-        title: "Cartões coloridos no topo",
-        content: "Cada cartão colorido mostra um número importante: pedidos do dia, faturamento do dia, ticket médio (valor médio dos pedidos) e clientes únicos. Você só olha e já sabe como está o dia.",
-        tip: "Toque em cada cartão para ver mais detalhes da informação.",
+        title: "Primeiros passos",
+        content: "Enquanto faltar alguma configuração, o cartão Primeiros passos aparece aqui mostrando o que falta para sua loja vender — logo, horários, produtos, entrega, motoboy e WhatsApp. Cada passo leva direto para a tela certa, e o último é fazer um pedido de teste na sua própria loja. Quando tudo está concluído, o cartão some.",
       },
       {
         title: "Pedidos em andamento",
@@ -104,8 +103,8 @@ export const TUTORIAIS: TutorialSection[] = [
         content: "Se você tem impressora térmica conectada, aparece um botão IMPRIMIR. Toque para sair o pedido na impressora da cozinha.",
       },
       {
-        title: "Conversar com o cliente",
-        content: "Em cada pedido tem um botão de chat. Use para tirar dúvidas: 'Sem cebola mesmo?', 'Posso substituir?'. O cliente recebe a mensagem no app dele.",
+        title: "Falar com o cliente",
+        content: "Não existe chat dentro do painel: a conversa é pelo WhatsApp. Ao aceitar ou marcar o pedido como pronto, o painel pode abrir o WhatsApp do cliente já com a mensagem do status. Para tirar uma dúvida ('Sem cebola mesmo?', 'Posso substituir?'), chame o cliente no número que aparece no pedido.",
       },
     ],
   },
@@ -281,8 +280,8 @@ export const TUTORIAIS: TutorialSection[] = [
     estimatedMinutes: 2,
     steps: [
       {
-        title: "Tipos de plano",
-        content: "FIXO: paga uma mensalidade e não paga comissão. COMISSÃO: não paga mensalidade, mas paga uma % de cada pedido. HÍBRIDO: paga mensalidade menor + comissão menor.",
+        title: "Planos de hoje",
+        content: "ESSENCIAL: delivery completo por R$ 89,90/mês — e fica grátis nos meses em que sua loja fatura até R$ 5.000 (janela de 60 dias). SOMENTE PDV: só o caixa, por R$ 120/mês fixos, sem taxa por venda. Nos pedidos de delivery, o cliente paga R$ 0,99 por entrega junto da taxa — é a parte do ItaSuper, que você repassa no acerto semanal.",
       },
       {
         title: "Quando vence?",
@@ -338,8 +337,8 @@ export const TUTORIAIS: TutorialSection[] = [
         content: "Depois que o motoboy se cadastra, você recebe e aprova. Aí ele aparece online no painel quando tiver disponível.",
       },
       {
-        title: "Pagar motoboy",
-        content: "Aqui você vê quanto deve pagar para cada um. Pode pagar via PIX direto pelo app, ou marcar como pago se pagou em dinheiro.",
+        title: "Quem paga o motoboy",
+        content: "Quem paga o motoboy é a sua loja, por fora do ItaSuper — PIX, dinheiro, por semana, como vocês combinarem. O ItaSuper não faz esse pagamento e não sabe quanto o motoboy ganha: o app dele serve para receber e acompanhar as entregas. A taxa de entrega que o cliente paga é da loja.",
         tip: "Mantenha o pagamento em dia para o motoboy continuar trabalhando.",
       },
       {
@@ -389,8 +388,8 @@ export const TUTORIAIS: TutorialSection[] = [
       },
       {
         title: "Chave PIX",
-        content: "Coloque a chave PIX que você quer receber os repasses. Pode ser CPF, CNPJ, e-mail, telefone ou aleatória.",
-        tip: "Confira BEM a chave. Se errar, o dinheiro vai para outra pessoa.",
+        content: "É a chave onde você recebe o PIX dos seus clientes — o pagamento vai direto do cliente para você, sem passar pelo ItaSuper. Pode ser CPF, CNPJ, e-mail, telefone ou aleatória.",
+        tip: "Confira BEM a chave. Se errar, o cliente paga para outra pessoa.",
       },
       {
         title: "WhatsApp",
@@ -613,7 +612,7 @@ const QUICK_START = [
 const FAQ = [
   {
     q: "Como recebo o dinheiro dos pedidos?",
-    a: "Pedidos no PIX são repassados pela plataforma direto na sua chave PIX cadastrada. Pedidos em dinheiro/cartão você recebe na hora da entrega.",
+    a: "O cliente paga 100% direto para a sua loja: o PIX cai na sua chave, sem passar pelo ItaSuper, e dinheiro/cartão você recebe na entrega. A parte do ItaSuper (R$ 0,99 por entrega, que o cliente paga junto na taxa) fica com você e é repassada no acerto semanal — a cobrança chega por PIX e a tela Repasse mostra tudo.",
   },
   {
     q: "Por que minha loja aparece como fechada?",
@@ -644,7 +643,7 @@ const FAQ = [
     a: "Diferença pode ser troco errado, sangria não registrada ou retirada sem motivo. Use o relatório do PDV para conferir cada movimento. Sempre registre sangrias com motivo.",
   },
   {
-    q: "Como mudar de plano (Essencial, Crescimento, Comissão, Somente PDV)?",
+    q: "Como mudar de plano (Essencial, Somente PDV)?",
     a: "Vá em Assinatura → Mudar Plano. A administração analisa em 1-2 dias. Você continua usando o plano atual até a aprovação.",
   },
   {

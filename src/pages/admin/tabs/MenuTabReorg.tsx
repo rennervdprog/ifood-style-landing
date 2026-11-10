@@ -10,11 +10,13 @@
  * A sub-aba "Estoque" saiu da navegação (filterReorgNavGroups); quem
  * chega pela aba "stock" (link direto) cai nesta mesma tela, já na
  * visualização de Estoque (initialView="estoque").
- * O botão "Como funciona" por tela não aparece aqui: a ajuda é central
- * no cabeçalho do shell (botão "?" — Ajuda desta tela).
+ * O botão "Como funciona" desta tela fica ao lado do seletor de
+ * visualização (Fase 2 dos tutoriais, 2026-11-10 — ajuda na tela de
+ * novo; o "?" do cabeçalho do shell continua existindo).
  */
 import { useState } from "react";
 import { Boxes, UtensilsCrossed } from "lucide-react";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import MenuBuilderReorg from "../sections/MenuBuilderReorg";
 import StockTab from "./StockTab";
 import { cn } from "@/lib/utils";
@@ -30,6 +32,7 @@ const MenuTabReorg = ({ storeId, storeCategory, initialView = "cardapio" }: Prop
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
       <div
         className="inline-flex rounded-xl border border-border bg-card p-1"
         role="tablist"
@@ -65,6 +68,8 @@ const MenuTabReorg = ({ storeId, storeCategory, initialView = "cardapio" }: Prop
           <Boxes className="h-4 w-4" />
           Estoque
         </button>
+      </div>
+      <TutorialHelpButton tutorialId="menu" />
       </div>
 
       {view === "cardapio" ? (
