@@ -1,12 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   AFFILIATE_HOLD_DAYS,
   AFFILIATE_MIN_PAYOUT,
   AFFILIATE_PAYOUT_DAYS,
   AFFILIATE_RATE_PERCENT,
+  REFERRAL_STORAGE_KEY,
   computeAffiliateCredit,
   creditReleaseDate,
   isPayoutDayValid,
+  normalizeReferralCode,
+  parseReferralFromSearch,
+  storeReferralCode,
+  getStoredReferralCode,
+  clearStoredReferralCode,
 } from "../affiliates";
 
 describe("constantes do programa de afiliados", () => {
@@ -82,5 +88,67 @@ describe("isPayoutDayValid", () => {
     expect(isPayoutDayValid(0)).toBe(false);
     expect(isPayoutDayValid(31)).toBe(false);
     expect(isPayoutDayValid(5.5)).toBe(false);
+  });
+});
+
+describe("normalizeReferralCode", () => {
+  it("aplica trim e maiúsculas", () => {
+    expect(normalizeReferralCode("  ab12 ")).toBe("AB12");
+  });
+
+  it("remove o que não é A-Z0-9 (a mesma normalização da RPC no banco)", () => {
+    expect(normalizeReferralCode("ab-12_x!")).toBe("AB12X");
+    expect(normalizeReferralCode("código")).toBe("CDIGO");
+  });
+
+  it("tolera null, undefined e vazio", () => {
+    expect(normalizeReferralCode(null)).toBe("");
+    expect(normalizeReferralCode(undefined)).toBe("");
+    expect(normalizeReferralCode("")).toBe("");
+    expect(normalizeReferralCode("   ")).toBe("");
+  });
+});
+
+describe("parseReferralFromSearch", () => {
+  it("extrai o ?ref com ou sem o '?' inicial", () => {
+    expect(parseReferralFromSearch("?ref=abc123")).toBe("ABC123");
+    expect(parseReferralFromSearch("ref=abc123")).toBe("ABC123");
+  });
+
+  it("convive com os outros parâmetros da URL (promo, city)", () => {
+    expect(parseReferralFromSearch("?promo=LONDRINA10&ref=zz9&city=x")).toBe("ZZ9");
+  });
+
+  it("sem ref — ou ref sem nenhum caractere válido — retorna null", () => {
+    expect(parseReferralFromSearch("?promo=X")).toBeNull();
+    expect(parseReferralFromSearch("?ref=")).toBeNull();
+    expect(parseReferralFromSearch("?ref=---")).toBeNull();
+    expect(parseReferralFromSearch("")).toBeNull();
+    expect(parseReferralFromSearch(null)).toBeNull();
+    expect(parseReferralFromSearch(undefined)).toBeNull();
+  });
+});
+
+describe("código de indicação guardado (localStorage)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("guarda normalizado, lê de volta e limpa", () => {
+    storeReferralCode(" ab-1 ");
+    expect(localStorage.getItem(REFERRAL_STORAGE_KEY)).toBe("AB1");
+    expect(getStoredReferralCode()).toBe("AB1");
+    clearStoredReferralCode();
+    expect(getStoredReferralCode()).toBeNull();
+    expect(localStorage.getItem(REFERRAL_STORAGE_KEY)).toBeNull();
+  });
+
+  it("código sem caracteres válidos não guarda nada", () => {
+    storeReferralCode("---");
+    expect(getStoredReferralCode()).toBeNull();
+  });
+
+  it("sem nada guardado, a leitura é null", () => {
+    expect(getStoredReferralCode()).toBeNull();
   });
 });
