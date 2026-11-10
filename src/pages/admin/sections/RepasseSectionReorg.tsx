@@ -1,6 +1,7 @@
 // Fase 4 da reorganização do painel (2026-11-08) — cópia Reorg, SOMENTE /admin-teste.
 import { Banknote, CheckCircle2, Crown, Info } from "lucide-react";
 import RepasseAlert from "@/components/repasse/RepasseAlert";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
 import { usePendingRepasse } from "@/hooks/usePendingRepasse";
@@ -51,6 +52,9 @@ export default function RepasseSectionReorg({ store, storePlan, setDashboardTab,
               ? "Você tem valor acumulado a repassar à plataforma"
               : "Nenhum repasse pendente no momento"}
           </p>
+        </div>
+        <div className="ml-auto">
+          <TutorialHelpButton tutorialId="finance" />
         </div>
       </div>
 

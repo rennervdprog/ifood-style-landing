@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleHelp, Clock, PlayCircle } from "lucide-react";
+import { CircleHelp, Clock, MessageCircle, PlayCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TUTORIAIS, TutorialStepsList, type TutorialSection } from "./TutoriaisPanel";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { SUPPORT_WHATSAPP, TUTORIAIS, TutorialStepsList, type TutorialSection } from "./TutoriaisPanel";
 
 export function getTutorialSection(id: string): TutorialSection | undefined {
   return TUTORIAIS.find((t) => t.id === id);
@@ -70,9 +71,24 @@ export default function TutorialHelpButton({ tutorialId, className = "" }: Tutor
             <TutorialStepsList section={section} />
           </div>
 
-          <p className="text-[11px] text-muted-foreground">
-            Todos os tutoriais ficam em <strong>Configurações → Tutoriais</strong>.
-          </p>
+          <div className="space-y-2 border-t border-border/60 pt-3">
+            <p className="text-[11px] text-muted-foreground">
+              Todos os tutoriais ficam no botão <strong>?</strong> no topo do painel.
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                openWhatsApp(
+                  SUPPORT_WHATSAPP,
+                  `Olá! Preciso de ajuda com o painel do lojista do ItaSuper. Estou na tela: ${section.title}.`,
+                )
+              }
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition-all hover:bg-primary/90 active:scale-95"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Ainda com dúvida? Falar com o suporte
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

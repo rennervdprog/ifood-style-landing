@@ -394,7 +394,7 @@ export default function DashboardOverviewSectionReorg(props: Props) {
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
 
-  <TabHeader title="Visão Geral" subtitle="Como sua loja está hoje: pedidos, vendas e o que precisa da sua atenção" />
+  <TabHeader title="Visão Geral" subtitle="Como sua loja está hoje: pedidos, vendas e o que precisa da sua atenção" tutorialId="dashboard" />
 
   {/* ── BLOCO 1 — PRECISA DE ATENÇÃO AGORA ──
       Um único card, uma linha por pendência (avisos, cobrança gerada,

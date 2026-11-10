@@ -8,6 +8,7 @@ import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } 
 import { toast } from "sonner";
 import { openWhatsApp } from "@/lib/whatsapp";
 import OrdersStatement from "@/components/store/OrdersStatement";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.DailyRevenueChart }))
@@ -610,6 +611,7 @@ export default function StoreReportsPanelReorg({ storeId, storeName }: { storeId
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-lg font-bold text-foreground">Relatórios Detalhados</h3>
         <div className="flex items-center gap-2">
+        <TutorialHelpButton tutorialId="reports" />
         <button
           onClick={exportCSV}
           disabled={!data || isLoading}

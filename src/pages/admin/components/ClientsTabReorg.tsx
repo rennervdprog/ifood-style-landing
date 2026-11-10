@@ -13,6 +13,7 @@ import { formatBRL } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import EmptyState from "@/components/EmptyState";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import { statusColors } from "../constants";
 
 export type ClientFilter =
@@ -328,6 +329,10 @@ const ClientsTabReorgImpl = ({
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-3">
+      {/* Ajuda desta tela (Fase 2 dos tutoriais, 2026-11-10) */}
+      <div className="flex justify-end">
+        <TutorialHelpButton tutorialId="clients" />
+      </div>
       {/* Cartões de destaque (Fase 4 Reorg): só Em risco e Inativos */}
       <div className="grid grid-cols-2 gap-2">
         {metricCards.map(m => (
