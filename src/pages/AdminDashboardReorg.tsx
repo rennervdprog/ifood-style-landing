@@ -100,7 +100,6 @@ import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvaila
 import { AUTO_PRINT_SWEEP_STATUSES } from "@/lib/printAgent";
 import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/lib/utils";
-import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
 import { REPASSE_RULES } from "@/lib/repasseRules";
@@ -1862,7 +1861,7 @@ const AdminDashboardReorg = () => {
   };
 
 
-  // ── Checklist "Configurar Loja" (Fase 2) ──
+  // ── Checklist "Primeiros passos" (ex-"Configurar Loja") ──
   // Passos calculados aqui porque o selo de pendências vai na barra de
   // sub-abas (GroupTabsBar) e o cartão vai na Visão Geral — mesma conta.
   const setupSteps = buildSetupSteps({
@@ -1877,6 +1876,10 @@ const AdminDashboardReorg = () => {
     hasLinkedDrivers,
     driversLoading,
     whatsappConnected: evolutionConnected,
+    // Primeiros passos (Fase 1 dos tutoriais): o passo final é o pedido de
+    // teste — sinal da busca única de pedidos que esta casca já faz.
+    hasAnyOrder: (allOrders?.length ?? 0) > 0,
+    storeSlug: store?.slug,
   });
   const setupPendingCount = setupSteps.filter((s) => !s.done).length;
 
@@ -2448,7 +2451,8 @@ const AdminDashboardReorg = () => {
           onGroupChange={handleGroupChange}
         />
       </main>
-      <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
+      {/* Tour guiado removido da casca (Fase 1 dos tutoriais, 2026-11-10):
+          quem ensina agora é o checklist Primeiros passos, na Visão Geral. */}
     </div>
     <ReprintConfirmDialog />
     </TrialExpiredGuard>
