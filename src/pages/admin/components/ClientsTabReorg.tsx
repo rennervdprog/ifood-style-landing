@@ -438,7 +438,7 @@ const ClientsTabReorgImpl = ({
             <EmptyState
               icon={<Users className="h-10 w-10" />}
               title="Nenhum cliente ainda"
-              description="Seus clientes aparecem aqui quando fazem o primeiro pedido."
+              description="Seus clientes aparecem aqui sozinhos, a partir do primeiro pedido de cada um. Com o tempo, esta tela mostra quem compra sempre e quem está sumindo — e você chama de volta quem esfriou. Compartilhe o link do seu cardápio pra trazer o primeiro."
             />
           ) : (
           <div className="text-center py-12">

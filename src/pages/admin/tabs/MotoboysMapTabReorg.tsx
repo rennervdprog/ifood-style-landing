@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCoordinate } from "@/lib/location";
 import TutorialHelpButton from "@/components/TutorialHelp";
+import { Bike } from "lucide-react";
 import { fetchOsrmRoute } from "@/lib/osrmRouting";
 
 // Aba "Onde Estão Meus Motoboys": mapa com TODOS os motoboys vinculados à
@@ -439,8 +440,14 @@ export default function MotoboysMapTabReorg({ storeId }: { storeId: string }) {
 
         <div className="flex w-full flex-col gap-2.5 lg:w-[340px] lg:shrink-0">
           {fleet.length === 0 && (
-            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-              Nenhum motoboy vinculado a esta loja ainda. Vincule um motoboy na aba Motoboys para ele aparecer aqui.
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-2">
+                <Bike className="h-5 w-5 text-primary" />
+                <p className="text-sm font-bold text-foreground">Nenhum motoboy vinculado ainda</p>
+              </div>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Vincule um motoboy na aba Motoboys. Quando ele abrir o app do entregador e ficar online, aparece aqui — em entrega, você acompanha o ponto dele andando até o cliente.
+              </p>
             </div>
           )}
           {fleet.map((f) => {

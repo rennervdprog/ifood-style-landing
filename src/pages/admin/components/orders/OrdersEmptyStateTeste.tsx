@@ -9,7 +9,7 @@ interface Props {
 }
 
 const CONFIG: Record<string, { icon: any; title: string; hint: string }> = {
-  pendente: { icon: Clock, title: "Tudo em ordem! 🎉", hint: "Novos pedidos aparecerão automaticamente. Relaxe! 😎" },
+  pendente: { icon: Clock, title: "Tudo em ordem! 🎉", hint: "Novos pedidos aparecem aqui sozinhos, na hora. Compartilhe o link do seu cardápio pra chegar o próximo." },
   preparando: { icon: ChefHat, title: "Nenhum pedido em preparo", hint: "Aceite pedidos pendentes para começar a produzir." },
   pronto_para_entrega: { icon: Package, title: "Nenhum pedido pronto", hint: "Marque pedidos como prontos quando finalizarem." },
   delivery: { icon: Truck, title: "Nenhuma entrega em andamento", hint: "Entregas em andamento aparecerão aqui." },
