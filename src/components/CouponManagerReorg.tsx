@@ -1,4 +1,5 @@
 // Fase 4 da reorganização do painel (2026-11-08) — cópia Reorg, SOMENTE /admin-teste.
+import EmptyState from "@/components/EmptyState";
 import { formatBRL } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -405,7 +406,11 @@ const CouponManagerReorg = ({ storeId, isAdmin }: CouponManagerProps) => {
         </div>
         </>
       ) : (
-        <p className="text-center text-sm text-muted-foreground py-6">Nenhum cupom criado ainda.</p>
+        <EmptyState
+          icon={<Tag className="h-10 w-10" />}
+          title="Nenhum cupom criado ainda"
+          description="Cupom é um código que o cliente digita no pedido pra ganhar desconto ou frete grátis. Crie o primeiro com um modelo pronto da Criação rápida, aqui em cima — o PRIMEIRA10, por exemplo, dá 10% pra quem nunca comprou."
+        />
       )}
     </div>
   );
