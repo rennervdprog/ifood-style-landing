@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCoordinate } from "@/lib/location";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import { fetchOsrmRoute } from "@/lib/osrmRouting";
 
 // Aba "Onde Estão Meus Motoboys": mapa com TODOS os motoboys vinculados à
@@ -403,11 +404,14 @@ export default function MotoboysMapTabReorg({ storeId }: { storeId: string }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-extrabold tracking-tight">Onde Estão Meus Motoboys</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Posição de cada motoboy da sua loja, atualizada sozinha conforme o app dele envia.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-extrabold tracking-tight">Onde Estão Meus Motoboys</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Posição de cada motoboy da sua loja, atualizada sozinha conforme o app dele envia.
+          </p>
+        </div>
+        <TutorialHelpButton tutorialId="motoboys_map" />
       </div>
 
       <div className="flex flex-wrap gap-2">
