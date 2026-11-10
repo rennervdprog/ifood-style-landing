@@ -834,12 +834,12 @@ export default function DashboardOverviewSectionReorg(props: Props) {
     </div>
   </div>
 
-  {/* Checklist: só aparece enquanto houver pendência */}
+  {/* Primeiros passos: só aparece enquanto houver pendência, já aberto */}
   {setupDoneCount < setupSteps.length && (
-  <details className="rounded-2xl border border-border bg-card overflow-hidden">
+  <details open className="rounded-2xl border border-border bg-card overflow-hidden">
     <summary className="flex items-center gap-3 p-4 cursor-pointer list-none">
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-bold text-foreground">Configurar Loja</h3>
+        <h3 className="text-sm font-bold text-foreground">Primeiros passos</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
           {setupDoneCount} de {setupSteps.length} concluídos
           {setupDoneCount < setupSteps.length ? " — toque para ver o que falta" : ""}
