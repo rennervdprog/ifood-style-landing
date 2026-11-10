@@ -32,6 +32,7 @@ import { useUserRouting } from "@/hooks/useUserRouting";
 import { APP_VERSION } from "@/lib/appVersion";
 import { useDelayedFallback } from "@/lib/useDelayedFallback";
 import { useNativeNavStackTracker } from "@/lib/nativeNavStack";
+import { parseReferralFromSearch, storeReferralCode } from "@/lib/affiliates";
 
 // Rotas divididas por domínio (MVC feature-based). Cada arquivo importa suas
 // próprias páginas de `src/routes/lazyPages` — App.tsx só compõe o shell.
@@ -86,6 +87,20 @@ const AppRoutes = memo(function AppRoutes() {
 // (route resolvers) possam ler o mesmo cache sem duplicar queries.
 const isNativeApp = typeof window !== "undefined" &&
   (window as any).Capacitor?.isNativePlatform?.() === true;
+
+/**
+ * Captura `?ref=CODIGO` (link de afiliado) em QUALQUER rota — landing
+ * inclusa — e guarda o código em localStorage para o cadastro da loja
+ * consumir depois (ver src/lib/affiliates.ts, item 1.2 dos afiliados).
+ */
+const ReferralCapture = () => {
+  const location = useLocation();
+  useEffect(() => {
+    const code = parseReferralFromSearch(location.search);
+    if (code) storeReferralCode(code);
+  }, [location.search]);
+  return null;
+};
 
 /** Listens for push notification taps and navigates via React Router */
 const PushNavigator = () => {
@@ -358,6 +373,7 @@ const App = () => {
           {showAncillary && <DebugOverlay />}
           <BrowserRouter>
             <PushNavigator />
+            <ReferralCapture />
             {showAncillary && <RecoveryRedirect />}
             <CapacitorRouteGuard />
             {showAncillary && !partnerNative && <StoreAppGuard />}
