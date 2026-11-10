@@ -317,7 +317,7 @@ const App = () => {
           // App parceiro: só prefetch das telas do lojista/entregador.
           // Não baixar bundles de cliente (StorePage, CartPage, CheckoutPage)
           // — economiza ~300KB no 4G/5G.
-          import("./pages/AdminDashboardV2Teste").catch(() => {});
+          import("./pages/AdminDashboardReorg").catch(() => {});
           import("./pages/PdvPageTeste").catch(() => {});
           import("./pages/DriverDashboardV2").catch(() => {});
         } else {
