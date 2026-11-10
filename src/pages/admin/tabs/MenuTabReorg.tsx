@@ -69,7 +69,7 @@ const MenuTabReorg = ({ storeId, storeCategory, initialView = "cardapio" }: Prop
           Estoque
         </button>
       </div>
-      <TutorialHelpButton tutorialId="menu" />
+      <TutorialHelpButton tutorialId={view === "estoque" ? "stock" : "menu"} />
       </div>
 
       {view === "cardapio" ? (
