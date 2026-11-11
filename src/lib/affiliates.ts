@@ -70,3 +70,90 @@ export function creditReleaseDate(earnedAtISO: string): string {
 export function isPayoutDayValid(day: number): boolean {
   return Number.isInteger(day) && AFFILIATE_PAYOUT_DAYS.includes(day);
 }
+
+// ─── Captura do código de indicação (item 1.2) ─────────────────────────
+//
+// O link do afiliado usa `?ref=CODIGO` — o mesmo parâmetro que moderadores
+// e revendedores já usam. Cada programa resolve o código na sua própria
+// tabela e uma tentativa que não casa é ignorada sem erro, então os três
+// fluxos convivem na mesma URL. O código é guardado em localStorage para
+// sobreviver às etapas do cadastro (e ao desvio /auth → /parceiro) e é
+// consumido uma única vez, no cadastro da loja, pela RPC
+// bind_store_to_affiliate (migration 20261110190000).
+
+/** Chave do localStorage onde o código capturado espera o cadastro. */
+export const REFERRAL_STORAGE_KEY = "itasuper_affiliate_ref";
+
+/** Fontes do vínculo gravadas em affiliate_referrals.source. */
+export type AffiliateReferralSource = "link" | "code";
+
+/**
+ * Normaliza um código de indicação: trim, maiúsculas e só [A-Z0-9] —
+ * EXATAMENTE a mesma normalização das RPCs reseller_attach_signup e
+ * bind_store_to_affiliate no banco, para cliente e servidor concordarem.
+ */
+export function normalizeReferralCode(raw: string | null | undefined): string {
+  return (raw ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+/**
+ * Extrai e normaliza o código de `?ref=` de uma query string
+ * ("?ref=ABC", "ref=ABC" ou a string de um URLSearchParams).
+ * Retorna null quando não há código válido.
+ */
+export function parseReferralFromSearch(
+  search: string | null | undefined,
+): string | null {
+  if (!search) return null;
+  try {
+    const params = new URLSearchParams(
+      search.startsWith("?") ? search.slice(1) : search,
+    );
+    const code = normalizeReferralCode(params.get("ref"));
+    return code || null;
+  } catch {
+    return null;
+  }
+}
+
+function referralStorage(): Storage | null {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage : null;
+  } catch {
+    return null; // navegador bloqueando storage (modo privado etc.)
+  }
+}
+
+/** Guarda o código capturado para o cadastro consumir depois. */
+export function storeReferralCode(code: string): void {
+  const normalized = normalizeReferralCode(code);
+  const storage = referralStorage();
+  if (!normalized || !storage) return;
+  try {
+    storage.setItem(REFERRAL_STORAGE_KEY, normalized);
+  } catch {
+    /* storage cheio/bloqueado: o vínculo é best-effort */
+  }
+}
+
+/** O código guardado pela captura, já normalizado (ou null). */
+export function getStoredReferralCode(): string | null {
+  const storage = referralStorage();
+  if (!storage) return null;
+  try {
+    return normalizeReferralCode(storage.getItem(REFERRAL_STORAGE_KEY)) || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Apaga o código guardado (depois que o cadastro o consumiu). */
+export function clearStoredReferralCode(): void {
+  const storage = referralStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(REFERRAL_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
