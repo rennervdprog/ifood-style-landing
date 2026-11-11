@@ -43,6 +43,7 @@ import { lojistaRoutes } from "@/routes/domains/lojista.routes";
 import { driverRoutes } from "@/routes/domains/driver.routes";
 import { adminRoutes } from "@/routes/domains/admin.routes";
 import { revendedorRoutes } from "@/routes/domains/revendedor.routes";
+import { afiliadoRoutes } from "@/routes/domains/afiliado.routes";
 import { storeRoutes } from "@/routes/domains/store.routes";
 
 /**
@@ -75,6 +76,7 @@ const AppRoutes = memo(function AppRoutes() {
       {driverRoutes}
       {adminRoutes}
       {revendedorRoutes}
+      {afiliadoRoutes}
       {/* store.routes contém o catch-all `/:slug` e o `*` 404 — deixe por último */}
       {storeRoutes}
     </Routes>
