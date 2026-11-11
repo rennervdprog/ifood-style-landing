@@ -156,11 +156,21 @@ export default function AfiliadoDashboard() {
     );
   }
 
+  if (affiliate.status !== "approved") {
+    return (
+      <StateScreen title="Situação do cadastro">
+        Situação do cadastro indisponível no momento.
+      </StateScreen>
+    );
+  }
+
   const credits = panel.data?.credits ?? [];
   const referrals = panel.data?.referrals ?? [];
   const payouts = panel.data?.payouts ?? [];
-  const summary = summarizeCredits(credits);
-  const received = receivedTotal(credits, payouts);
+  const creditTotals = panel.data?.creditTotals ?? [];
+  const payoutTotals = panel.data?.payoutTotals ?? [];
+  const summary = summarizeCredits(creditTotals);
+  const received = receivedTotal(creditTotals, payoutTotals);
   const progress = payoutProgress(summary.available);
   const nextBatch = nextPayoutDate(affiliate.payout_day);
   const referralLink = buildReferralLink(
