@@ -66,6 +66,7 @@ const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
+const AfiliadosTab = lazy(() => import("./super-admin/tabs/AfiliadosTab"));
 const ConsolidadoTab = lazy(() => import("./super-admin/tabs/ConsolidadoTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
@@ -215,6 +216,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "planos-templates"
     | "addons"
     | "revendedores"
+    | "afiliados"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("consolidado");
   type StoresSection = "lojas" | "cidades" | "entrega";
@@ -1283,6 +1285,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                      ]},
                      { group: "Parceiros", items: [
                        { key: "revendedores", label: "Revendedores", icon: Handshake },
+                       { key: "afiliados", label: "Afiliados", icon: Users },
                        { key: "socios", label: "Sócios", icon: Handshake },
                      ]},
                      { group: "Sistema", items: [
@@ -1371,6 +1374,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                    )}
                    {financeSection === "revendedores" && (
                      <Suspense fallback={<TabFallback />}><RevendedoresTab /></Suspense>
+                   )}
+                   {financeSection === "afiliados" && (
+                     <Suspense fallback={<TabFallback />}><AfiliadosTab /></Suspense>
                    )}
                </div>
              )}
