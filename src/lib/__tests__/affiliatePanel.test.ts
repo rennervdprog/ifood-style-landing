@@ -6,6 +6,7 @@ import {
   payoutProgress,
   buildReferralLink,
   formatBRL,
+  formatDateBR,
   type AffiliateCreditLike,
   type AffiliatePayoutLike,
 } from "@/lib/affiliatePanel";
@@ -162,6 +163,20 @@ describe("buildReferralLink", () => {
     expect(buildReferralLink("https://itasuper.com.br/", "MARINA")).toBe(
       "https://itasuper.com.br/cadastro-lojista?ref=MARINA",
     );
+  });
+});
+
+describe("formatDateBR", () => {
+  it("string só-data (coluna date) é interpretada como data local", () => {
+    expect(formatDateBR("2026-11-20")).toBe("20/11/2026");
+    expect(formatDateBR("2026-12-01")).toBe("01/12/2026");
+  });
+
+  it("instante ISO com hora continua formatando pela data local", () => {
+    // Sem sufixo Z/offset, o ISO é interpretado como hora local.
+    expect(formatDateBR("2026-11-20T12:00:00")).toBe("20/11/2026");
+    // Date construído por componentes locais também.
+    expect(formatDateBR(new Date(2026, 11, 1, 15, 30))).toBe("01/12/2026");
   });
 });
 
