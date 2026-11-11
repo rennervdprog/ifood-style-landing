@@ -11,6 +11,12 @@ import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
+import {
+  normalizeReferralCode,
+  getStoredReferralCode,
+  clearStoredReferralCode,
+  type AffiliateReferralSource,
+} from "@/lib/affiliates";
 import { Check } from "lucide-react";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
@@ -95,6 +101,11 @@ const CadastroLojista = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"fixed" | "pdv_only" | "">("");
   const [acceptedDynamic, setAcceptedDynamic] = useState(false);
+  // Afiliados (item 1.2): código de indicação da loja. Pré-preenchido pelo
+  // link (?ref) ou pelo código guardado na captura; se o lojista digitar ou
+  // alterar, a fonte do vínculo vira 'code'.
+  const [affiliateCode, setAffiliateCode] = useState("");
+  const [affiliateCodeSource, setAffiliateCodeSource] = useState<AffiliateReferralSource>("link");
   const [expandedPlan, setExpandedPlan] = useState<"fixed" | "pdv_only" | "">("");
   const isPdvOnly = selectedPlan === "pdv_only";
 
@@ -115,6 +126,18 @@ const CadastroLojista = () => {
       setStep((s) => (s === 0 ? 1 : s));
     }
   }, [promoCode]);
+
+  // Afiliados (item 1.2): pré-preenche o código de indicação — primeiro o
+  // ?ref desta URL, senão o código guardado pela captura global (App).
+  // Só na montagem: referralCode é o ?ref da URL inicial da página.
+  useEffect(() => {
+    const initial = normalizeReferralCode(referralCode) || getStoredReferralCode() || "";
+    if (initial) {
+      setAffiliateCode(initial);
+      setAffiliateCodeSource("link");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Tracking: visita ao cadastro de lojista (etapa final do funil de aquisição)
   useEffect(() => {
@@ -517,6 +540,33 @@ const CadastroLojista = () => {
             } catch {
               // Não bloqueia o cadastro
             }
+          }
+
+          // Vincular loja ao AFILIADO via código de indicação (item 1.2).
+          // A RPC bind_store_to_affiliate é idempotente e valida no banco:
+          // afiliado aprovado, dono da loja (ou admin) e autoindicação.
+          // Falha NUNCA bloqueia o cadastro — é best-effort, com log.
+          const affiliateCodeToBind = normalizeReferralCode(affiliateCode);
+          if (affiliateCodeToBind) {
+            try {
+              const { data: bindStatus, error: bindErr } = await (supabase as any).rpc(
+                "bind_store_to_affiliate",
+                {
+                  p_store_id: storeRow.id,
+                  p_code: affiliateCodeToBind,
+                  p_source: affiliateCodeSource,
+                }
+              );
+              if (bindErr) {
+                console.warn("[CadastroLojista] bind_store_to_affiliate erro:", bindErr.message);
+              } else {
+                console.info("[CadastroLojista] vínculo de afiliado:", bindStatus);
+              }
+            } catch (bindEx) {
+              console.warn("[CadastroLojista] bind_store_to_affiliate exceção (não bloqueia):", bindEx);
+            }
+            // Código consumido por este cadastro: não reutilizar o guardado.
+            clearStoredReferralCode();
           }
 
           // Loja criada com sucesso: só aqui o lojista entra no painel.
@@ -1071,6 +1121,21 @@ const CadastroLojista = () => {
                    />
                    <p className="text-[10px] text-muted-foreground mt-1 px-1">Usado para contato e Asaas.</p>
                  </div>
+
+                {/* Afiliados: código de indicação (opcional) */}
+                <div>
+                  <FieldInput
+                    icon={Users}
+                    placeholder="Código de indicação (opcional)"
+                    value={affiliateCode}
+                    onChange={(v) => {
+                      setAffiliateCode(normalizeReferralCode(v));
+                      setAffiliateCodeSource("code");
+                    }}
+                    maxLength={24}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Se alguém te indicou o ItaSuper, deixe o código da pessoa aqui — ou deixe em branco.</p>
+                </div>
 
                 {/* Terms */}
                 <label className="flex items-start gap-3 cursor-pointer select-none bg-muted/50 rounded-2xl p-3.5">
