@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION public.bind_store_to_affiliate(p_store_id uuid, p_cod
 AS $function$
 DECLARE
   v_requester uuid := auth.uid();
-  v_code text := upper(regexp_replace(coalesce(p_code, ''), '[^A-Z0-9]', '', 'g'));
+  v_code text := regexp_replace(upper(coalesce(p_code, '')), '[^A-Z0-9]', '', 'g');
   v_affiliate_id uuid;
   v_affiliate_user_id uuid;
   v_affiliate_document text;
