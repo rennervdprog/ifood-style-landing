@@ -165,6 +165,23 @@ export function formatBRL(value: number): string {
 
 /** Data (ISO ou Date) em dd/mm/aaaa, no fuso local de quem vê. */
 export function formatDateBR(value: string | Date): string {
-  const date = typeof value === "string" ? new Date(value) : value;
+  let date: Date;
+  if (typeof value === "string") {
+    // Coluna `date` do Postgres chega como "yyyy-mm-dd" (sem hora):
+    // `new Date("2026-11-20")` seria meia-noite UTC e renderizaria
+    // 19/11 em America/Sao_Paulo. Interprete como data local.
+    const onlyDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+    if (onlyDate) {
+      date = new Date(
+        Number(onlyDate[1]),
+        Number(onlyDate[2]) - 1,
+        Number(onlyDate[3]),
+      );
+    } else {
+      date = new Date(value);
+    }
+  } else {
+    date = value;
+  }
   return date.toLocaleDateString("pt-BR");
 }
