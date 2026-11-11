@@ -19,6 +19,7 @@ AS $function$
 DECLARE
   v_requester uuid := auth.uid();
   v_pix_key text := nullif(btrim(coalesce(p_pix_key, '')), '');
+  v_status text;
 BEGIN
   IF v_requester IS NULL THEN
     RAISE EXCEPTION 'Autenticação obrigatória.';
@@ -31,6 +32,19 @@ BEGIN
 
   IF v_pix_key IS NULL THEN
     RAISE EXCEPTION 'Informe sua chave Pix.' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT status INTO v_status
+  FROM public.affiliates
+  WHERE user_id = v_requester;
+
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Cadastro de afiliado não encontrado.';
+  END IF;
+
+  IF v_status = 'suspended' THEN
+    RAISE EXCEPTION 'Cadastro de afiliado suspenso: alterações de recebimento não permitidas.'
+      USING ERRCODE = '42501';
   END IF;
 
   UPDATE public.affiliates
@@ -48,6 +62,7 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.update_affiliate_payout_settings(text, int) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_affiliate_payout_settings(text, int) FROM anon;
 GRANT EXECUTE ON FUNCTION public.update_affiliate_payout_settings(text, int) TO authenticated, service_role;
 
 COMMENT ON FUNCTION public.update_affiliate_payout_settings(text, int) IS
