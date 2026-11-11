@@ -73,6 +73,9 @@ export const ROUTES = {
     entrar: "/revendedor/entrar",
     cadastro: "/revendedor/cadastro",
   },
+  afiliado: {
+    home: "/afiliado",
+  },
   kds: (token: string) => `/kds/${token}`,
 } as const;
 
