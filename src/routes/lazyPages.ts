@@ -54,6 +54,7 @@ export const ModeradorDashboard = lazy(() => import("@/pages/ModeradorDashboard"
 export const ResellerDashboard = lazy(() => import("@/pages/ResellerDashboard"));
 export const SejaRevendedor = lazy(() => import("@/pages/SejaRevendedor"));
 export const ResellerAuth = lazy(() => import("@/pages/ResellerAuth"));
+export const AfiliadoDashboard = lazy(() => import("@/pages/AfiliadoDashboard"));
 export const SupportAgentDashboard = lazy(() => import("@/pages/SupportAgentDashboard"));
 export const LinksPage = lazy(() => import("@/pages/LinksPage"));
 export const DownloadApp = lazy(() => import("@/pages/DownloadApp"));
