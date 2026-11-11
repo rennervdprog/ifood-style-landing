@@ -208,6 +208,10 @@ export default defineConfig(({ mode }) => ({
           /^\/~oauth/,
           /^\/api\//,
           /^\/functions\//,
+          // URLs de arquivo real (.apk, .pdf, ...) nunca caem no fallback
+          // da SPA — sem isso o SW devolve o index.html e o navegador mostra
+          // o 404 do app em vez de baixar o arquivo (2.5.8, 2026-11-11).
+          /[^/?]+\.[^/]+$/,
         ],
         cleanupOutdatedCaches: true,
         // Não pular o waiting nem reivindicar clientes: o SW novo só assume
