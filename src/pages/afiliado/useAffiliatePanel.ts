@@ -13,7 +13,6 @@ export interface AffiliateRow {
   user_id: string | null;
   name: string | null;
   email: string | null;
-  document: string | null;
   pix_key: string | null;
   payout_day: number;
   status: "pending" | "approved" | "suspended";
@@ -56,11 +55,31 @@ export interface AffiliatePayoutRow {
   created_at: string;
 }
 
+/** Linha mínima de crédito para os TOTAIS (sem limite de exibição). */
+export interface AffiliateCreditTotalsRow {
+  credit_amount: number | string;
+  status: "pending" | "available" | "paid" | "cancelled";
+  release_at: string;
+  payout_id: string | null;
+}
+
+/** Linha mínima de lote para os TOTAIS (sem limite de exibição). */
+export interface AffiliatePayoutTotalsRow {
+  amount: number | string;
+  status: "scheduled" | "paid" | "failed" | "cancelled";
+}
+
 export interface AffiliatePanelData {
   affiliate: AffiliateRow | null;
+  /** Lista de exibição do extrato (limitada). NÃO usar para somar saldos. */
   credits: AffiliateCreditRow[];
   referrals: AffiliateReferralRow[];
+  /** Lista de exibição dos pagamentos (limitada). NÃO usar para somar. */
   payouts: AffiliatePayoutRow[];
+  /** Todos os créditos (só colunas de cálculo) — base dos saldos. */
+  creditTotals: AffiliateCreditTotalsRow[];
+  /** Todos os lotes (só colunas de cálculo) — base do "já recebido". */
+  payoutTotals: AffiliatePayoutTotalsRow[];
 }
 
 const db = supabase as unknown as {
@@ -133,38 +152,69 @@ export function useAffiliatePanel() {
     queryFn: async (): Promise<AffiliatePanelData> => {
       const { data: affiliateData, error: affiliateError } = await db
         .from("affiliates")
-        .select("*")
+        .select(
+          "id, user_id, name, email, pix_key, payout_day, status, referral_code, created_at",
+        )
         .eq("user_id", user!.id)
         .maybeSingle();
       if (affiliateError) throw affiliateError;
 
       const affiliate = (affiliateData ?? null) as AffiliateRow | null;
       if (!affiliate) {
-        return { affiliate: null, credits: [], referrals: [], payouts: [] };
+        return {
+          affiliate: null,
+          credits: [],
+          referrals: [],
+          payouts: [],
+          creditTotals: [],
+          payoutTotals: [],
+        };
       }
 
-      const [creditsRes, referralsRes, payoutsRes] = await Promise.all([
+      const [
+        creditsRes,
+        referralsRes,
+        payoutsRes,
+        creditTotalsRes,
+        payoutTotalsRes,
+      ] = await Promise.all([
         db
           .from("affiliate_credits")
-          .select("*")
+          .select(
+            "id, store_id, plan_kind, base_amount, rate_percent, credit_amount, status, earned_at, release_at, payout_id, created_at",
+          )
           .eq("affiliate_id", affiliate.id)
           .order("created_at", { ascending: false })
           .limit(50),
         db
           .from("affiliate_referrals")
-          .select("*")
+          .select("id, store_id, source, created_at")
           .eq("affiliate_id", affiliate.id)
           .order("created_at", { ascending: false }),
         db
           .from("affiliate_payouts")
-          .select("*")
+          .select(
+            "id, amount, pix_key, status, scheduled_for, paid_at, created_at",
+          )
           .eq("affiliate_id", affiliate.id)
           .order("created_at", { ascending: false })
           .limit(24),
+        // Totais: SEM limit — os saldos não podem somar listas truncadas.
+        // Só as colunas de cálculo (crédito: credit_amount; lote: amount).
+        db
+          .from("affiliate_credits")
+          .select("credit_amount, status, release_at, payout_id")
+          .eq("affiliate_id", affiliate.id),
+        db
+          .from("affiliate_payouts")
+          .select("amount, status")
+          .eq("affiliate_id", affiliate.id),
       ]);
       if (creditsRes.error) throw creditsRes.error;
       if (referralsRes.error) throw referralsRes.error;
       if (payoutsRes.error) throw payoutsRes.error;
+      if (creditTotalsRes.error) throw creditTotalsRes.error;
+      if (payoutTotalsRes.error) throw payoutTotalsRes.error;
 
       const rawCredits = (creditsRes.data ?? []) as Array<
         Omit<AffiliateCreditRow, "store_name">
@@ -176,6 +226,10 @@ export function useAffiliatePanel() {
         created_at: string;
       }>;
       const payouts = (payoutsRes.data ?? []) as AffiliatePayoutRow[];
+      const creditTotals = (creditTotalsRes.data ??
+        []) as AffiliateCreditTotalsRow[];
+      const payoutTotals = (payoutTotalsRes.data ??
+        []) as AffiliatePayoutTotalsRow[];
 
       const storeIds = Array.from(
         new Set([
@@ -203,7 +257,7 @@ export function useAffiliatePanel() {
         created_at: r.created_at,
       }));
 
-      return { affiliate, credits, referrals, payouts };
+      return { affiliate, credits, referrals, payouts, creditTotals, payoutTotals };
     },
   });
 }
