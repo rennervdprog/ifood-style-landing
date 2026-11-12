@@ -53,6 +53,7 @@ import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
 import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
+import { splitCartItemId } from "@/pages/pdv/splitCartItemId";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import {
   stashPendingReceipt,
@@ -560,15 +561,18 @@ const PdvPage = () => {
     try {
       const { rpcAddTabItem } = await import("@/pages/pdv/state/usePdvTables");
       for (const item of snapshot) {
+        // N1 (F3): o id composto `produto::variante` quebra o cast `::uuid`
+        // de `pdv_add_tab_item`. Envia uuid pai + metadata com a variante.
+        const split = splitCartItemId(item);
         await rpcAddTabItem({
           tabId: selectedTabId,
-          productId: item.id,
+          productId: split.productId,
           name: item.name,
           quantity: item.quantity,
           unitPrice: item.price,
           addons: item.addons ?? null,
           observations: item.observations ?? null,
-          metadata: item.metadata ?? null,
+          metadata: split.metadata,
         });
         sentCount++;
       }
