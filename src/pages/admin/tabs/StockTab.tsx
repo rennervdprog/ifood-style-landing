@@ -633,20 +633,32 @@ export default function StockTab({ storeId }: Props) {
               variant="outline"
               onClick={() => {
                 if (confirm(`Ativar controle de estoque para ${notTracked.length} produtos?\n\nVocê poderá ajustar as quantidades depois.`)) {
-                  // Ativa todos de uma vez com quantidade 0
-                  Promise.all(
-                    notTracked.map((item) =>
-                      supabase.from("product_stock").upsert({
-                        product_id: item.product_id,
-                        store_id: storeId,
-                        quantity: 0,
-                        min_quantity: 5,
-                        track_stock: true,
-                      }, { onConflict: "product_id,store_id" })
-                    )
-                  ).then(() => {
-                    queryClient.invalidateQueries({ queryKey: ["stock-list", storeId] });
-                    toast.success(`${notTracked.length} produtos com controle ativado! Ajuste as quantidades.`);
+                  // Ativa todos de uma vez com quantidade 0 (linhas novas nascem com 0;
+                  // linhas existentes mantêm o saldo). Uma chamada por item, via RPCs —
+                  // o upsert direto falhava: não existe constraint única (product_id, store_id).
+                  const activateOne = async (item: StockItem) => {
+                    const { error: e1 } = await supabase.rpc("stock_toggle_tracking", {
+                      _product_id: item.product_id,
+                      _track: true,
+                    });
+                    if (e1) throw e1;
+                    const { error: e2 } = await supabase.rpc("stock_set_min", {
+                      _product_id: item.product_id,
+                      _min_quantity: 5,
+                    });
+                    if (e2) throw e2;
+                  };
+                  Promise.allSettled(notTracked.map(activateOne)).then((results) => {
+                    const ok = results.filter((r) => r.status === "fulfilled").length;
+                    const failed = results.length - ok;
+                    refresh();
+                    if (failed === 0) {
+                      toast.success(`${ok} produtos com controle ativado! Ajuste as quantidades.`);
+                    } else if (ok > 0) {
+                      toast.error(`${ok} de ${results.length} produtos ativados. ${failed} falharam — tente de novo.`);
+                    } else {
+                      toast.error("Não foi possível ativar o controle. Tente de novo.");
+                    }
                   });
                 }
               }}

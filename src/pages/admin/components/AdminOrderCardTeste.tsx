@@ -51,6 +51,60 @@ const RequiredAddonHighlights = ({ highlights }: RequiredAddonHighlightsProps) =
   );
 };
 
+/** Aviso de falta de estoque (Fase 1, L-30): a baixa não cobriu o pedido.
+ *  A seção busca em lote em `order_stock_alerts` e entrega pronto p/ exibir
+ *  (só avisos não resolvidos); o card só lê e mostra. Nunca bloqueia ação. */
+export interface StockShortageAlert {
+  id: string;
+  kind: "insufficient_stock" | "recipe_shortfall" | "decrement_error";
+  /** Nome do que faltou: o produto (baixa direta) ou o ingrediente (ficha técnica). */
+  itemName: string;
+  /** Nome do produto vendido, quando o que faltou é um ingrediente dele. */
+  productName?: string | null;
+  requestedQty: number;
+  availableQty: number;
+  shortfallQty: number;
+  unit: string;
+}
+
+const formatStockQty = (value: number, unit: string) => {
+  const n = Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+  return unit && unit !== "un" ? `${n} ${unit}` : n;
+};
+
+const StockShortageBox = ({ alerts }: { alerts: StockShortageAlert[] }) => {
+  if (alerts.length === 0) return null;
+  return (
+    <div className="mx-3 mb-2 space-y-1.5">
+      <div className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2">
+        <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+          <AlertTriangle className="h-3 w-3 text-primary" /> Estoque não cobriu este pedido
+        </p>
+        <div className="mt-1 space-y-1">
+          {alerts.map((alert) => (
+            <p key={alert.id} className="text-xs text-foreground">
+              <span className="font-bold">{alert.itemName}</span>
+              {alert.productName && alert.productName !== alert.itemName && (
+                <span className="text-muted-foreground"> (ingrediente de {alert.productName})</span>
+              )}{" "}
+              {alert.kind === "decrement_error" ? (
+                <span className="text-muted-foreground">— não foi possível dar baixa no estoque. Confira antes de preparar.</span>
+              ) : (
+                <span className="text-muted-foreground">
+                  — pedido {formatStockQty(alert.requestedQty, alert.unit)}, em estoque{" "}
+                  {formatStockQty(alert.availableQty, alert.unit)}, faltou{" "}
+                  <span className="font-bold text-destructive">{formatStockQty(alert.shortfallQty, alert.unit)}</span>.
+                  Confira antes de preparar.
+                </span>
+              )}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export interface AdminOrderCardTesteProps {
   order: any;
   index: number;
@@ -68,6 +122,8 @@ export interface AdminOrderCardTesteProps {
   onlineDriversCount: number;
   linkedStoreDrivers: any[] | undefined;
   highlights: RequiredAddonHighlight[];
+  /** Avisos de falta de estoque não resolvidos (L-30) — busca em lote na seção. */
+  stockAlerts?: StockShortageAlert[];
   clientName: string;
   clientWhatsApp: string;
   driverName: (id: string) => string;
@@ -92,7 +148,7 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
     order, index, isAddressExpanded, isOwnDelivery, hasLinkedDrivers,
     driversLoading, cancelConfirm, cancelReason, setCancelReason, cancellingOrder,
     storeName, storeId, evolutionConnected, onlineDriversCount, linkedStoreDrivers,
-    highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
+    highlights, stockAlerts, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
     toggleAddress, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
     groupSelectable, groupChecked, onToggleGroup,
@@ -147,6 +203,7 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
   const elapsedMs = Date.now() - new Date(order.created_at).getTime();
   const elapsedMin = Math.floor(elapsedMs / 60000);
   const isDelayed = elapsedMin > 20 && ["pendente", "preparando"].includes(order.status);
+  const hasStockAlert = (stockAlerts?.length ?? 0) > 0;
   const action = mainAction;
 
   // Escolha inicial do motoboy: só faz sentido quando a entrega é da própria loja,
@@ -213,6 +270,11 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
               <AlertTriangle className="h-2.5 w-2.5" /> Atrasado
             </span>
           )}
+          {hasStockAlert && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+              <AlertTriangle className="h-2.5 w-2.5" /> Sem estoque
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
@@ -263,6 +325,8 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
       )}
 
             <RequiredAddonHighlights highlights={highlights} />
+
+      <StockShortageBox alerts={stockAlerts ?? []} />
 
       <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
         {order.order_items?.map((item: any) => (
@@ -830,6 +894,9 @@ const areEqual = (prev: AdminOrderCardTesteProps, next: AdminOrderCardTesteProps
   if (prev.mainAction?.label !== next.mainAction?.label) return false;
   if (prev.groupSelectable !== next.groupSelectable) return false;
   if (prev.groupChecked !== next.groupChecked) return false;
+  // L-30: avisos de falta de estoque chegam por prop própria — sem comparar,
+  // o memo congelaria o card sem o aviso quando ele fosse criado no banco.
+  if (JSON.stringify(prev.stockAlerts ?? null) !== JSON.stringify(next.stockAlerts ?? null)) return false;
   return true;
 };
 
