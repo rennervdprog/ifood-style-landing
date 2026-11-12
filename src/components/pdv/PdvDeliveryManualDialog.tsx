@@ -11,6 +11,7 @@ import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep, formatCep } from "@/lib/location";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import type { CartItem } from "@/pages/pdv/types";
+import { splitCartItemId } from "@/pages/pdv/splitCartItemId";
 
 interface Props {
   open: boolean;
@@ -324,15 +325,20 @@ export function PdvDeliveryManualDialog({
       if (oe) throw oe;
 
       const { error: itemsError } = await supabase.from("order_items").insert(
-        cart.map((item) => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
-          observations: item.observations || null,
-          metadata: item.metadata && Object.keys(item.metadata).length > 0 ? item.metadata : null,
-        })) as any,
+        cart.map((item) => {
+          // N1 (F6): id composto quebra o cast `::uuid` do insert. Envia
+          // uuid pai + metadata com a variante (o erro já era checado aqui).
+          const split = splitCartItemId(item);
+          return {
+            order_id: order.id,
+            product_id: split.productId,
+            quantity: item.quantity,
+            unit_price: item.price,
+            addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
+            observations: item.observations || null,
+            metadata: split.metadata,
+          };
+        }) as any,
       );
       if (itemsError) {
         // Nunca deixar um pedido oco na cozinha: desfaz o pedido (best-effort)
