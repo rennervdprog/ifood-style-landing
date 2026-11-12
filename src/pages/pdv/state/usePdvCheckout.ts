@@ -8,6 +8,7 @@ import { printPdvReceipt } from "@/lib/thermalPrint";
 import type { CartItem, PdvSession } from "../types";
 import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { enqueue as outboxEnqueue, isOfflineQueueEnabled } from "./pdvOutbox";
+import { splitCartItemId } from "../splitCartItemId";
 import type { PendingReceiptJob } from "./pendingReceipt";
 
 /** Timeout de rede para a RPC (Fase 3). */
@@ -255,18 +256,20 @@ export function usePdvCheckout() {
           operator_id: operatorId ?? null,
           // Fase 2 (L-02a): baixa o estoque DENTRO da transação do finalize.
           decrement_stock: true,
-          items: cart.map((item) => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            unit_price: item.price,
-            addons:
-              item.addons && item.addons.length > 0 ? item.addons : null,
-            observations: item.observations || null,
-            metadata:
-              item.metadata && Object.keys(item.metadata).length > 0
-                ? item.metadata
-                : null,
-          })),
+          items: cart.map((item) => {
+            // N1 (F4): id composto quebra o cast `::uuid` dentro de
+            // `pdv_finalize_sale`. Envia uuid pai + metadata com a variante.
+            const split = splitCartItemId(item);
+            return {
+              product_id: split.productId,
+              quantity: item.quantity,
+              unit_price: item.price,
+              addons:
+                item.addons && item.addons.length > 0 ? item.addons : null,
+              observations: item.observations || null,
+              metadata: split.metadata,
+            };
+          }),
         };
         let shouldQueueOffline = browserOffline;
         let offlineQueued = false;
@@ -353,23 +356,32 @@ export function usePdvCheckout() {
         if (oe) throw oe;
           orderId = order.id;
 
-        // 2) Items
-        await supabase.from("order_items").insert(
-          cart.map((item) => ({
-            order_id: orderId!,
-            product_id: item.id,
-            quantity: item.quantity,
-            unit_price: item.price,
-            addons:
-              item.addons && item.addons.length > 0
-                ? JSON.stringify(item.addons)
-                : null,
-            observations: item.observations || null,
-            metadata: item.metadata && Object.keys(item.metadata).length > 0
-              ? item.metadata
-              : null,
-          })) as any,
+        // 2) Items (N1 F4: uuid pai + metadata; o erro AGORA é checado —
+        // o insert silencioso criava pedido sem itens + tela de sucesso).
+        const { error: itemsError } = await supabase.from("order_items").insert(
+          cart.map((item) => {
+            const split = splitCartItemId(item);
+            return {
+              order_id: orderId!,
+              product_id: split.productId,
+              quantity: item.quantity,
+              unit_price: item.price,
+              addons:
+                item.addons && item.addons.length > 0
+                  ? JSON.stringify(item.addons)
+                  : null,
+              observations: item.observations || null,
+              metadata: split.metadata,
+            };
+          }) as any,
         );
+        if (itemsError) {
+          // Nunca deixar um pedido oco: desfaz o pedido (best-effort) e
+          // falha ruidosamente — o `catch` externo mostra o erro e a venda
+          // NÃO conclui (mesmo padrão do pedido manual).
+          await supabase.from("orders").delete().eq("id", orderId!);
+          throw itemsError;
+        }
 
         // 3) Movements (uma por forma de pagamento)
         await supabase.from("pdv_movements" as any).insert(
