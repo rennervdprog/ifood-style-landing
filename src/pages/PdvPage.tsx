@@ -54,6 +54,7 @@ import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { splitCartItemId } from "@/pages/pdv/splitCartItemId";
+import { clearSaleWithUndo } from "@/pages/pdv/clearSaleWithUndo";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import {
   stashPendingReceipt,
@@ -1037,7 +1038,9 @@ const PdvPage = () => {
       if (cart.length > 0 && !loading && !orderDone) handleVenda();
     },
     onClearSale: () => {
-      if (cart.length > 0) setClearGateOpen(true);
+      // 2a: abre o portão também com a venda vazia quando há comanda
+      // selecionada — sem isso, a mesa ocupada só pela seleção ficava presa.
+      if (cart.length > 0 || selectedTabId) setClearGateOpen(true);
     },
     onHelp: () => setShowShortcuts(true),
     onSangria: () => setMovModal("sangria"),
@@ -1994,13 +1997,17 @@ const PdvPage = () => {
           onClose={() => setClearGateOpen(false)}
           onLogin={async () => {
             setClearGateOpen(false);
-            // N2 Opção A (gesto ESC): mesmo auto-cancelamento da comanda
-            // vazia do botão "Limpar venda" — silencioso, sem toast novo.
-            // Vive SÓ neste gesto: o fechamento normal de comanda
-            // (pós-`pdv_close_tab`) chama `clearSale` direto e não passa aqui.
+            // F1 (2c): gesto ESC unificado com o botão — mesmo
+            // auto-cancelamento da comanda vazia (N2) + snapshot + toast
+            // "Venda limpa" com Desfazer. Vive SÓ neste gesto: o fechamento
+            // normal de comanda (pós-`pdv_close_tab`) chama `clearSale`
+            // direto e não passa aqui.
             const { cancelEmptyTab } = await import("@/pages/pdv/state/usePdvTables");
-            await cancelEmptyTab(selectedTabId);
-            clearSale();
+            await clearSaleWithUndo({
+              cart, tableId, selectedTable, selectedTabId,
+              discountType, discountInput,
+              cancelEmptyTab, clearSale, restoreCart,
+            });
             // Item 12 (reaberto): sair do sucesso por aqui também
             // dispara o cupom adiado da venda concluída.
             flushPendingReceipt();
