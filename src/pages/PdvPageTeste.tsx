@@ -1996,8 +1996,14 @@ const PdvPageTeste = () => {
           requiredRole="gerente"
           title="Autorização de gerente"
           onClose={() => setClearGateOpen(false)}
-          onLogin={() => {
+          onLogin={async () => {
             setClearGateOpen(false);
+            // N2 Opção A (gesto ESC): mesmo auto-cancelamento da comanda
+            // vazia do botão "Limpar venda" — silencioso, sem toast novo.
+            // Vive SÓ neste gesto: o fechamento normal de comanda
+            // (pós-`pdv_close_tab`) chama `clearSale` direto e não passa aqui.
+            const { cancelEmptyTab } = await import("@/pages/pdv/state/usePdvTables");
+            await cancelEmptyTab(selectedTabId);
             clearSale();
             // Item 12 (reaberto): sair do sucesso por aqui também
             // dispara o cupom adiado da venda concluída.
