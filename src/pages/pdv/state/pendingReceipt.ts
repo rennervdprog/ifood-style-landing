@@ -29,11 +29,30 @@ import { hasSilentPrintBridge, printPdvReceipt, type PrintOptions } from "@/lib/
  * No app Windows (Electron), onde a ponte de impressão silenciosa
  * existe (`hasSilentPrintBridge`), o flush mantém a impressão
  * automática — lá `window.print()` não abre o preview modal.
+ *
+ * Follow-up P9 (2026-11-12, palavra do Renner): a configuração da loja
+ * volta a mandar. O job carrega a decisão da venda (`autoPrint`,
+ * calculada no checkout a partir de `settings.auto_print_pdv`): no
+ * navegador, com a configuração LIGADA, o flush imprime
+ * automaticamente pelo caminho existente — o preview modal é esperado
+ * nesse ramo, é a opção que o lojista escolheu, e o operador humano
+ * o dispensa (imprime/cancela) e segue; com a configuração DESLIGADA,
+ * o flush mostra o toast. Jobs legados em sessionStorage, sem a flag
+ * (guardados por build anterior), caem no toast — o ramo seguro. No
+ * app Windows a ponte silenciosa imprime automaticamente em qualquer
+ * dos casos.
  */
 export interface PendingReceiptJob {
   order: Parameters<typeof printPdvReceipt>[0];
   storeName: string;
   options: PrintOptions;
+  /**
+   * Decisão da venda, calculada no checkout a partir de
+   * `settings.auto_print_pdv` (default ligado). Opcional só para
+   * compatibilidade com jobs legados em sessionStorage (build
+   * anterior à flag): sem ela, o flush cai no ramo seguro (toast).
+   */
+  autoPrint?: boolean;
 }
 
 const KEY = "pdv_pending_receipt_v1";
@@ -62,9 +81,13 @@ export function hasPendingReceipt(): boolean {
  * Retorna true se havia um job. Nunca lança: falha de impressão é
  * best-effort e o cupom pode ser reimpresso pelo Histórico.
  *
- * No navegador, "disparar" = mostrar o toast com CTA Imprimir — nunca
- * `window.print()` automático (P9). No app Windows (Electron), com a
- * ponte de impressão silenciosa, imprime automaticamente como antes.
+ * A decisão segue a configuração da loja, carregada no job
+ * (`autoPrint`): no app Windows (Electron), com a ponte de impressão
+ * silenciosa, imprime automaticamente em qualquer dos casos. No
+ * navegador, com a configuração ligada, imprime automaticamente pelo
+ * caminho existente (o preview modal é esperado — opção do lojista);
+ * com a configuração desligada, ou job legado sem a flag, mostra o
+ * toast com CTA Imprimir e o cupom só sai por gesto do operador.
  */
 export function flushPendingReceipt(): boolean {
   let raw: string | null = null;
@@ -79,13 +102,20 @@ export function flushPendingReceipt(): boolean {
     const job = JSON.parse(raw) as PendingReceiptJob;
     if (hasSilentPrintBridge()) {
       // App Windows (Electron): impressão silenciosa via preload —
-      // window.print() não abre o preview modal. Mantém o automático.
+      // window.print() não abre o preview modal. Automático sempre.
+      printPdvReceipt(job.order, job.storeName, job.options);
+    } else if (job.autoPrint === true) {
+      // Navegador + configuração ligada: o lojista escolheu a
+      // automática. O preview modal do navegador é esperado aqui —
+      // o operador humano o dispensa (imprime/cancela) e segue; a
+      // travada da P9 existia porque o modal disparava sem escolha.
+      // (Follow-up P9, palavra do Renner 2026-11-12.)
       printPdvReceipt(job.order, job.storeName, job.options);
     } else {
-      // Navegador: nunca disparar window.print() automaticamente — o
-      // preview modal sequestra os cliques da próxima tela (P9).
-      // Mesmo toast do ramo manual do checkout (texto, CTA e duração
-      // idênticos); o CTA imprime pelo caminho existente.
+      // Navegador + configuração desligada, ou job legado sem a flag
+      // (guardado por build anterior): ramo seguro — mesmo toast do
+      // ramo manual do checkout (texto, CTA e duração idênticos); o
+      // CTA imprime pelo caminho existente.
       toast("Cupom pronto — clique para imprimir", {
         action: {
           label: "Imprimir",
