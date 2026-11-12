@@ -58,6 +58,18 @@ import { PdvSaleSuccessScreen } from "../../components/PdvSaleSuccessScreen";
 // window.itasuperPainel.requestSilentPrint, o flush mantém a
 // impressão automática (lá não há modal). Os testes abaixo fixam os
 // dois ramos: navegador (sem a ponte) e Electron (com a ponte).
+//
+// Follow-up P9 (2026-11-12, palavra do Renner): a configuração da
+// loja volta a mandar. O job carrega a decisão da venda (`autoPrint`,
+// de `settings.auto_print_pdv`): no navegador, com a configuração
+// LIGADA, o flush imprime automaticamente DEPOIS da transição (o
+// preview modal é esperado — opção do lojista, que o dispensa); com
+// a configuração DESLIGADA, o checkout mostra o toast na conclusão
+// e nenhum job é guardado. O que estes testes continuam fixando: o
+// print NUNCA dispara com a tela de sucesso montada — a única saída
+// dela é um clique na página, e o modal não pode ficar entre o
+// operador e a saída. Jobs legados sem a flag caem no toast (ramo
+// seguro — coberto em pendingReceipt.test.ts).
 
 const toastMock = vi.hoisted(() => {
   const fn: any = vi.fn();
@@ -102,6 +114,12 @@ const STORE = {
   name: "Loja Demo",
   settings: { auto_print_pdv: true, print_copies: 2 },
 } as any;
+// Follow-up P9: configuração desligada — o checkout mostra o toast na
+// conclusão e nenhum job é guardado.
+const STORE_MANUAL = {
+  ...STORE,
+  settings: { auto_print_pdv: false, print_copies: 2 },
+} as any;
 const SESSION = { id: "session1" } as any;
 const SCOPE = "store1:session1";
 
@@ -124,7 +142,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * o ctx do checkout é montado como `any` para o mesmo harness rodar
  * antes da correção (quando onAutoPrintReady nem existia no hook).
  */
-function PdvCheckoutHarness() {
+function PdvCheckoutHarness({ store }: { store?: any }) {
   const c = usePdvCart();
   const { handleVenda: runCheckout } = usePdvCheckout();
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "success">("cart");
@@ -163,7 +181,7 @@ function PdvCheckoutHarness() {
 
   const handleVenda = async () => {
     const ctx: any = {
-      store: STORE,
+      store: store ?? STORE,
       session: SESSION,
       cart: c.cart,
       splitMode: c.splitMode,
@@ -225,13 +243,13 @@ function PdvCheckoutHarness() {
   );
 }
 
-const renderHarness = () => {
+const renderHarness = (store?: any) => {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={qc}>
-      <PdvCheckoutHarness />
+      <PdvCheckoutHarness store={store} />
     </QueryClientProvider>
   );
 };
@@ -273,7 +291,7 @@ const cupomToastAction = () => {
 };
 
 describe("Item 12 reaberto — impressão automática não pode prender a tela de sucesso", () => {
-  it("navegador: concluir NÃO chama window.print; 'Nova venda' transiciona, mostra o toast e NÃO imprime — só o CTA imprime", async () => {
+  it("navegador + configuração LIGADA: concluir NÃO chama window.print; 'Nova venda' transiciona e imprime 1x, sem toast", async () => {
     const user = userEvent.setup();
     renderHarness();
 
@@ -297,11 +315,33 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
     // Saiu do sucesso para a venda limpa…
     expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
     expect(screen.getByTestId("etapa-carrinho")).toHaveTextContent("itens:0");
-    // …e, no navegador (P9), o cupom NÃO saiu sozinho: o flush
-    // mostrou o toast com CTA e consumiu o job, sem window.print.
+    // …e, com a configuração ligada (follow-up P9), o flush imprime
+    // 1x DEPOIS da transição, sem toast: o lojista escolheu a
+    // automática e o preview modal é esperado aqui.
     await act(async () => {
       await sleep(200);
     });
+    expect(printSpy).toHaveBeenCalledTimes(1);
+    expect(hasPendingReceipt()).toBe(false);
+    expect(
+      toastMock.mock.calls.some((c: any[]) => c[0] === "Cupom pronto — clique para imprimir")
+    ).toBe(false);
+  });
+
+  it("navegador + configuração DESLIGADA: concluir mostra o toast, não guarda job e 'Nova venda' não imprime — só o CTA imprime", async () => {
+    const user = userEvent.setup();
+    renderHarness(STORE_MANUAL);
+
+    await user.click(screen.getByRole("button", { name: "montar venda" }));
+    await user.click(screen.getByRole("button", { name: "concluir venda" }));
+    expect(await screen.findByText("Venda concluída!")).toBeInTheDocument();
+
+    await act(async () => {
+      await sleep(300);
+    });
+
+    // Ramo manual do checkout: toast na conclusão, sem imprimir e
+    // sem guardar job — não há nada para o flush disparar depois.
     expect(printSpy).not.toHaveBeenCalled();
     expect(hasPendingReceipt()).toBe(false);
     expect(toastMock).toHaveBeenCalledWith(
@@ -312,6 +352,14 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
       })
     );
 
+    await user.click(screen.getByRole("button", { name: "Nova venda" }));
+    expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
+    expect(screen.getByTestId("etapa-carrinho")).toHaveTextContent("itens:0");
+    await act(async () => {
+      await sleep(200);
+    });
+    expect(printSpy).not.toHaveBeenCalled();
+
     // O gesto do operador (CTA Imprimir) imprime 1x pelo caminho
     // existente (safePrint dispara window.print ~50ms depois).
     cupomToastAction().onClick();
@@ -321,7 +369,7 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
     expect(printSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("navegador: reload entre concluir e 'Nova venda' não perde o cupom — a remontagem mostra o toast, sem imprimir", async () => {
+  it("navegador + configuração LIGADA: reload entre concluir e 'Nova venda' não perde o cupom — a remontagem imprime 1x, sem toast", async () => {
     const user = userEvent.setup();
     const first = renderHarness();
 
@@ -338,19 +386,16 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
     renderHarness();
     expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
 
-    // A remontagem dispara o pendente na montagem — no navegador, via
-    // toast, sem window.print (P9).
+    // A remontagem dispara o pendente na montagem — com a
+    // configuração ligada, imprime 1x (follow-up P9), sem toast.
     await act(async () => {
       await sleep(700);
     });
-    expect(printSpy).not.toHaveBeenCalled();
+    expect(printSpy).toHaveBeenCalledTimes(1);
     expect(hasPendingReceipt()).toBe(false);
-    expect(toastMock).toHaveBeenCalledWith(
-      "Cupom pronto — clique para imprimir",
-      expect.objectContaining({
-        action: expect.objectContaining({ label: "Imprimir" }),
-      })
-    );
+    expect(
+      toastMock.mock.calls.some((c: any[]) => c[0] === "Cupom pronto — clique para imprimir")
+    ).toBe(false);
   });
 
   it("Electron (ponte do preload): 'Nova venda' mantém a impressão automática, sem toast", async () => {
@@ -401,12 +446,15 @@ describe("Item 12 reaberto — fiação presente nas páginas reais (guarda de f
     }
   });
 
-  it("P9: o flush mostra o toast no navegador e só imprime com a ponte do Electron", () => {
+  it("Follow-up P9: o flush honra a configuração (autoPrint no job), mostra o toast no navegador com ela desligada e só imprime sempre com a ponte do Electron", () => {
     const flush = read("../pendingReceipt.ts");
     expect(flush).toContain("Cupom pronto — clique para imprimir");
     expect(flush).toContain("hasSilentPrintBridge");
+    expect(flush).toContain("autoPrint");
     const thermal = readFileSync(join(__dirname, "../../../../lib/thermalPrint.ts"), "utf8");
     expect(thermal).toContain("hasSilentPrintBridge");
     expect(thermal).toContain("itasuperPainel");
+    const hook = read("../usePdvCheckout.ts");
+    expect(hook).toContain("autoPrint");
   });
 });
