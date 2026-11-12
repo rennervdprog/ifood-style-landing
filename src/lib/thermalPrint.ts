@@ -161,6 +161,26 @@ const pdvPaymentLabels: Record<string, string> = {
 const PRINT_CONTAINER_ID = "thermal-print-container";
 
 /**
+ * O app Windows (Electron) expõe a ponte de impressão silenciosa
+ * `window.itasuperPainel.requestSilentPrint()` (preload.js do Painel) e
+ * troca o `window.print()` da página: com a notinha montada, imprime
+ * direto na térmica, sem abrir o preview modal do navegador. No
+ * navegador comum a ponte não existe — qualquer `window.print()` abre
+ * o preview modal e sequestra os cliques até ser dispensado (P9).
+ * Só a presença da ponte prova que a impressão silenciosa está ligada;
+ * userAgent sozinho não provaria nada.
+ */
+export function hasSilentPrintBridge(): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    const bridge = (window as unknown as { itasuperPainel?: { requestSilentPrint?: unknown } }).itasuperPainel;
+    return typeof bridge?.requestSilentPrint === "function";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Dispara `window.print()` de forma resiliente.
  * Chrome/Edge invalidam o callback de `requestAnimationFrame` se a aba perde
  * foco ou há re-render entre frames, causando:
