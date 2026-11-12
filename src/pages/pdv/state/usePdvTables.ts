@@ -186,6 +186,79 @@ export async function rpcCancelTab(tabId: string, reason: string) {
   if (error) throw error;
 }
 
+/** Motivo de sistema registrado em `cancel_reason` no auto-cancelamento do N2. */
+export const CLEAR_SALE_CANCEL_REASON = "Limpeza de venda sem itens enviados";
+
+export interface CancelEmptyTabDeps {
+  /** Quantidade de itens da comanda NO BANCO no momento da ação. */
+  countTabItems: (tabId: string) => Promise<number>;
+  /** Cancela a comanda (RPC `pdv_cancel_tab`, com motivo). */
+  cancelTab: (tabId: string, reason: string) => Promise<void>;
+}
+
+const defaultCancelEmptyTabDeps: CancelEmptyTabDeps = {
+  countTabItems: async (tabId) => {
+    const { count, error } = await (supabase as any)
+      .from("pdv_tab_items")
+      .select("id", { count: "exact", head: true })
+      .eq("tab_id", tabId);
+    if (error) throw error;
+    return count ?? 0;
+  },
+  cancelTab: (tabId, reason) => rpcCancelTab(tabId, reason),
+};
+
+/**
+ * N2 Opção A — auto-cancela a comanda VAZIA no gesto "Limpar venda".
+ *
+ * Guardas obrigatórias (§2 do plano boutique):
+ * (1) Cancela SÓ se a comanda tem 0 itens NO BANCO no momento da ação —
+ *     carrinho vazio pode significar "itens já enviados". Falha ao contar =
+ *     estado desconhecido = NUNCA cancela (fail-closed).
+ * (2) O chamador usa o retorno para definir o "Desfazer": `true` = a comanda
+ *     não existe mais, o snapshot volta sem destino (Balcão), sem ressuscitar
+ *     o id morto; `false` = comanda preservada, destino original mantido.
+ * (3) Vive SÓ nos gestos "Limpar venda" (botão + ESC) — nunca em `clearSale`,
+ *     que é compartilhado com o pós-`pdv_close_tab`. E tolera comanda já
+ *     fechada/cancelada (`tab_not_found_or_closed` = já se foi, silencioso).
+ *
+ * Nunca lança exceção e nunca mostra toast/diálogo: o gesto segue com o
+ * mesmo toast "Venda limpa". A aba Mesas se atualiza pelo realtime de
+ * `usePdvTables` (montado no `PdvTableSelector` da tela Vender).
+ *
+ * Ressalva: a checagem é count-then-cancel — `pdv_cancel_tab` não verifica
+ * itens no servidor. Um envio concorrente de outro caixa na mesma janela
+ * (fração de segundo, após o PIN) poderia cair no cancelamento; fechar isso
+ * exigiria migration (fora do escopo do N2).
+ */
+export async function cancelEmptyTab(
+  tabId: string | null | undefined,
+  reason: string = CLEAR_SALE_CANCEL_REASON,
+  deps: CancelEmptyTabDeps = defaultCancelEmptyTabDeps,
+): Promise<boolean> {
+  if (!tabId) return false;
+  let itemCount: number;
+  try {
+    itemCount = await deps.countTabItems(tabId);
+  } catch (e) {
+    console.warn("[N2] contagem de itens da comanda falhou; comanda preservada", e);
+    return false;
+  }
+  if (itemCount > 0) return false;
+  try {
+    await deps.cancelTab(tabId, reason);
+    return true;
+  } catch (e: unknown) {
+    // `pdv_cancel_tab` levanta `tab_not_found_or_closed` quando a comanda já
+    // foi fechada/cancelada (ex.: outro caixa) — a comanda já se foi; o gesto
+    // segue silencioso e o Desfazer não deve ressuscitar o id morto.
+    const message = e instanceof Error ? e.message : String(e ?? "");
+    if (message.includes("tab_not_found_or_closed")) return true;
+    console.warn("[N2] cancelamento da comanda vazia falhou; comanda preservada", e);
+    return false;
+  }
+}
+
 export async function rpcCloseTab(args: {
   tabId: string; sessionId: string; payments: { method: string; amount: number }[];
   pdvDiscount?: number; commissionRate?: number;
