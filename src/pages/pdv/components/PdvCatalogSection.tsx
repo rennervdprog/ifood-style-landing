@@ -49,6 +49,18 @@ export const PdvProductCard = ({ product, qty, stock, addItem, decItem }: Produc
       toast.error(`${product.name} está esgotado`);
       return;
     }
+    // Fase 2 (L-22): não permite adicionar além do saldo (espelha o grid
+    // boutique). Produtos por peso ficam de fora: o carrinho conta pesagens,
+    // não gramas — o peso é validado no checkout (L-10) e no finalize.
+    if (
+      hasStockControl &&
+      stockQty !== null &&
+      !product.sold_by_weight &&
+      qty >= stockQty
+    ) {
+      toast.warning(`Estoque máximo de ${product.name} já está no carrinho`);
+      return;
+    }
     addItem(product);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 350);
@@ -126,6 +138,15 @@ export const PdvCatalogSection = ({
       const stock = stockMap?.get(found.id);
       if (stock?.track_stock === true && Number(stock.quantity) <= 0) {
         toast.error(`${found.name} está esgotado`);
+        return;
+      }
+      // Fase 2 (L-22): mesma trava de saldo do card.
+      if (
+        stock?.track_stock === true &&
+        !found.sold_by_weight &&
+        getQty(found.id) >= Number(stock.quantity)
+      ) {
+        toast.warning(`Estoque máximo de ${found.name} já está no carrinho`);
         return;
       }
       addItem(found);
