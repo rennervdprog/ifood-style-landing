@@ -500,11 +500,15 @@ export function usePdvCheckout() {
             // página — window.print() abriria o preview modal do
             // navegador por cima e prenderia o operador na tela.
             // Entregamos o job pronto; a página imprime DEPOIS da
-            // transição (ver pendingReceipt.ts).
+            // transição (ver pendingReceipt.ts). O job carrega a
+            // decisão da venda (autoPrint, da configuração
+            // auto_print_pdv) para o flush honrar a escolha do
+            // lojista no navegador (follow-up P9).
             onAutoPrintReady({
               order: buildReceiptPayload(),
               storeName: store?.name || "Loja",
               options: { ...printOpts },
+              autoPrint,
             });
           } else {
             printPdvReceipt(buildReceiptPayload(), store?.name || "Loja", printOpts);
