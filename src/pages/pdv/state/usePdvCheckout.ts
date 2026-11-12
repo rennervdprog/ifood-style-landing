@@ -65,8 +65,11 @@ export interface CheckoutContext {
   pdvCommissionRate: number;
   /** Operador PIN logado (Fase 2) — grava em pdv_movements.operator_id. */
   operatorId?: string | null;
-  /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline). */
-  onSuccess: (info: { orderId: string | null }) => void;
+  /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline).
+   * Fase 2: `stockDecremented=true` quando a RPC já baixou o estoque (o
+   * chamador pula a baixa client-side); `offlineQueued=true` quando a venda
+   * foi enfileirada (a baixa acontece no flush). */
+  onSuccess: (info: { orderId: string | null; stockDecremented?: boolean; offlineQueued?: boolean }) => void;
   /**
    * Agendado 2s após o sucesso. Recebe o carrinho finalizado para que o
    * chamador só limpe se ele não mudou (evita apagar nova venda iniciada
@@ -128,21 +131,53 @@ export function usePdvCheckout() {
 
       // ── Validação de estoque (bloqueia venda sem estoque) ──
       // CartItem usa `id` como id do produto (não existe `product_id` no tipo).
+      // Fase 2 (L-22/L-10): soma as linhas duplicadas por produto e usa a
+      // quantidade pesada (weight_grams → unidade do estoque; ficha = kg),
+      // espelhando stock_effective_sale_qty no banco. O finalize é a
+      // autoridade final (aborta sem saldo); isto é a pré-checagem.
       const stockCheckItems = cart.filter(
         (i: any) => !(i.metadata as any)?.apparel_variant_id && i.id
       );
       if (stockCheckItems.length > 0) {
-        const productIds = stockCheckItems.map((i: any) => i.id);
+        const productIds = [...new Set(stockCheckItems.map((i: any) => i.id))];
         // Tabela fora dos tipos gerados — cast para evitar TS2589.
         const { data: stocks } = await (supabase as any)
           .from("product_stock")
-          .select("product_id, quantity, track_stock")
+          .select("product_id, quantity, track_stock, unit")
+          .in("product_id", productIds);
+        const { data: recipes } = await (supabase as any)
+          .from("product_recipes")
+          .select("product_id")
           .in("product_id", productIds);
         const stockMap = new Map<string, any>((stocks || []).map((s: any) => [s.product_id, s]));
+        const recipeSet = new Set<string>((recipes || []).map((r: any) => r.product_id));
+        const requiredByProduct = new Map<string, { qty: number; name: string }>();
         for (const item of stockCheckItems) {
           const s = stockMap.get(item.id);
-          if (s && s.track_stock && Number(s.quantity) < Math.abs(item.quantity)) {
-            toast.error(`Estoque insuficiente: ${item.name} (tem ${s.quantity})`);
+          const grams = Number((item.metadata as any)?.weight_grams) || 0;
+          let needed = Math.abs(item.quantity);
+          if (grams > 0) {
+            // Espelho exato de stock_effective_sale_qty: ficha → kg;
+            // estoque em kg → gramas/1000; qualquer outra unidade (ou
+            // ausente) → gramas sem conversão.
+            if (recipeSet.has(item.id)) {
+              needed = grams / 1000;
+            } else if (s?.unit === "kg") {
+              needed = grams / 1000;
+            } else {
+              needed = grams;
+            }
+          }
+          const prev = requiredByProduct.get(item.id);
+          requiredByProduct.set(item.id, {
+            qty: (prev?.qty ?? 0) + needed,
+            name: item.name,
+          });
+        }
+        for (const [productId, req] of requiredByProduct) {
+          const s = stockMap.get(productId);
+          if (s && s.track_stock && Number(s.quantity) < req.qty) {
+            toast.error(`Estoque insuficiente: ${req.name} (tem ${s.quantity})`);
             return;
           }
         }
@@ -218,6 +253,8 @@ export function usePdvCheckout() {
           payments: paymentsPayload,
           created_by: createdBy,
           operator_id: operatorId ?? null,
+          // Fase 2 (L-02a): baixa o estoque DENTRO da transação do finalize.
+          decrement_stock: true,
           items: cart.map((item) => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -233,6 +270,7 @@ export function usePdvCheckout() {
         };
         let shouldQueueOffline = browserOffline;
         let offlineQueued = false;
+        let rpcSucceeded = false;
 
         if (!shouldQueueOffline) {
           try {
@@ -247,8 +285,15 @@ export function usePdvCheckout() {
                 typeof rpcRes === "string"
                   ? rpcRes
                   : (rpcRes as any)?.order_id ?? (rpcRes as any)?.id ?? null;
+              rpcSucceeded = orderId != null;
             } else if (rpcErr) {
               const message = String(rpcErr.message ?? rpcErr);
+              // Fase 2 (L-03): sem saldo, a venda NÃO conclui — nem fallback,
+              // nem fila offline. O operador ajusta o carrinho e tenta de novo.
+              if (/insufficient_stock/i.test(message)) {
+                toast.error("Estoque insuficiente para concluir a venda. Ajuste o carrinho e tente de novo.");
+                return;
+              }
               shouldQueueOffline = /fetch|network|timeout|failed to fetch/i.test(message);
               if (!shouldQueueOffline) {
                 console.warn("[PDV] RPC pdv_finalize_sale falhou:", rpcErr);
@@ -348,7 +393,7 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-stock"],
         });
-        onSuccess({ orderId });
+        onSuccess({ orderId, stockDecremented: rpcSucceeded, offlineQueued });
         // SEM toast de sucesso aqui: a tela "Venda concluída!" já é a
         // confirmação visual da venda. O toast antigo ("✅ Venda
         // finalizada!") renderizava no rodapé bem sobre o botão
