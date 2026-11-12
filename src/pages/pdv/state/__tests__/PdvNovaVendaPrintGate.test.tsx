@@ -48,6 +48,28 @@ import { PdvSaleSuccessScreen } from "../../components/PdvSaleSuccessScreen";
 // metade do mecanismo que é do app: QUANDO window.print é chamado em
 // relação à transição de estado. Antes da correção, o teste 1 FALHA
 // (print dispara com a tela de sucesso montada); depois, passa.
+//
+// P9 (2026-11-12): o adiamento só moveu o problema — o preview modal
+// passou a prender a tela SEGUINTE ao "Nova venda" (4 repros ao vivo;
+// experimento liga/desliga fechou a causa). Novo comportamento: no
+// navegador, o flush NUNCA dispara window.print() automaticamente —
+// mostra o toast "Cupom pronto — clique para imprimir" e o cupom só
+// sai pelo CTA. No app Windows (Electron), onde o preload expõe
+// window.itasuperPainel.requestSilentPrint, o flush mantém a
+// impressão automática (lá não há modal). Os testes abaixo fixam os
+// dois ramos: navegador (sem a ponte) e Electron (com a ponte).
+
+const toastMock = vi.hoisted(() => {
+  const fn: any = vi.fn();
+  fn.success = vi.fn();
+  fn.error = vi.fn();
+  fn.warning = vi.fn();
+  fn.info = vi.fn();
+  fn.dismiss = vi.fn();
+  return fn;
+});
+
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -230,15 +252,28 @@ Storage.prototype.removeItem = function (k: string) {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  delete (window as any).itasuperPainel;
+  toastMock.mockClear();
+  toastMock.error.mockClear();
+  toastMock.warning.mockClear();
+  toastMock.success.mockClear();
   printSpy = vi.spyOn(window, "print").mockImplementation(() => {});
 });
 
 afterEach(() => {
+  delete (window as any).itasuperPainel;
   vi.restoreAllMocks();
 });
 
+/** Ação do toast "Cupom pronto" capturada na chamada mais recente. */
+const cupomToastAction = () => {
+  const call = toastMock.mock.calls.find((c: any[]) => c[0] === "Cupom pronto — clique para imprimir");
+  expect(call).toBeDefined();
+  return (call[1] as any).action as { label: string; onClick: () => void };
+};
+
 describe("Item 12 reaberto — impressão automática não pode prender a tela de sucesso", () => {
-  it("concluir NÃO chama window.print com a tela de sucesso montada; 'Nova venda' transiciona e imprime 1x", async () => {
+  it("navegador: concluir NÃO chama window.print; 'Nova venda' transiciona, mostra o toast e NÃO imprime — só o CTA imprime", async () => {
     const user = userEvent.setup();
     renderHarness();
 
@@ -262,16 +297,31 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
     // Saiu do sucesso para a venda limpa…
     expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
     expect(screen.getByTestId("etapa-carrinho")).toHaveTextContent("itens:0");
-    // …e o cupom saiu — uma única vez, depois da transição
-    // (safePrint dispara window.print ~50ms após o flush).
+    // …e, no navegador (P9), o cupom NÃO saiu sozinho: o flush
+    // mostrou o toast com CTA e consumiu o job, sem window.print.
+    await act(async () => {
+      await sleep(200);
+    });
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(hasPendingReceipt()).toBe(false);
+    expect(toastMock).toHaveBeenCalledWith(
+      "Cupom pronto — clique para imprimir",
+      expect.objectContaining({
+        duration: 8000,
+        action: expect.objectContaining({ label: "Imprimir" }),
+      })
+    );
+
+    // O gesto do operador (CTA Imprimir) imprime 1x pelo caminho
+    // existente (safePrint dispara window.print ~50ms depois).
+    cupomToastAction().onClick();
     await act(async () => {
       await sleep(200);
     });
     expect(printSpy).toHaveBeenCalledTimes(1);
-    expect(hasPendingReceipt()).toBe(false);
   });
 
-  it("reload entre concluir e 'Nova venda' não perde o cupom: a remontagem imprime o pendente", async () => {
+  it("navegador: reload entre concluir e 'Nova venda' não perde o cupom — a remontagem mostra o toast, sem imprimir", async () => {
     const user = userEvent.setup();
     const first = renderHarness();
 
@@ -288,12 +338,49 @@ describe("Item 12 reaberto — impressão automática não pode prender a tela d
     renderHarness();
     expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
 
-    // A remontagem dispara o pendente na montagem + safePrint (50ms).
+    // A remontagem dispara o pendente na montagem — no navegador, via
+    // toast, sem window.print (P9).
     await act(async () => {
       await sleep(700);
     });
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(hasPendingReceipt()).toBe(false);
+    expect(toastMock).toHaveBeenCalledWith(
+      "Cupom pronto — clique para imprimir",
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Imprimir" }),
+      })
+    );
+  });
+
+  it("Electron (ponte do preload): 'Nova venda' mantém a impressão automática, sem toast", async () => {
+    const user = userEvent.setup();
+    (window as any).itasuperPainel = { requestSilentPrint: vi.fn() };
+    renderHarness();
+
+    await user.click(screen.getByRole("button", { name: "montar venda" }));
+    await user.click(screen.getByRole("button", { name: "concluir venda" }));
+    expect(await screen.findByText("Venda concluída!")).toBeInTheDocument();
+    await act(async () => {
+      await sleep(300);
+    });
+    expect(printSpy).not.toHaveBeenCalled();
+    expect(hasPendingReceipt()).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Nova venda" }));
+
+    expect(screen.queryByText("Venda concluída!")).not.toBeInTheDocument();
+    expect(screen.getByTestId("etapa-carrinho")).toHaveTextContent("itens:0");
+    // No app Windows a impressão é silenciosa (preload): o flush
+    // imprime 1x depois da transição, sem toast.
+    await act(async () => {
+      await sleep(200);
+    });
     expect(printSpy).toHaveBeenCalledTimes(1);
     expect(hasPendingReceipt()).toBe(false);
+    expect(
+      toastMock.mock.calls.some((c: any[]) => c[0] === "Cupom pronto — clique para imprimir")
+    ).toBe(false);
   });
 });
 
@@ -312,5 +399,14 @@ describe("Item 12 reaberto — fiação presente nas páginas reais (guarda de f
       expect(page).toContain("stashPendingReceipt");
       expect(page).toContain("flushPendingReceipt");
     }
+  });
+
+  it("P9: o flush mostra o toast no navegador e só imprime com a ponte do Electron", () => {
+    const flush = read("../pendingReceipt.ts");
+    expect(flush).toContain("Cupom pronto — clique para imprimir");
+    expect(flush).toContain("hasSilentPrintBridge");
+    const thermal = readFileSync(join(__dirname, "../../../../lib/thermalPrint.ts"), "utf8");
+    expect(thermal).toContain("hasSilentPrintBridge");
+    expect(thermal).toContain("itasuperPainel");
   });
 });
