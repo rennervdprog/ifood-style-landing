@@ -159,6 +159,18 @@ export function usePdvCart() {
             : i,
         );
       }
+      // Fase 2 (L-23): repassa SÓ as chaves apparel do metadata (variante) —
+      // sem elas, a comanda nunca enxerga a variante. As demais chaves do
+      // metadata do produto (sizes, builders etc.) NÃO vão para o carrinho.
+      const apparelMeta = (product as any)?.metadata;
+      const cartMetadata = apparelMeta?.apparel_variant_id
+        ? {
+            apparel_variant_id: apparelMeta.apparel_variant_id,
+            apparel_parent_product_id: apparelMeta.apparel_parent_product_id ?? null,
+            apparel_size: apparelMeta.apparel_size ?? null,
+            apparel_color: apparelMeta.apparel_color ?? null,
+          }
+        : undefined;
       return [
         ...prev,
         {
@@ -168,6 +180,7 @@ export function usePdvCart() {
           price: Number(product.price),
           quantity: 1,
           image_url: product.image_url,
+          metadata: cartMetadata,
           printer_target: (product as any)?.printer_target ?? null,
         },
       ];
