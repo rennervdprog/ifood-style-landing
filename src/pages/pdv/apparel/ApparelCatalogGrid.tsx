@@ -151,12 +151,12 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
                         )}
                       </div>
                       <span
-                        className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                        className={`text-[10px] font-extrabold uppercase tracking-wide px-2 py-1 rounded-full ${
                           stock === 0
-                            ? "bg-red-500/10 text-red-600"
+                            ? "bg-red-600 text-white"
                             : stock < 5
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-zinc-200 text-zinc-700"
                         }`}
                       >
                         {stock} pçs
@@ -305,9 +305,7 @@ function VariantMatrixSheet({
                               ? "bg-red-500/5 border-red-500/20 text-red-500/40 cursor-not-allowed"
                               : inCart > 0
                               ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                              : v.stock_qty < 3
-                              ? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300 hover:border-amber-500/60"
-                              : "bg-emerald-500/5 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:border-emerald-500/60"
+                              : "bg-card border-border text-foreground hover:border-primary/50"
                           }`}
                         >
                           <span className="pdv-mono text-base leading-tight">{v.stock_qty}</span>
