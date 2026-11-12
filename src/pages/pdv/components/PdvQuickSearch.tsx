@@ -57,6 +57,16 @@ export const PdvQuickSearch = ({ products, getQty, addItem, decItem, stockMap }:
       toast.error(`${p.name} está esgotado`);
       return;
     }
+    // Fase 2 (L-22): mesma trava de saldo do card (peso fica de fora:
+    // o carrinho conta pesagens, não gramas — validado no checkout).
+    if (
+      stock?.track_stock === true &&
+      !p.sold_by_weight &&
+      getQty(p.id) >= Number(stock.quantity)
+    ) {
+      toast.warning(`Estoque máximo de ${p.name} já está no carrinho`);
+      return;
+    }
     addItem(p);
   };
 
@@ -71,6 +81,15 @@ export const PdvQuickSearch = ({ products, getQty, addItem, decItem, stockMap }:
       const stock = stockMap?.get(found.id);
       if (stock?.track_stock === true && Number(stock.quantity) <= 0) {
         toast.error(`${found.name} está esgotado`);
+        return;
+      }
+      // Fase 2 (L-22): mesma trava de saldo do card.
+      if (
+        stock?.track_stock === true &&
+        !found.sold_by_weight &&
+        getQty(found.id) >= Number(stock.quantity)
+      ) {
+        toast.warning(`Estoque máximo de ${found.name} já está no carrinho`);
         return;
       }
       addItem(found);

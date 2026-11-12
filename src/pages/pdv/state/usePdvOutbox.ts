@@ -32,9 +32,11 @@ export function usePdvOutbox(storeId: string | undefined | null) {
       setFlushing(true);
       try {
         const res = await outboxFlush(storeId, async (payload) => {
+          // Fase 2 (L-02b): força a baixa dentro do finalize — cobre
+          // payloads enfileirados por JS antigo (sem a chave).
           const { data, error } = await supabase.rpc(
             "pdv_finalize_sale" as any,
-            { _payload: payload } as any,
+            { _payload: { ...payload, decrement_stock: true } } as any,
           );
           if (error) return { ok: false, error: error.message };
           const orderId =
@@ -48,8 +50,13 @@ export function usePdvOutbox(storeId: string | undefined | null) {
           toast.success(`Sincronizadas ${res.sent} venda(s) da fila offline.`);
         }
         if (!silent && res.failed > 0) {
+          // Fase 2 (L-02b): falta de estoque na sincronização fica visível
+          // com o motivo — a fila retenta sozinha quando repor.
+          const stockFailed = res.errors.some((e) => /insufficient_stock/i.test(e));
           toast.error(
-            `${res.failed} venda(s) ainda não sincronizaram — tentarei de novo.`,
+            stockFailed
+              ? `${res.failed} venda(s) sem estoque para sincronizar — reponha o estoque e sincronize de novo.`
+              : `${res.failed} venda(s) ainda não sincronizaram — tentarei de novo.`,
           );
         }
       } finally {

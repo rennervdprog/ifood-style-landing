@@ -693,7 +693,7 @@ const PdvPageTeste = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
-    onSuccess: async ({ orderId }) => {
+    onSuccess: async ({ orderId, stockDecremented, offlineQueued }) => {
       // Item 11 (varredura 2026-10-30): limpa o estado da venda JÁ na
       // conclusão. A tela de sucesso usa só `lastSale` (não lê o carrinho);
       // manter os itens no estado fazia o rascunho persistido
@@ -761,17 +761,24 @@ const PdvPageTeste = () => {
       }
       // Controle de estoque: decrementa estoque de produtos normais vendidos
       // (CartItem usa `id` como id do produto.)
+      // Fase 2 (L-02a/L-02b): quando a RPC já baixou (stockDecremented) ou a
+      // venda foi enfileirada (offlineQueued — a baixa acontece no flush),
+      // pula a baixa client-side: sem o gate, a venda offline falhava por FK
+      // (orderId provisório) e a venda normal baixava 2×.
+      const skipClientDecrement = stockDecremented === true || offlineQueued === true;
       const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.id);
-      for (const it of regularItems) {
-        await decrementWithRetry(
-          "stock_decrement_sale",
-          {
-            _product_id: it.id,
-            _quantity: Math.abs(it.quantity),
-            _order_id: orderId || null,
-          },
-          it.name
-        );
+      if (!skipClientDecrement) {
+        for (const it of regularItems) {
+          await decrementWithRetry(
+            "stock_decrement_sale",
+            {
+              _product_id: it.id,
+              _quantity: Math.abs(it.quantity),
+              _order_id: orderId || null,
+            },
+            it.name
+          );
+        }
       }
       if (regularItems.length) {
         queryClient.invalidateQueries({ queryKey: ["stock-list"] });
