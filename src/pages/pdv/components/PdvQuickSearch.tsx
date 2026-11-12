@@ -2,7 +2,6 @@ import { Search, Plus, Minus, Hash, X } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "@/pages/pdv/types";
-import { gradientFor } from "@/pages/pdv/components/PdvCatalogSection";
 
 interface Props {
   /** Lista bruta de produtos (a mesma do catálogo e do leitor de código). */
@@ -155,10 +154,7 @@ export const PdvQuickSearch = ({ products, getQty, addItem, decItem, stockMap }:
                     onClick={() => handleAdd(p)}
                     className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none transition-colors hover:bg-muted/30 active:bg-muted/50 ${isOutOfStock ? "opacity-50" : ""}`}
                   >
-                    <div
-                      className="w-11 h-11 rounded-[10px] flex items-center justify-center text-white text-base font-extrabold shrink-0"
-                      style={{ background: gradientFor(p.name) }}
-                    >
+                    <div className="w-11 h-11 rounded-[10px] flex items-center justify-center bg-zinc-200 text-zinc-700 text-base font-extrabold shrink-0">
                       {p.name[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
