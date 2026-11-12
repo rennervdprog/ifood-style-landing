@@ -1,0 +1,33 @@
+-- ============================================================================
+-- Fase 1 Estoque + Ficha Técnica — 06/06: REMOÇÃO DA FUNÇÃO ÓRFÃ (L-07).
+--
+-- deduct_recipe_ingredients(_product_id, _store_id, _qty) é uma SEGUNDA
+-- implementação da baixa por ficha, divergente de stock_decrement_sale:
+--   * NÃO converte unidades;
+--   * NÃO marca out_of_stock;
+--   * insere em product_stock_movements SEM balance_after (coluna NOT NULL
+--     sem default) — QUALQUER chamada com ficha existente FALHA;
+--   * não tem migration no repo (criada fora do versionamento).
+--
+-- Evidência de órfã (4 checagens independentes, 2026-11-12):
+--   1. grep no repo inteiro (origin/production 5c48a68d, src + supabase +
+--      migrations + edges): ZERO ocorrências;
+--   2. grep em prosrc de TODAS as funções do banco: nenhum corpo a referencia;
+--   3. pg_depend: nenhum objeto depende dela (o único pg_depend de estoque é
+--      o trigger sobre a sua própria função; e corpos plpgsql nem geram
+--      pg_depend — por isso as checagens 1+2 são as decisivas);
+--   4. nenhuma view a referencia; nenhum app nativo (cliente/entregador/KMP)
+--      a chama (grep nos 4 repos locais).
+--
+-- Risco residual: um chamador externo não versionado (script avulso, query
+-- salva no dashboard) quebraria com 'function does not exist' — falha ALTA
+-- e diagnosticável, e qualquer chamador real para produtos COM ficha já
+-- falhava hoje (balance_after). Rollback: recriar a partir da definição
+-- verbatim capturada em desenho-fase1.md (Apêndice A) — mas NÃO recriar
+-- sem corrigir o INSERT (balance_after), ou a função volta quebrada.
+--
+-- Ordem: por último, para que as provas das migrations 04–05 rodem antes
+-- com a função ainda presente (qualquer chamador perdido apareceria nelas).
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.deduct_recipe_ingredients(uuid, uuid, numeric);

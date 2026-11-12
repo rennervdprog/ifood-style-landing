@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowRight, Bell, Bike, Check, Loader2, Plus, X } from "lucide-react";
-import { AdminOrderCardTeste } from "../components/AdminOrderCardTeste";
+import { AdminOrderCardTeste, type StockShortageAlert } from "../components/AdminOrderCardTeste";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
@@ -130,6 +130,82 @@ export default function OrdersSectionTeste(props: Props) {
   useEffect(() => {
     if ((linkedStoreDrivers?.length || 0) === 1) setGroupDriverId(linkedStoreDrivers![0].user_id);
   }, [linkedStoreDrivers]);
+
+  // ─── Avisos de falta de estoque (Fase 1, L-30) ───
+  // Uma busca em lote: todos os avisos não resolvidos da loja, agrupados por
+  // pedido e entregues prontos ao card. Recarrega quando a lista de pedidos
+  // muda (id/status/data) — os avisos nascem nas transições de status, e o
+  // Realtime da casca já refaz a query de pedidos a cada mudança.
+  const [stockAlertsByOrder, setStockAlertsByOrder] = useState<Record<string, StockShortageAlert[]>>({});
+  const ordersKey = useMemo(
+    () => (orders || []).map((o: any) => `${o.id}:${o.status}:${o.updated_at || ""}`).join("|"),
+    [orders]
+  );
+  useEffect(() => {
+    const storeId = store?.id;
+    if (!storeId || !orders?.length) {
+      setStockAlertsByOrder({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from("order_stock_alerts")
+        .select("id, order_id, product_id, order_item_id, ingredient_product_id, kind, requested_qty, available_qty, shortfall_qty, unit")
+        .eq("store_id", storeId)
+        .is("resolved_at", null)
+        .order("created_at", { ascending: true });
+      if (cancelled) return;
+      if (error || !data?.length) {
+        // Sem aviso, ou sem permissão (gestor não vê — RLS só do dono):
+        // nenhum aviso exibido, sem toast — o aviso nunca bloqueia nada.
+        setStockAlertsByOrder({});
+        return;
+      }
+      // Nomes legíveis: o alerta guarda só UUIDs. Uma busca em lote resolve
+      // produto vendido + ingrediente; o nome do item do pedido é o fallback.
+      const ids: string[] = [...new Set<string>(data.flatMap((a: any) => [a.product_id, a.ingredient_product_id]).filter(Boolean))];
+      const names = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: prods } = await supabase.from("products").select("id, name").in("id", ids);
+        (prods || []).forEach((p: any) => names.set(p.id, p.name));
+      }
+      if (cancelled) return;
+      const itemNameById = new Map<string, string>();
+      (orders || []).forEach((o: any) =>
+        (o.order_items || []).forEach((it: any) => {
+          if (it?.id && it?.products?.name) itemNameById.set(it.id, it.products.name);
+        })
+      );
+      const grouped: Record<string, StockShortageAlert[]> = {};
+      data.forEach((a: any) => {
+        const isRecipe = a.kind === "recipe_shortfall" && !!a.ingredient_product_id;
+        const itemName = isRecipe
+          ? names.get(a.ingredient_product_id) || "Ingrediente"
+          : names.get(a.product_id) || (a.order_item_id ? itemNameById.get(a.order_item_id) : undefined) || "Produto";
+        const productName = isRecipe
+          ? names.get(a.product_id) || (a.order_item_id ? itemNameById.get(a.order_item_id) : undefined) || null
+          : null;
+        const alert: StockShortageAlert = {
+          id: a.id,
+          kind: a.kind,
+          itemName,
+          productName,
+          requestedQty: Number(a.requested_qty),
+          availableQty: Number(a.available_qty),
+          shortfallQty: Number(a.shortfall_qty),
+          unit: a.unit || "un",
+        };
+        if (!grouped[a.order_id]) grouped[a.order_id] = [];
+        grouped[a.order_id].push(alert);
+      });
+      setStockAlertsByOrder(grouped);
+    })();
+    return () => { cancelled = true; };
+    // ordersKey resume id/status/data dos pedidos; `orders` entra só como
+    // fonte dos nomes dos itens dentro do efeito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store?.id, ordersKey]);
 
   const toggleGroupOrder = (id: string) =>
     setGroupSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -568,6 +644,7 @@ export default function OrdersSectionTeste(props: Props) {
               onlineDriversCount={onlineDrivers?.length || 0}
               linkedStoreDrivers={linkedStoreDrivers}
               highlights={getRequiredAddonHighlights(order)}
+              stockAlerts={stockAlertsByOrder[order.id]}
               clientName={getClientName(order.client_id)}
               clientWhatsApp={getClientWhatsApp(order.client_id)}
               driverName={getDriverName}
