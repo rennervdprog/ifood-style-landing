@@ -36,22 +36,6 @@ interface ProductCardProps {
   decItem: (id: string) => void;
 }
 
-/** 5 gradientes do protótipo — a cor é estável por produto (hash do nome). */
-const CARD_GRADIENTS = [
-  "linear-gradient(135deg,#FF6A00,#FF9A3D)",
-  "linear-gradient(135deg,#F59E0B,#FBBF24)",
-  "linear-gradient(135deg,#EF4444,#F87171)",
-  "linear-gradient(135deg,#3B82F6,#60A5FA)",
-  "linear-gradient(135deg,#10B981,#34D399)",
-];
-
-/** Escolhe um dos 5 gradientes pelo hash do nome (mesmo produto, mesma cor). */
-export const gradientFor = (name: string) => {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return CARD_GRADIENTS[h % CARD_GRADIENTS.length];
-};
-
 /** Card individual do produto com feedback visual ao adicionar. */
 export const PdvProductCard = ({ product, qty, stock, addItem, decItem }: ProductCardProps) => {
   const [justAdded, setJustAdded] = useState(false);
@@ -83,10 +67,8 @@ export const PdvProductCard = ({ product, qty, stock, addItem, decItem }: Produc
           ? "border-primary ring-2 ring-primary/25 scale-[0.97]"
           : "border-border"
       } ${isOutOfStock ? "opacity-50" : "active:scale-[0.97]"}`}>
-      {/* Bloco colorido com a inicial */}
-      <div
-        className="h-16 rounded-[10px] flex items-center justify-center text-white text-[26px] font-extrabold shrink-0"
-        style={{ background: gradientFor(product.name) }}>
+      {/* Bloco neutro com a inicial (Y-01: sem gradiente, sem âmbar) */}
+      <div className="h-16 rounded-[10px] flex items-center justify-center bg-zinc-200 text-zinc-700 text-[26px] font-extrabold shrink-0">
         {product.name[0]?.toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
