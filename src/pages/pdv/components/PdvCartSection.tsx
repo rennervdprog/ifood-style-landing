@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import type { CartItem, SaleSnapshot } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
+import { cancelEmptyTab } from "@/pages/pdv/state/usePdvTables";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 
 interface Props {
@@ -103,15 +104,25 @@ export const PdvCartSection = ({
     setGatePurpose("clear");
   };
 
-  const executeClearSale = () => {
+  const executeClearSale = async () => {
+    // N2 Opção A: se a venda está numa comanda VAZIA no banco, o gesto
+    // "Limpar venda" cancela a comanda (libera a mesa) — silencioso, mesmo
+    // toast "Venda limpa", nenhum diálogo novo. `cancelEmptyTab` nunca
+    // cancela comanda com itens nem lança exceção.
+    const tabGone = await cancelEmptyTab(selectedTabId);
     // Snapshot da venda para o "Desfazer" (campos de pagamento preenchidos vazios —
     // o pagamento agora acontece na tela própria).
+    // Desfazer DEFINIDO (guarda 2): se a comanda foi cancelada, o snapshot
+    // volta SEM destino (Balcão) — o Desfazer restaura os itens no carrinho
+    // sem ressuscitar o id da tab morta; o operador re-seleciona a mesa se
+    // quiser (pickTable reabre uma comanda nova). Se a comanda foi preservada
+    // (tem itens enviados), o destino original é mantido no snapshot.
     const snapshot: SaleSnapshot = {
       items: [...cart],
       paymentMethod: "",
-      tableId,
-      selectedTable,
-      selectedTabId,
+      tableId: tabGone ? "" : tableId,
+      selectedTable: tabGone ? null : selectedTable,
+      selectedTabId: tabGone ? null : selectedTabId,
       discountType,
       discountInput,
       cashReceived: "",
