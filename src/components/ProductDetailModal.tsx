@@ -10,6 +10,7 @@ import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/pro
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
 import { priceForFlavorInSize, isFlavorAvailableInSize, combinePricesByMode } from "@/lib/pizzaPricing";
 import { fetchProductAddons, type ProductAddonGroup, type ProductAddonItem } from "@/lib/productAddons";
+import { extractApparelMetadata } from "@/pages/pdv/splitCartItemId";
 
 interface Product {
   id: string;
@@ -35,7 +36,7 @@ interface Props {
   closedNotice?: string | null;
   open: boolean;
   onClose: () => void;
-  onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
+  onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number, metadata?: Record<string, any>) => void;
 }
 
 const categoryEmoji: Record<string, string> = {
@@ -928,7 +929,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       ? `[${selectedTemp === "cold" ? "❄️ Gelado" : "🔥 Quente"}]`
       : "";
     const fullObservations = [tempNote, observations.trim()].filter(Boolean).join(" ");
-    onAdd(product, buildCartAddons(), fullObservations, quantity, unitPrice);
+    // N1 (F2): o modal é o caminho vivo da matriz boutique (o `fetchProductAddons`
+    // com id composto falha e o `catch` do `addItem` abre o modal). Sem o 6º
+    // argumento, o item chegava ao carrinho com `metadata: undefined` e a
+    // variante se perdia — a venda concluiria sem baixar nada e sem alerta.
+    // Só as 4 chaves apparel viajam; alimentos seguem com `undefined`.
+    onAdd(product, buildCartAddons(), fullObservations, quantity, unitPrice, extractApparelMetadata(product?.metadata));
     closeAndReset();
   };
 
