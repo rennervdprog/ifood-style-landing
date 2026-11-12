@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import type { CartItem, SaleSnapshot } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
 import { cancelEmptyTab } from "@/pages/pdv/state/usePdvTables";
+import { clearSaleWithUndo } from "@/pages/pdv/clearSaleWithUndo";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 
 /**
@@ -121,37 +122,12 @@ export const PdvCartSectionTeste = ({
   };
 
   const executeClearSale = async () => {
-    // N2 Opção A: se a venda está numa comanda VAZIA no banco, o gesto
-    // "Limpar venda" cancela a comanda (libera a mesa) — silencioso, mesmo
-    // toast "Venda limpa", nenhum diálogo novo. `cancelEmptyTab` nunca
-    // cancela comanda com itens nem lança exceção.
-    const tabGone = await cancelEmptyTab(selectedTabId);
-    // Snapshot da venda para o "Desfazer" (campos de pagamento preenchidos vazios —
-    // o pagamento agora acontece na tela própria).
-    // Desfazer DEFINIDO (guarda 2): se a comanda foi cancelada, o snapshot
-    // volta SEM destino (Balcão) — o Desfazer restaura os itens no carrinho
-    // sem ressuscitar o id da tab morta; o operador re-seleciona a mesa se
-    // quiser (pickTable reabre uma comanda nova). Se a comanda foi preservada
-    // (tem itens enviados), o destino original é mantido no snapshot.
-    const snapshot: SaleSnapshot = {
-      items: [...cart],
-      paymentMethod: "",
-      tableId: tabGone ? "" : tableId,
-      selectedTable: tabGone ? null : selectedTable,
-      selectedTabId: tabGone ? null : selectedTabId,
-      discountType,
-      discountInput,
-      cashReceived: "",
-      splitMode: false,
-      splitPayments: [],
-    };
-    clearSale();
-    toast.warning("Venda limpa", {
-      action: restoreCart ? {
-        label: "Desfazer",
-        onClick: () => restoreCart(snapshot),
-      } : undefined,
-      duration: 5000,
+    // F1 (2c): gesto compartilhado com o ESC — cancela a comanda vazia (N2),
+    // monta o snapshot do "Desfazer", limpa e mostra o toast (10 s).
+    await clearSaleWithUndo({
+      cart, tableId, selectedTable, selectedTabId,
+      discountType, discountInput,
+      cancelEmptyTab, clearSale, restoreCart,
     });
   };
 
@@ -171,7 +147,9 @@ export const PdvCartSectionTeste = ({
         />
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground">{totalItems} itens</span>
-          {!cartEmpty && (
+          {/* 2a: o botão aparece também com a venda vazia quando há comanda
+              selecionada — sem ele, a mesa ocupada só pela seleção ficava presa. */}
+          {(!cartEmpty || selectedTabId) && (
             <button onClick={handleClearSale} aria-label="Limpar venda" title="Limpar venda (ESC)"
               className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
