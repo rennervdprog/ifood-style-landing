@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage } from "@/lib/deliveryQuote";
+import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, manualQuoteFailureGuidance, manualQuoteFailureMessage } from "@/lib/deliveryQuote";
 
 // Fase 6B (P2-7): quando a cotação falha por não resolver o endereço, a
 // mensagem orienta preencher o CEP — é ele que localiza a rua.
@@ -114,5 +114,31 @@ describe("checkout sem CEP — 2026-11-06", () => {
       policy_version: 1,
     } as any;
     expect(deliveryQuoteBreakdown(quote)).toContain("Frete grátis");
+  });
+});
+
+// Pedido manual — motivo real (2026-11-13): a falha da cotação mostra o
+// motivo, não a frase genérica; sem-motoboy não menciona retirada.
+describe("manualQuoteFailureMessage / manualQuoteFailureGuidance — pedido manual", () => {
+  it("no_driver_available com mensagem do servidor usa a mensagem do servidor", () => {
+    const msg = manualQuoteFailureMessage({ ok: false, reason: "no_driver_available", message: "Esta loja está sem entregador disponível no momento." });
+    expect(msg).toBe("Esta loja está sem entregador disponível no momento.");
+  });
+
+  it("no_driver_available sem mensagem não menciona retirada", () => {
+    const msg = manualQuoteFailureMessage({ ok: false, reason: "no_driver_available" });
+    expect(msg).toBe("Esta loja está sem entregador disponível no momento.");
+    expect(msg).not.toMatch(/retirada/i);
+  });
+
+  it("outros motivos usam a mensagem do checkout", () => {
+    expect(manualQuoteFailureMessage({ ok: false, reason: "delivery_unavailable" })).toContain("não está aceitando");
+    expect(manualQuoteFailureMessage({ ok: false, reason: "outside_delivery_area", distance: { km: 12, max_km: 5 } })).toContain("12.0 km");
+  });
+
+  it("só sem-motoboy tem orientação de chamar o motoboy", () => {
+    expect(manualQuoteFailureGuidance("no_driver_available")).toContain("motoboy");
+    expect(manualQuoteFailureGuidance("delivery_unavailable")).toBeNull();
+    expect(manualQuoteFailureGuidance(undefined)).toBeNull();
   });
 });

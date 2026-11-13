@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep, formatCep } from "@/lib/location";
+import { manualQuoteFailureGuidance, manualQuoteFailureMessage, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import type { CartItem } from "@/pages/pdv/types";
 import { splitCartItemId } from "@/pages/pdv/splitCartItemId";
@@ -73,6 +74,9 @@ export function PdvDeliveryManualDialog({
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [calcFee, setCalcFee] = useState(false);
   const [deliveryQuote, setDeliveryQuote] = useState<any | null>(null);
+  // Motivo real da falha da cotação (item 3) + orientação (só sem-motoboy)
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteGuidance, setQuoteGuidance] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // Passo visível na apresentação em 3 passos (wizardSteps): 2 = cliente, 3 = entrega/pagamento
   const [wizardStep, setWizardStep] = useState<2 | 3>(2);
@@ -85,6 +89,7 @@ export function PdvDeliveryManualDialog({
       setComplement(""); setReference("");
       setPaymentMethod("dinheiro"); setChangeFor("");
       setFee(null); setFeeBreakdown(null); setDeliveryQuote(null);
+      setQuoteError(null); setQuoteGuidance(null);
       setWizardStep(2);
     }
   }, [open]);
@@ -140,11 +145,15 @@ export function PdvDeliveryManualDialog({
       setFee(null);
       setFeeBreakdown(null);
       setDeliveryQuote(null);
+      setQuoteError(null);
+      setQuoteGuidance(null);
       return;
     }
 
     let cancelled = false;
     setCalcFee(true);
+    setQuoteError(null);
+    setQuoteGuidance(null);
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -169,7 +178,22 @@ export function PdvDeliveryManualDialog({
         });
         const quote = await response.json().catch(() => null);
         if (!response.ok || !quote?.ok || !quote?.pricing || !quote?.destination) {
-          throw new Error(quote?.reason || "quote_failed");
+          // Falha COM payload: mostra o motivo real (item 3), não a frase
+          // genérica. O payload preserva reason/message/distance da cotação.
+          const failure: DeliveryQuoteFailure = {
+            ok: false,
+            reason: typeof quote?.reason === "string" ? quote.reason : "delivery_quote_failed",
+            message: typeof quote?.message === "string" ? quote.message : undefined,
+            distance: quote?.distance ?? undefined,
+          };
+          if (!cancelled) {
+            setFee(null);
+            setDeliveryQuote(null);
+            setFeeBreakdown(null);
+            setQuoteError(manualQuoteFailureMessage(failure));
+            setQuoteGuidance(manualQuoteFailureGuidance(failure.reason));
+          }
+          return;
         }
         if (!cancelled) {
           const quotedFee = Number(quote.pricing.delivery_fee || 0);
@@ -179,12 +203,19 @@ export function PdvDeliveryManualDialog({
           const platform = Number(quote.pricing.platform_fee_customer || 0);
           const distance = Number(quote.distance?.km || 0);
           setFeeBreakdown(`Distância ${distance.toFixed(1)} km · Frete da loja ${formatBRL(base)} · Plataforma ${formatBRL(platform)}`);
+          setQuoteError(null);
+          setQuoteGuidance(null);
         }
-      } catch {
+      } catch (e) {
+        // Sem payload (rede/sessão): sessão expirada tem mensagem própria;
+        // o resto usa o genérico com retry da função compartilhada.
+        const reason = e instanceof Error && e.message === "session_expired" ? "unauthorized" : "quote_unreachable";
         if (!cancelled) {
           setFee(null);
           setDeliveryQuote(null);
-          setFeeBreakdown("Não foi possível calcular a entrega para este endereço.");
+          setFeeBreakdown(null);
+          setQuoteError(manualQuoteFailureMessage({ ok: false, reason }));
+          setQuoteGuidance(null);
         }
       } finally {
         if (!cancelled) setCalcFee(false);
@@ -592,6 +623,12 @@ export function PdvDeliveryManualDialog({
                 {feeBreakdown && (
                   <p className="text-[11px] text-muted-foreground mt-1">{feeBreakdown}</p>
                 )}
+                {quoteError && (
+                  <p className="text-[11px] font-semibold text-foreground mt-1">{quoteError}</p>
+                )}
+                {quoteGuidance && (
+                  <p className="text-[11px] text-muted-foreground mt-1">{quoteGuidance}</p>
+                )}
                 <p className="mt-2 text-[11px] text-muted-foreground">{wizardSteps ? "A taxa é calculada pelo sistema com o endereço do cliente — não dá para mudar neste pedido." : "A taxa é definida pela cotação central da loja e não pode ser alterada manualmente neste pedido."}</p>
               </div>
             </section>
@@ -655,7 +692,9 @@ export function PdvDeliveryManualDialog({
               </div>
             </section>
 
-            {wizardSteps && (
+            {/* Só "pronto" com cotação válida (item 3b): antes a caixa aparecia
+                com a taxa falhada e o botão desabilitado. */}
+            {wizardSteps && canSave && (
               <div className="rounded-xl border border-success/40 bg-success/5 p-3 text-xs leading-relaxed">
                 ✅ <strong>Pronto para criar.</strong> Ao tocar em “Criar pedido”, ele aparece na tela de Pedidos como{" "}
                 <strong>Preparando</strong>, a notinha imprime e o motoboy confirma a entrega com o PIN <strong>{pin}</strong>.
