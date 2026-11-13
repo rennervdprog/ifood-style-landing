@@ -9,11 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.5.8",
+  version: "2.5.9",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.5.8.apk",
+  apkPath: "/apps/itasuper-entregador-2.5.9.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Som garantido na tela de oferta: o aviso de pedido novo agora toca o som pela própria tela de oferta — mesmo com a notificação silenciada, o chamado toca uma única vez, sem dobrar",
     "Som do aviso mais suave: a mesma melodia do ItaSuper, agora com ataque mais macio e volume mais baixo — sem perder o chamado na rua",
     "Aviso sem duplicar: cada pedido novo toca o som uma única vez, mesmo quando a tela de oferta abre junto com a notificação",
     "Som novo no alerta de pedido: o toque mudou — agora é o som estilo sirene do ItaSuper, mais alto e mais chamativo na rua",
