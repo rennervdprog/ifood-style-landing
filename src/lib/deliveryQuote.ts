@@ -101,6 +101,30 @@ export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null |
   return "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";
 }
 
+/**
+ * Mensagem de falha da cotação no pedido manual (painel do lojista, 2026-11-13):
+ * a mesma do checkout, exceto sem-motoboy sem mensagem do servidor — sem a
+ * menção a retirada, que não existe nesse fluxo. O servidor normalmente
+ * devolve `message` (reason_message do banco); a exceção só cobre a ausência dele.
+ */
+export function manualQuoteFailureMessage(value: DeliveryQuoteFailure | null | undefined): string {
+  if (value?.reason === "no_driver_available" && !value?.message) {
+    return "Esta loja está sem entregador disponível no momento.";
+  }
+  return deliveryQuoteFailureMessage(value);
+}
+
+/**
+ * Orientação do que fazer quando a cotação falha no pedido manual. Só
+ * sem-motoboy tem ação possível na hora (chamar o motoboy); os demais
+ * motivos já trazem a orientação na própria mensagem.
+ */
+export function manualQuoteFailureGuidance(reason: string | null | undefined): string | null {
+  return reason === "no_driver_available"
+    ? "Peça ao motoboy para abrir o app e ficar online, depois tente de novo."
+    : null;
+}
+
 export function deliveryQuoteBreakdown(quote: DeliveryQuote | null): string | null {
   if (!quote || quote.fulfillment !== "delivery") return null;
   if (quote.pricing.free_delivery_applied) return "Frete grátis aplicado pela regra da loja";
