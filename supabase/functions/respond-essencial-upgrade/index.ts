@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
 
       const { error: updateStoreError } = await admin
         .from("stores")
-        .update({ status: "ativo", updated_at: now })
+        .update({ status: "ativo" })
         .eq("id", store_id)
         .eq("status", "inativo");
       if (updateStoreError) return json({ error: updateStoreError.message }, 500);
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
 
     const { error: suspendError } = await admin
       .from("stores")
-      .update({ status: "inativo", updated_at: now })
+      .update({ status: "inativo" })
       .eq("id", store_id);
     if (suspendError) return json({ error: suspendError.message }, 500);
 
