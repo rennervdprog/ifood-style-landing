@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
-import { getOrderItemDisplayName } from "@/lib/orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons } from "@/lib/orderItemName";
 import { toast } from "sonner";
 
 type KdsOrder = {
@@ -262,15 +262,25 @@ function Column({
                 </div>
               </div>
               <ul className="space-y-1 mb-2">
-                {o.order_items?.map((it) => (
-                  <li key={it.id} className="text-sm">
-                    <span className="font-black">{it.quantity}×</span>{" "}
-                    <span className="font-bold">{getOrderItemDisplayName(it)}</span>
-                    {it.observations && (
-                      <div className="text-[11px] text-muted-foreground italic ml-5">obs: {it.observations}</div>
-                    )}
-                  </li>
-                ))}
+                {o.order_items?.map((it) => {
+                  const flavors = getOrderItemFlavors(it);
+                  const extras = getOrderItemExtraAddons(it);
+                  return (
+                    <li key={it.id} className="text-sm">
+                      <span className="font-black">{it.quantity}×</span>{" "}
+                      <span className="font-bold">{getOrderItemDisplayName(it)}</span>
+                      {flavors.map((f, i) => (
+                        <div key={`${f}-${i}`} className="text-[13px] font-semibold ml-5">{f}</div>
+                      ))}
+                      {extras.length > 0 && (
+                        <div className="text-[11px] text-muted-foreground ml-5">+ {extras.join(", ")}</div>
+                      )}
+                      {it.observations && (
+                        <div className="text-[11px] text-muted-foreground italic ml-5">obs: {it.observations}</div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
               {o.notes && (
                 <div className="text-[11px] bg-muted rounded-lg p-2 mb-2">
