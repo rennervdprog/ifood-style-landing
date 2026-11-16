@@ -98,8 +98,11 @@ Deno.serve(async (req) => {
       if (updateStoreError) return json({ error: updateStoreError.message }, 500);
 
       await admin.from("admin_logs").insert({
+        admin_user_id: user.id,
         action: "essencial_upgrade_accepted",
-        metadata: { store_id, plan_type: plan.plan_type, new_fee: monthlyFee, user_id: user.id, via_admin: isAdmin && store.owner_id !== user.id },
+        target_type: "store",
+        target_id: store_id,
+        details: { plan_type: plan.plan_type, new_fee: monthlyFee, via_admin: isAdmin && store.owner_id !== user.id },
       }).then(() => {}, () => {});
 
       return json({ ok: true, response: "accepted", new_monthly_fee: monthlyFee });
@@ -118,8 +121,11 @@ Deno.serve(async (req) => {
     if (suspendError) return json({ error: suspendError.message }, 500);
 
     await admin.from("admin_logs").insert({
+      admin_user_id: user.id,
       action: "store_suspended_upgrade_refused",
-      metadata: { store_id, plan_type: plan.plan_type, user_id: user.id, via_admin: isAdmin && store.owner_id !== user.id },
+      target_type: "store",
+      target_id: store_id,
+      details: { plan_type: plan.plan_type, via_admin: isAdmin && store.owner_id !== user.id },
     }).then(() => {}, () => {});
 
     return json({ ok: true, response: "refused", store_suspended: true });
