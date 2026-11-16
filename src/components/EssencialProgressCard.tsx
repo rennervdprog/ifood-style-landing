@@ -46,10 +46,11 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
         planName: tpl?.label || fb.planName,
       }
     : undefined;
-  // Elegível para o card dinâmico: planos Essencial/Autonomia na entrada grátis.
+  // Elegível para o card dinâmico: planos Essencial/Autonomia na entrada grátis
+  // (ou já com a mensalidade aplicada pelo aceite, enquanto a data agendada
+  // não chega — ver o filtro de feeNow abaixo, que precisa de `data`).
   const eligible =
     !!cfg &&
-    Number(storePlan?.monthlyFee || 0) === 0 &&
     !storePlan?.isVip &&
     !storePlan?.isEssencialLifetimeFree &&
     !storePlan?.isInTrial;
@@ -91,6 +92,14 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
   const remaining = Math.max(0, THRESHOLD - data.gmv);
   const scheduled = data.scheduledAt ? new Date(data.scheduledAt) : null;
 
+  // Pós-aceite: a mensalidade já está aplicada no plano, mas a 1ª cobrança só
+  // cai na data agendada (next_billing_date = data agendada). Manter a
+  // confirmação visível até lá; fora disso, plano pago não mostra o card.
+  const feeNow = Number(storePlan?.monthlyFee || 0);
+  const acceptedAwaiting =
+    feeNow > 0 && data.response === "accepted" && !!scheduled && scheduled.getTime() > Date.now();
+  if (feeNow > 0 && !acceptedAwaiting) return null;
+
   async function respond(response: "accepted" | "refused") {
     setSaving(true);
     const { data: res, error } = await supabase.rpc(
@@ -119,7 +128,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
           Sua loja ultrapassou {formatBRL(THRESHOLD)} em vendas e a mensalidade do plano {PLAN_NAME} (<b>{formatBRL(UPGRADE_FEE)}/mês</b>) passou a ser devida. Como o upgrade foi recusado, a loja está <b>inativa</b> — vitrine, cardápio e novos pedidos estão bloqueados.
         </p>
         <p className="text-xs text-muted-foreground">
-          Conforme os Termos de Uso (5.2), não há retorno ao plano gratuito. Para reativar, aceite a mensalidade abaixo.
+          Conforme os Termos de Uso (6.1), não há retorno ao plano gratuito. Para reativar, aceite a mensalidade abaixo.
         </p>
         <Button size="sm" disabled={saving} onClick={() => respond("accepted")} className="w-full gap-1">
           <Check className="h-4 w-4" /> Aceitar mensalidade e reativar loja
