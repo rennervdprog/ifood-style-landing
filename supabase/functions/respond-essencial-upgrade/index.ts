@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
     const { data: plan, error: planError } = await admin
       .from("store_plans")
-      .select("id, plan_type, is_active")
+      .select("id, plan_type, is_active, essencial_upgrade_scheduled_at, next_billing_date")
       .eq("store_id", store_id)
       .eq("is_active", true)
       .maybeSingle();
@@ -81,6 +81,10 @@ Deno.serve(async (req) => {
           essencial_upgrade_response: "accepted",
           essencial_upgrade_response_at: now,
           monthly_fee: monthlyFee,
+          // 1ª cobrança NA DATA AGENDADA (cartão + Termos 6.1): o
+          // monthly-billing só fatura planos com next_billing_date
+          // nulo/passado. Sem data agendada, preserva a existente.
+          next_billing_date: (plan as any).essencial_upgrade_scheduled_at ?? (plan as any).next_billing_date ?? now,
           updated_at: now,
         })
         .eq("id", plan.id);

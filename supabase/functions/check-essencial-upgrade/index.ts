@@ -177,10 +177,12 @@ Deno.serve(async (req) => {
             "plan_upgrade_scheduled", p.store_id);
           skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
         } else if (nowMs >= scheduled && response === "accepted") {
-          // Grace period vencido → aplica upgrade
+          // Grace period vencido → aplica upgrade. A data agendada já passou:
+          // next_billing_date = data agendada faz a 1ª cobrança sair na
+          // próxima rodada do monthly-billing (que só fatura datas passadas).
           const { error: uErr } = await sb
             .from("store_plans")
-            .update({ monthly_fee: UPGRADE_FEE, updated_at: new Date().toISOString() })
+            .update({ monthly_fee: UPGRADE_FEE, next_billing_date: new Date(scheduled).toISOString(), updated_at: new Date().toISOString() })
             .eq("id", p.id);
           if (uErr) {
             skipped.push({ store: store.name, gmv, error: uErr.message });
@@ -207,7 +209,7 @@ Deno.serve(async (req) => {
             metadata: { store_id: p.store_id, plan_type: (p as any).plan_type, gmv, scheduled_for: new Date(scheduled).toISOString() },
           }).then(() => {}, () => {});
           await notify(ownerPhone,
-            `⚠️ ${store.name}: o prazo de aceite da mensalidade do plano *${PLAN_LABEL}* (R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês) venceu sem resposta.\n\nSua loja foi *suspensa* conforme os Termos de Uso (cláusula 5.2). Para reativar, acesse o painel e clique em *Aceitar mensalidade e reativar loja*.`,
+            `⚠️ ${store.name}: o prazo de aceite da mensalidade do plano *${PLAN_LABEL}* (R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês) venceu sem resposta.\n\nSua loja foi *suspensa* conforme os Termos de Uso (cláusula 6.1). Para reativar, acesse o painel e clique em *Aceitar mensalidade e reativar loja*.`,
             "plan_upgrade_auto_suspended", p.store_id);
           skipped.push({ store: store.name, gmv, reason: "auto_suspended_deadline_expired" });
         } else {
