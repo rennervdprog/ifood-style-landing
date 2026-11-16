@@ -4461,7 +4461,7 @@ export type Database = {
         | "commission_only"
         | "supporter"
         | "autonomy"
-      store_status: "analise" | "ativo" | "bloqueado"
+      store_status: "analise" | "ativo" | "bloqueado" | "inativo"
       wallet_transaction_type: "credit" | "debit"
     }
     CompositeTypes: {
@@ -4655,7 +4655,7 @@ export const Constants = {
         "supporter",
         "autonomy",
       ],
-      store_status: ["analise", "ativo", "bloqueado"],
+      store_status: ["analise", "ativo", "bloqueado", "inativo"],
       wallet_transaction_type: ["credit", "debit"],
     },
   },
