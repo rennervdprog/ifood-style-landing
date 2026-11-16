@@ -73,3 +73,16 @@ export function getFractionAddonNames(item: ItemLike): Set<string> {
   if (!detected) return new Set();
   return new Set(detected.matches.map((a: any) => String(a.name)));
 }
+
+/**
+ * Opcionais que NÃO são frações de sabor (ex.: ["Bacon extra"]).
+ * Aceita `addons` como array ou string JSON; tolera valores inválidos.
+ * As frações vão para `getOrderItemFlavors` — não duplicar aqui.
+ */
+export function getOrderItemExtraAddons(item: ItemLike): string[] {
+  const addons = parseAddons(item);
+  const fractionNames = getFractionAddonNames(item);
+  return addons
+    .map((a: any) => (typeof a?.name === "string" ? a.name : ""))
+    .filter((name) => name !== "" && !fractionNames.has(name));
+}
