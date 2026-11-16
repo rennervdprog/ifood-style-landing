@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       const PLAN_LABEL = cfg.planLabel;
       // Se já respondeu 'refused', reaplica suspensão (caso admin tenha reativado por engano)
       if (response === "refused" && store.status === "ativo") {
-        await sb.from("stores").update({ status: "inativo", updated_at: new Date().toISOString() }).eq("id", p.store_id);
+        await sb.from("stores").update({ status: "inativo" }).eq("id", p.store_id);
         await sb.from("admin_logs").insert({
           action: "store_suspended_upgrade_refused_reapply",
           metadata: { store_id: p.store_id, plan_type: (p as any).plan_type },
@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
         } else if (nowMs >= scheduled) {
           // Prazo venceu sem aceite expresso → recusa implícita: suspende loja.
           await sb.from("stores")
-            .update({ status: "inativo", updated_at: new Date().toISOString() })
+            .update({ status: "inativo" })
             .eq("id", p.store_id);
           await sb.from("store_plans")
             .update({ essencial_upgrade_response: "refused", essencial_upgrade_response_at: new Date().toISOString(), updated_at: new Date().toISOString() })
