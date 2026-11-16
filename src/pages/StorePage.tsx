@@ -29,6 +29,7 @@ import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { fetchProductAddons } from "@/lib/productAddons";
+import { buildOutOfStockSet, applyLiveStockFlags } from "@/lib/storeStock";
 import { isReservedSlug } from "@/routes/reservedSlugs";
 
 interface Product {
@@ -518,22 +519,51 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 3,
   });
 
+  // Saldo vivo (bug do catálogo, E2E 15/11): a flag metadata.out_of_stock
+  // pode estar ausente/desatualizada — a RPC store_stock_flags devolve o
+  // estado real por produto (só booleanos). Falha aqui não bloqueia a
+  // vitrine: sem dados, vale só a flag (comportamento anterior).
+  const { data: stockFlags } = useQuery({
+    queryKey: ["store-stock-flags", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("store_stock_flags", {
+        _store_id: storeId!,
+      });
+      if (error) throw error;
+      return (data || []) as { product_id: string; out_of_stock: boolean }[];
+    },
+    enabled: !!storeId && bootstrapDone,
+    staleTime: 1000 * 60,
+    retry: 1,
+  });
+
+  const liveOutOfStock = useMemo(
+    () => buildOutOfStockSet(stockFlags),
+    [stockFlags],
+  );
+
   // Produtos visíveis no cardápio (oculta itens marcados como "apenas no modal" de pastel)
   // Fase 2: produto indisponível (is_available=false) não aparece na vitrine.
   // A RPC store_bootstrap já filtra; isto cobre o cache antigo.
+  // Saldo vivo: mescla a flag de esgotado do estoque real no metadata em
+  // memória — um único ponto que alimenta cards, destaques, modal e
+  // handleAddToCart (todos leem metadata.out_of_stock do produto exibido).
   const displayProducts = useMemo(
     () =>
-      (products || []).filter(
-        (p) =>
-          (p as any).is_available !== false &&
-          !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor) &&
-          !(p as any).sold_by_weight &&
-          !((p.metadata as any)?.pdv_only) &&
-          !((p.metadata as any)?.sold_by_weight) &&
-          !((p.metadata as any)?.hidden) &&
-          !!(p.name && String(p.name).trim())
+      applyLiveStockFlags(
+        (products || []).filter(
+          (p) =>
+            (p as any).is_available !== false &&
+            !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor) &&
+            !(p as any).sold_by_weight &&
+            !((p.metadata as any)?.pdv_only) &&
+            !((p.metadata as any)?.sold_by_weight) &&
+            !((p.metadata as any)?.hidden) &&
+            !!(p.name && String(p.name).trim())
+        ),
+        liveOutOfStock,
       ),
-    [products]
+    [products, liveOutOfStock]
   );
 
   // Coleções de promoção ativas (ex.: "PROMOÇÃO RUMO AO HEXA 🚀")
