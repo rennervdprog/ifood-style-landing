@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ArrowLeft, ChefHat, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons } from "@/lib/orderItemName";
 
 type KdsOrder = {
   id: string;
@@ -231,20 +232,27 @@ export default function PdvKdsPage() {
                       </div>
                     </div>
                     <ul className="space-y-1 mb-2">
-                      {o.order_items.map((it) => (
-                        <li key={it.id} className="text-sm leading-tight">
-                          <span className="font-black">{it.quantity}×</span>{" "}
-                          <span className="font-bold">{it.products?.name || "Item"}</span>
-                          {it.observations && (
-                            <div className="text-[11px] text-muted-foreground italic ml-4">↳ {it.observations}</div>
-                          )}
-                          {Array.isArray(it.addons) && it.addons.length > 0 && (
-                            <div className="text-[11px] text-muted-foreground ml-4">
-                              + {it.addons.map((a: any) => a?.name).filter(Boolean).join(", ")}
-                            </div>
-                          )}
-                        </li>
-                      ))}
+                      {o.order_items.map((it) => {
+                        const flavors = getOrderItemFlavors(it);
+                        const extras = getOrderItemExtraAddons(it);
+                        return (
+                          <li key={it.id} className="text-sm leading-tight">
+                            <span className="font-black">{it.quantity}×</span>{" "}
+                            <span className="font-bold">{getOrderItemDisplayName(it)}</span>
+                            {flavors.map((f, i) => (
+                              <div key={`${f}-${i}`} className="text-[13px] font-semibold ml-4">{f}</div>
+                            ))}
+                            {extras.length > 0 && (
+                              <div className="text-[11px] text-muted-foreground ml-4">
+                                + {extras.join(", ")}
+                              </div>
+                            )}
+                            {it.observations && (
+                              <div className="text-[11px] text-muted-foreground italic ml-4">↳ {it.observations}</div>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                     {target && (
                       <button
