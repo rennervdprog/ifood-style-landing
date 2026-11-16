@@ -375,7 +375,10 @@ export function PdvDeliveryManualDialog({
         // Nunca deixar um pedido oco na cozinha: desfaz o pedido (best-effort)
         // e avisa — sem toast de sucesso se os itens não gravaram.
         await supabase.from("orders").delete().eq("id", order.id);
-        throw new Error("Não foi possível salvar os itens do pedido. Tente de novo.");
+        // Motivo real: a trava de estoque do pedido manual devolve
+        // "O produto X está esgotado." — mostrar o motivo, não o genérico.
+        const stockReason = /O produto .* está esgotado\./.exec(itemsError.message || "")?.[0];
+        throw new Error(stockReason || "Não foi possível salvar os itens do pedido. Tente de novo.");
       }
 
       queryClient.invalidateQueries({ queryKey: ["store-orders", storeId] });

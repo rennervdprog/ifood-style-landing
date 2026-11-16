@@ -7,6 +7,7 @@ import { Check, ChevronDown, ChevronUp, Loader2, Minus, Pencil, Plus, Search, Sh
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, sumMoney } from "@/lib/utils";
 import type { ProductAddonGroup, ProductAddonItem } from "@/lib/productAddons";
+import { buildOutOfStockSet } from "@/lib/storeStock";
 import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
 import type { CartItem } from "@/pages/pdv/types";
 
@@ -24,6 +25,8 @@ interface PickerProduct {
   name: string;
   price: number;
   image_url?: string | null;
+  /** Marcação manual de esgotado do lojista (metadata.out_of_stock). */
+  outOfStockFlag: boolean;
 }
 
 /** Adicional escolhido de um item (antes de virar CartAddon[] no carrinho). */
@@ -151,11 +154,41 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
           name: p.name,
           price: p.promo_active && p.promo_price ? Number(p.promo_price) : Number(p.price),
           image_url: p.image_url,
+          outOfStockFlag: (p.metadata || {}).out_of_stock === true,
         })) as PickerProduct[];
     },
     enabled: open && !!storeId,
     staleTime: 60_000,
   });
+
+  // Saldo vivo (trava de estoque do pedido manual): a flag metadata pode
+  // estar ausente/desatualizada — a RPC store_stock_flags devolve o estado
+  // real por produto (só booleanos, sem quantidades). Falha aqui não
+  // bloqueia o picker: sem dados, vale só a flag manual (comportamento
+  // anterior). A trava real está no banco (trigger BEFORE INSERT em
+  // order_items); isto é só o estado visível na seleção.
+  const { data: stockFlags } = useQuery({
+    queryKey: ["manual-order-stock-flags", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("store_stock_flags", {
+        _store_id: storeId,
+      });
+      if (error) throw error;
+      return (data || []) as { product_id: string; out_of_stock: boolean }[];
+    },
+    enabled: open && !!storeId,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  const liveOutOfStock = useMemo(
+    () => buildOutOfStockSet(stockFlags),
+    [stockFlags],
+  );
+
+  /** Esgotado = marcação manual do lojista OU saldo vivo zerado. */
+  const isOutOfStock = (product: PickerProduct) =>
+    product.outOfStockFlag || liveOutOfStock.has(product.id);
 
   // Grupos de adicionais por produto (vínculos + grupos diretos), uma
   // consulta só para o cardápio inteiro — mesma fonte do PDV/checkout.
@@ -249,6 +282,9 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
 
   /** Adiciona 1 na linha simples do produto (produto sem adicionais). */
   const addPlain = (product: PickerProduct) => {
+    // Esgotado não entra no pedido (o botão já vem desabilitado; a guarda
+    // é defesa em profundidade — a trava real está no banco).
+    if (isOutOfStock(product)) return;
     setSelected((prev) => {
       const existing = prev.find((s) => s.lineKey === product.id);
       if (existing) {
@@ -282,6 +318,9 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
   };
 
   const openAddonEditor = (product: PickerProduct, line?: SelectedItem) => {
+    // Editar uma linha já escolhida continua permitido (reduzir/remover);
+    // abrir o editor para um produto esgotado, não.
+    if (!line && isOutOfStock(product)) return;
     const entry = addonsByProduct?.get(product.id);
     if (!entry) return;
     if (line) {
@@ -535,7 +574,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                         <button
                           type="button"
                           onClick={() => setLineQty(s.lineKey, s.quantity + 1)}
-                          className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95"
+                          disabled={isOutOfStock(s.product)}
+                          className="h-7 w-7 rounded-lg border border-border bg-background flex items-center justify-center active:scale-95 disabled:opacity-40"
                           aria-label="Aumentar"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -603,11 +643,14 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                 const grouped = hasAddons(p.id);
                 const qty = qtyOf(p.id);
                 const plainQty = plainQtyOf(p.id);
+                const outOfStock = isOutOfStock(p);
                 return (
-                  <div key={p.id} className="flex items-center justify-between gap-2 py-2.5">
+                  <div key={p.id} className={`flex items-center justify-between gap-2 py-2.5 ${outOfStock ? "opacity-60" : ""}`}>
                     <div className="min-w-0">
                       <p className="text-sm text-foreground truncate">{p.name}</p>
-                      {grouped && (
+                      {outOfStock ? (
+                        <span className="mt-0.5 inline-block text-[10px] font-bold uppercase bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">Esgotado</span>
+                      ) : grouped && (
                         <p className="text-[11px] font-semibold text-primary">tem adicionais — toque no + para escolher</p>
                       )}
                     </div>
@@ -623,7 +666,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                           <button
                             type="button"
                             onClick={() => openAddonEditor(p)}
-                            className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95"
+                            disabled={outOfStock}
+                            className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95 disabled:opacity-40"
                             aria-label={`Adicionar ${p.name} com adicionais`}
                           >
                             <Plus className="h-4 w-4" />
@@ -633,7 +677,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                         <button
                           type="button"
                           onClick={() => addPlain(p)}
-                          className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95"
+                          disabled={outOfStock}
+                          className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95 disabled:opacity-40"
                           aria-label={`Adicionar ${p.name}`}
                         >
                           <Plus className="h-4 w-4" />
@@ -652,7 +697,8 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
                           <button
                             type="button"
                             onClick={() => addPlain(p)}
-                            className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95"
+                            disabled={outOfStock}
+                            className="h-8 w-8 rounded-lg border border-primary text-primary flex items-center justify-center active:scale-95 disabled:opacity-40"
                             aria-label={`Aumentar ${p.name}`}
                           >
                             <Plus className="h-4 w-4" />
