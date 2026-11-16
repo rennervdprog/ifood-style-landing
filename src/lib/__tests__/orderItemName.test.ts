@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames } from "@/lib/orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames, getOrderItemExtraAddons } from "@/lib/orderItemName";
 
 describe("getOrderItemDisplayName", () => {
   it("retorna nome do produto quando não é meio-a-meio", () => {
@@ -54,5 +54,34 @@ describe("getOrderItemDisplayName", () => {
     const set = getFractionAddonNames(item);
     expect(set.has("½ Pastel - Carne")).toBe(true);
     expect(set.has("Complemento: Cebola")).toBe(false);
+  });
+});
+
+describe("getOrderItemExtraAddons", () => {
+  it("retorna só os opcionais, sem as frações de sabor (addons array)", () => {
+    const item = {
+      products: { name: "Pizza Grande" },
+      addons: [{ name: "½ Calabresa" }, { name: "½ Mussarela" }, { name: "Bacon extra", price: 5 }],
+    };
+    expect(getOrderItemExtraAddons(item)).toEqual(["Bacon extra"]);
+  });
+
+  it("aceita addons como string JSON (formato do pedido manual)", () => {
+    const item = {
+      products: { name: "Pizza" },
+      addons: JSON.stringify([{ name: "½ Calabresa" }, { name: "½ Mussarela" }, { name: "Bacon extra" }]),
+    };
+    expect(getOrderItemExtraAddons(item)).toEqual(["Bacon extra"]);
+  });
+
+  it("retorna todos os nomes quando não há fração", () => {
+    const item = { products: { name: "Lanche" }, addons: [{ name: "Cheddar extra" }, { name: "Bacon extra" }] };
+    expect(getOrderItemExtraAddons(item)).toEqual(["Cheddar extra", "Bacon extra"]);
+  });
+
+  it("tolera addons inválidos e itens sem nome", () => {
+    expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: "not-json" })).toEqual([]);
+    expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: null })).toEqual([]);
+    expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: [{ price: 3 }, { name: "Bacon" }] })).toEqual(["Bacon"]);
   });
 });
