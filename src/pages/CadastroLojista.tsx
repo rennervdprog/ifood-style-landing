@@ -11,6 +11,7 @@ import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
+import { matrizSignupErrorMessage } from "@/lib/matrizSignupError";
 import {
   normalizeReferralCode,
   getStoredReferralCode,
@@ -361,7 +362,14 @@ const CadastroLojista = () => {
           return;
         }
 
-        // Se for cadastro como matriz, registrar a rede após criar a loja
+        // Se for cadastro como matriz, registrar a rede após criar a loja.
+        // Item 2b (pós-E2E matriz 17/11): a falha da RPC NÃO pode ser
+        // silenciosa — sem a rede, a conta nasceria como loja avulsa e o
+        // /matriz-v2 negaria o acesso, e o usuário (que escolheu "matriz")
+        // não saberia por quê. Mesmo padrão do register_as_lojista acima:
+        // erro visível e parar aqui, com o formulário intacto para tentar
+        // de novo. A mensagem passa pelo sanitizador (só as mensagens
+        // úteis da RPC vão para a tela; o resto cai na genérica).
         if (accountType === "matriz" && networkName.trim()) {
           try {
             const { error: matrizErr } = await (supabase as any).rpc("register_as_matriz", {
@@ -374,10 +382,16 @@ const CadastroLojista = () => {
               _upgrade_trigger_months: null,
             });
             if (matrizErr) {
-              console.warn("register_as_matriz aviso:", matrizErr.message);
+              console.warn("register_as_matriz falhou:", matrizErr.message);
+              setLoading(false);
+              toast.error(matrizSignupErrorMessage(matrizErr));
+              return;
             }
           } catch (e) {
-            console.warn("matriz exception (não-fatal):", e);
+            console.warn("register_as_matriz exceção:", e);
+            setLoading(false);
+            toast.error(matrizSignupErrorMessage(e));
+            return;
           }
         }
 
