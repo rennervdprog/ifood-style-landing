@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
-import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons } from "@/lib/orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons, getOrderDisplayNumber } from "@/lib/orderItemName";
 import { toast } from "sonner";
 
 type KdsOrder = {
   id: string;
   code?: string | null;
+  // Devolvido pela edge `kds` só após o item 8 do plano (sincronizar o fonte);
+  // ausente hoje — o fallback para o prefixo do UUID vive em getOrderDisplayNumber.
+  order_number?: number | null;
   status: "preparando" | "pronto_para_entrega";
   created_at: string;
   notes?: string | null;
@@ -255,7 +258,7 @@ function Column({
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <div className="text-sm font-black">#{o.code || o.id.slice(0, 6)}</div>
+                  <div className="text-sm font-black">{getOrderDisplayNumber(o)}</div>
                   <div className={`text-xs font-bold ${late ? "text-destructive" : "text-muted-foreground"}`}>
                     {elapsedLabel(o.created_at)}
                   </div>

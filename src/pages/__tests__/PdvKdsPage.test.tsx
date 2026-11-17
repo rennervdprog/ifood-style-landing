@@ -9,10 +9,11 @@ import PdvKdsPage from "../PdvKdsPage";
 // consulta do Supabase mockada.
 
 let ordersResult: { data: any[]; error: any } = { data: [], error: null };
+let lastSelect = "";
 
 const makeChain = () => {
   const chain: any = {};
-  chain.select = () => chain;
+  chain.select = (cols: string) => { lastSelect = cols; return chain; };
   chain.eq = () => chain;
   chain.in = () => chain;
   chain.order = () => chain;
@@ -131,6 +132,46 @@ describe("PdvKdsPage — adicionais string + título meio a meio (item 2)", () =
     const { unmount } = render(<PdvKdsPage />);
     expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
     expect(screen.getByText("+ Cheddar extra, Bacon extra")).toBeInTheDocument();
+    unmount();
+  });
+});
+
+describe("PdvKdsPage — número real do pedido (item 3)", () => {
+  it("seleciona order_number e exibe o número real no cartão", async () => {
+    ordersResult = {
+      data: [
+        {
+          ...orderWith([
+            { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+          ]),
+          order_number: 992038,
+        },
+      ],
+      error: null,
+    };
+    const { unmount } = render(<PdvKdsPage />);
+    expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
+    expect(lastSelect).toContain("order_number");
+    expect(screen.getByText("#992038 · Delivery")).toBeInTheDocument();
+    expect(screen.queryByText(/#7e3110/)).not.toBeInTheDocument();
+    unmount();
+  });
+
+  it("cai para o prefixo do UUID quando order_number é nulo (pedido antigo)", async () => {
+    ordersResult = {
+      data: [
+        {
+          ...orderWith([
+            { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+          ]),
+          order_number: null,
+        },
+      ],
+      error: null,
+    };
+    const { unmount } = render(<PdvKdsPage />);
+    expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
+    expect(screen.getByText("#7e3110 · Delivery")).toBeInTheDocument();
     unmount();
   });
 });

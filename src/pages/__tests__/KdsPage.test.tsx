@@ -118,3 +118,46 @@ describe("KdsPage — sabores e adicionais (item 1)", () => {
     unmount();
   });
 });
+
+describe("KdsPage — número real do pedido (item 3)", () => {
+  // A edge `kds` deployada (v41) ainda NÃO devolve `order_number` — o campo
+  // só chega após o item 8 do plano. Estes testes provam o caminho de
+  // exibição: com o campo, mostra o número real; sem ele, o fallback.
+  it("exibe o order_number quando a edge o devolve", async () => {
+    invokeMock.mockResolvedValue({
+      data: {
+        store_name: "Loja Demonstração",
+        orders: [
+          {
+            ...orderWith([
+              { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+            ]),
+            order_number: 992038,
+          },
+        ],
+      },
+      error: null,
+    });
+    const { unmount } = render(<KdsPage />);
+    expect(await screen.findByText("#992038")).toBeInTheDocument();
+    expect(screen.queryByText("#7e3110")).not.toBeInTheDocument();
+    unmount();
+  });
+
+  it("cai para o prefixo do UUID quando a edge não devolve order_number", async () => {
+    invokeMock.mockResolvedValue({
+      data: {
+        store_name: "Loja Demonstração",
+        orders: [
+          orderWith([
+            { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+          ]),
+        ],
+      },
+      error: null,
+    });
+    const { unmount } = render(<KdsPage />);
+    expect(await screen.findByText("#7e3110")).toBeInTheDocument();
+    unmount();
+  });
+});
