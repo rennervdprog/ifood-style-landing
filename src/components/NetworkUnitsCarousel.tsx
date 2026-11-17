@@ -14,6 +14,25 @@ interface Unit {
   is_open: boolean | null;
   force_closed: boolean | null;
   delivery_mode: string | null;
+  delivery_enabled: boolean | null;
+}
+
+/**
+ * Rótulos do modo de atendimento do card (Item 3, 17/11/2026). O modo real
+ * vem do flag delivery_enabled — NULL histórico conta como só-retirada,
+ * mesma semântica do checklist. Com entrega ligada, vale a lógica atual
+ * por delivery_mode.
+ */
+export function getUnitDeliveryLabels(
+  deliveryEnabled: boolean | null,
+  mode: string | null,
+): string[] {
+  if (deliveryEnabled !== true) return ["Retirada"];
+  const parts: string[] = [];
+  if (mode === "own" || mode === "both" || mode === "platform") parts.push("Entrega");
+  if (mode === "pickup" || mode === "both" || !mode) parts.unshift("Retirada");
+  if (parts.length === 0) parts.push("Entrega");
+  return parts;
 }
 
 export default function NetworkUnitsCarousel({
@@ -30,7 +49,7 @@ export default function NetworkUnitsCarousel({
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("stores_public")
-        .select("id, name, slug, image_url, address_city, address_neighborhood, is_open, force_closed, delivery_mode")
+        .select("id, name, slug, image_url, address_city, address_neighborhood, is_open, force_closed, delivery_mode, delivery_enabled")
         .eq("network_id", networkId)
         .neq("id", currentStoreId)
         .order("name", { ascending: true })
@@ -80,14 +99,6 @@ export default function NetworkUnitsCarousel({
 
   const go = (u: Unit) => navigate(u.slug ? `/${u.slug}` : `/loja/${u.id}`);
 
-  const deliveryLabels = (mode: string | null) => {
-    const parts: string[] = [];
-    if (mode === "own" || mode === "both" || mode === "platform") parts.push("Entrega");
-    if (mode === "pickup" || mode === "both" || !mode) parts.unshift("Retirada");
-    if (parts.length === 0) parts.push("Entrega");
-    return parts;
-  };
-
   return (
     <div className="px-5 mt-4">
       <h3 className="text-[15px] font-black text-foreground mb-3">Nossas unidades</h3>
@@ -95,7 +106,7 @@ export default function NetworkUnitsCarousel({
         {units.map((u) => {
           const hours = hoursMap?.[u.id] || [];
           const status = getStoreOpenStatus(hours, !!u.force_closed, !!u.is_open, undefined, holidaysMap?.[u.id] || []);
-          const methods = deliveryLabels(u.delivery_mode);
+          const methods = getUnitDeliveryLabels(u.delivery_enabled, u.delivery_mode);
           return (
             <button
               key={u.id}
