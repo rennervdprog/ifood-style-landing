@@ -18,6 +18,8 @@ import {
   type AffiliateReferralSource,
 } from "@/lib/affiliates";
 import { Check } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
 import { ChevronDown } from "lucide-react";
@@ -577,6 +579,23 @@ const CadastroLojista = () => {
           }
 
           // Loja criada com sucesso: só aqui o lojista entra no painel.
+          // Item 2 (pós-E2E matriz 17/11): o cadastro de matriz muda o papel
+          // no banco (lojista → lojista_matriz), mas o cache de roteamento
+          // (staleTime 5 min) pode ter sido preenchido com o papel antigo
+          // durante o signIn — o guard do /matriz-v2 negava com o cache
+          // velho (toast "Acesso negado", o F3) e caía em /admin. Mesmo
+          // padrão do F12 (ConviteRede): invalida e AGUARDA o refetch
+          // antes de navegar. Se o refetch falhar, navega mesmo assim
+          // (pior caso = o comportamento antigo, nunca uma tela travada).
+          if (accountType === "matriz") {
+            try {
+              await queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, signUpData.user.id] });
+              await queryClient.invalidateQueries({ queryKey: ["user-role", signUpData.user.id] });
+              await queryClient.refetchQueries({ queryKey: [USER_ROUTING_QUERY_KEY, signUpData.user.id] });
+            } catch {
+              // segue para /matriz-v2; o guard recarrega o papel se preciso
+            }
+          }
           toast.success("Cadastro realizado! Sua loja já está ativa. 🎉");
           navigate(accountType === "matriz" ? "/matriz-v2" : "/admin", { replace: true });
         } else {
