@@ -15,6 +15,10 @@
  *    motoboy — o item de entregador vem dispensado da RPC.
  *  - Criação com endereço completo (rua, número, bairro, cidade, CEP) +
  *    taxa de entrega — o formulário antigo nem pedia rua/número/bairro.
+ *    A criação escolhe o modo de atendimento (Item 1, 17/11/2026):
+ *    "Com entrega própria" ou "Só retirada" (default) — o modo define se
+ *    o checklist exige entregador, e o dono pode trocar depois no card
+ *    da unidade (1b).
  *  - Gerente por CONVITE (7 dias): o dono convida por e-mail e mostra o
  *    link de aceite; desvincular existe (antes não havia como desfazer).
  *  - Pausar a rede pausa as sublojas junto (decisão 9), com confirmação.
@@ -82,6 +86,8 @@ import {
   summarizeMenuDivergence,
   MENU_DIVERGENCE_LABELS,
   DIVERGENCE_FIELD_LABELS,
+  deliveryModeFromFlag,
+  UNIT_DELIVERY_MODE_LABELS,
   type UnitChecklist,
   type CreateUnitForm,
   type MenuDivergenceItem,
@@ -113,6 +119,8 @@ interface Unit {
   is_draft?: boolean | null;
   force_closed?: boolean | null;
   delivery_fee?: number | null;
+  /** Modo de atendimento (Item 1): true = com entrega própria, false = só retirada. */
+  delivery_enabled?: boolean | null;
   is_open?: boolean | null;
   plan_type?: string | null;
   created_at?: string | null;
@@ -180,7 +188,7 @@ const MatrizDashboardV2 = () => {
     queryFn: async (): Promise<Unit[]> => {
       const { data } = await (supabase as any)
         .from("stores")
-        .select("id, name, slug, category, status, address_city, address_neighborhood, image_url, is_draft, force_closed, delivery_fee, is_matriz, is_open, plan_type, created_at")
+        .select("id, name, slug, category, status, address_city, address_neighborhood, image_url, is_draft, force_closed, delivery_fee, delivery_enabled, is_matriz, is_open, plan_type, created_at")
         .eq("network_id", network!.id)
         .order("created_at", { ascending: true });
       return (data as any) || [];
@@ -401,6 +409,28 @@ const MatrizDashboardV2 = () => {
         toast.error(msg || "Erro ao pausar a unidade.");
       }
     },
+  });
+
+  // Item 1 (1b): trocar o modo de atendimento da unidade — SÓ O DONO.
+  // Este painel é do dono por construção (a rede é buscada por owner_id
+  // e a rota só aceita lojista_matriz/admin); o gerente de unidade nunca
+  // cai aqui. No banco, a policy "Store owners can update own store"
+  // reforça: só o dono atualiza a loja. O checklist lê o flag ao vivo,
+  // então o invalidateAll abaixo já reflete a troca no card.
+  const modeMutation = useMutation({
+    mutationFn: async ({ unit, deliveryEnabled }: { unit: Unit; deliveryEnabled: boolean }) => {
+      const { error } = await (supabase as any)
+        .from("stores")
+        .update({ delivery_enabled: deliveryEnabled })
+        .eq("id", unit.id);
+      if (error) throw error;
+      return deliveryEnabled;
+    },
+    onSuccess: (deliveryEnabled) => {
+      toast.success(deliveryEnabled ? "Modo atualizado: com entrega própria." : "Modo atualizado: só retirada.");
+      invalidateAll();
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao trocar o modo."),
   });
 
   if (loadingNetwork) {
@@ -690,6 +720,37 @@ const MatrizDashboardV2 = () => {
                           )}
                         </div>
                       )}
+
+                      {/* Item 1 (1b): modo de atendimento — troca do dono, reflete no checklist */}
+                      <div className="mt-3">
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1.5">
+                          Modo de atendimento
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(["delivery", "pickup"] as const).map((mode) => {
+                            const active = deliveryModeFromFlag(unit.delivery_enabled) === mode;
+                            return (
+                              <button
+                                key={mode}
+                                onClick={() => modeMutation.mutate({ unit, deliveryEnabled: mode === "delivery" })}
+                                disabled={active || modeMutation.isPending}
+                                className={`rounded-xl py-2 text-xs font-bold border transition-colors ${
+                                  active
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border bg-muted/40 text-muted-foreground"
+                                }`}
+                              >
+                                {UNIT_DELIVERY_MODE_LABELS[mode]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
+                          {unit.is_draft
+                            ? "Define se o checklist exige um entregador aceito para publicar."
+                            : "Mudar o modo não despublica a unidade; vender entrega segue dependendo de motoboy disponível."}
+                        </p>
+                      </div>
 
                       {/* Gerente */}
                       <div className="mt-3 flex items-center gap-2 text-xs">
@@ -1088,6 +1149,10 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
     delivery_fee: "",
     delivery_radius: "",
     minimum_order_value: "",
+    // Item 1: default "Só retirada" — preserva o comportamento implícito
+    // de hoje (toda unidade nascia com delivery_enabled=false), agora
+    // explícito na escolha do dono.
+    delivery_enabled: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -1101,6 +1166,16 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
       }
       return next;
     });
+  };
+
+  // Item 1: trocar o modo limpa taxa e raio (não se aplicam sem entrega).
+  const setMode = (deliveryEnabled: boolean) => {
+    setForm((f) => ({
+      ...f,
+      delivery_enabled: deliveryEnabled,
+      delivery_fee: deliveryEnabled ? f.delivery_fee : "",
+      delivery_radius: deliveryEnabled ? f.delivery_radius : "",
+    }));
   };
 
   const handleSubmit = async () => {
@@ -1122,9 +1197,11 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
         _address_city: form.address_city.trim(),
         _address_state: form.address_state.trim() || null,
         _address_cep: form.address_cep.replace(/\D/g, "") || null,
-        _delivery_fee: parseMoneyField(form.delivery_fee),
-        _delivery_radius: parseMoneyField(form.delivery_radius),
+        // Item 1: sem entrega, taxa e raio vão como null (não se aplicam).
+        _delivery_fee: form.delivery_enabled ? parseMoneyField(form.delivery_fee) : null,
+        _delivery_radius: form.delivery_enabled ? parseMoneyField(form.delivery_radius) : null,
         _minimum_order_value: parseMoneyField(form.minimum_order_value),
+        _delivery_enabled: form.delivery_enabled,
       });
       if (error) throw error;
       if (!storeId) throw new Error("A subloja não foi criada.");
@@ -1179,6 +1256,31 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
               ))}
             </select>
           </div>
+          <div>
+            <label className={labelCls}>Modo de atendimento</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["delivery", "pickup"] as const).map((mode) => {
+                const active = form.delivery_enabled === (mode === "delivery");
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setMode(mode === "delivery")}
+                    className={`rounded-xl py-2.5 text-xs font-bold border transition-colors ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {UNIT_DELIVERY_MODE_LABELS[mode]}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Define se o checklist exige um entregador aceito para publicar a unidade. Dá para trocar depois, no painel da matriz.
+            </p>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="col-span-2">
               <label className={labelCls}>Rua *</label>
@@ -1215,12 +1317,12 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
             <div>
               <label className={labelCls}>Taxa entrega (R$)</label>
               <input value={form.delivery_fee} onChange={e => set("delivery_fee", e.target.value)}
-                placeholder="6,99" className={inputCls} inputMode="decimal" />
+                placeholder="6,99" className={inputCls} inputMode="decimal" disabled={!form.delivery_enabled} />
             </div>
             <div>
               <label className={labelCls}>Raio (km)</label>
               <input value={form.delivery_radius} onChange={e => set("delivery_radius", e.target.value)}
-                placeholder="5" className={inputCls} inputMode="decimal" />
+                placeholder="5" className={inputCls} inputMode="decimal" disabled={!form.delivery_enabled} />
             </div>
             <div>
               <label className={labelCls}>Pedido mín. (R$)</label>
@@ -1228,6 +1330,11 @@ const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreate
                 placeholder="20" className={inputCls} inputMode="decimal" />
             </div>
           </div>
+          {!form.delivery_enabled && (
+            <p className="text-[10px] text-muted-foreground">
+              Só retirada: taxa e raio não se aplicam. O pedido mínimo vale para a retirada.
+            </p>
+          )}
           <button onClick={handleSubmit} disabled={submitting}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
