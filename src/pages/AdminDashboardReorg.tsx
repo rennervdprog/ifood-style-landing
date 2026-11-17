@@ -257,7 +257,7 @@ const AdminDashboardReorg = () => {
   // /admin?storeId=<id>. A validacao confirma que a loja e uma unidade
   // (tem rede, nao e a matriz) do proprio usuario — o mesmo criterio de
   // dono que publish_network_unit usa. Sem ?storeId= valido, o redirect
-  // para /matriz continua exatamente igual.
+  // para /matriz-v2 continua exatamente igual.
   const { data: matrizUnitAccess, isLoading: matrizUnitLoading } = useQuery({
     queryKey: ["matriz-unit-access", user?.id, simulateStoreId],
     queryFn: async () => {
@@ -282,12 +282,12 @@ const AdminDashboardReorg = () => {
   useEffect(() => {
     if (roleLoading || !isMatriz) return;
     if (!simulateStoreId) {
-      navigate("/matriz", { replace: true });
+      navigate("/matriz-v2", { replace: true });
       return;
     }
     if (matrizUnitLoading) return;
     if (!matrizUnitValid) {
-      navigate("/matriz", { replace: true });
+      navigate("/matriz-v2", { replace: true });
     }
   }, [isMatriz, roleLoading, simulateStoreId, matrizUnitLoading, matrizUnitValid, navigate]);
   const initialTabParam = searchParams.get("tab") as DashboardTab | null;

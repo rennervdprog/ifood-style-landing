@@ -397,6 +397,13 @@ const CadastroLojista = () => {
          // A coluna do número é `number`; birth_date fica só nos metadados.
          const { error: profileUpdateErr } = await supabase.from("profiles").update({
            terms_accepted_at: new Date().toISOString(),
+           // F2 (E2E matriz 17/11): sem as versões aceitas, o perfil nascia
+           // com terms_version_accepted='1.0' (trigger) e o modal "Termos
+           // atualizados" disparava na primeira entrada — mesmo o aceite
+           // já estando em terms_acceptance. Mesmos campos que
+           // recordLegalAcceptance grava no reaceite.
+           terms_version_accepted: CURRENT_TERMS_VERSION,
+           privacy_version_accepted: CURRENT_PRIVACY_VERSION,
            cep: cep.replace(/\D/g, ""),
            street: street,
            number: addressNumber.trim(),
@@ -571,7 +578,7 @@ const CadastroLojista = () => {
 
           // Loja criada com sucesso: só aqui o lojista entra no painel.
           toast.success("Cadastro realizado! Sua loja já está ativa. 🎉");
-          navigate(accountType === "matriz" ? "/matriz" : "/admin", { replace: true });
+          navigate(accountType === "matriz" ? "/matriz-v2" : "/admin", { replace: true });
         } else {
           // A loja não foi criada (nem via RPC nem via trigger): não entra no painel.
           toast.error("Não foi possível criar sua loja. Verifique sua conexão e tente novamente.", {

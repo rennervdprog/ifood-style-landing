@@ -5,7 +5,6 @@ import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardReorg,
-  MatrizDashboard,
   MatrizDashboardV2,
   PdvPageTeste,
   PdvKdsPage,
@@ -40,10 +39,14 @@ export const lojistaRoutes = (
     </Route>
     <Route path="/admin2" element={<Navigate to="/admin" replace />} />
 
-    {/* /matriz — dashboard multi-unidade */}
+    {/* /matriz — APOSENTADO (E2E matriz 17/11, F4/F5/F6): o formulário
+        antigo de criar unidade sempre falhava (endereço incompleto) e o
+        painel contava errado. Redireciona para o painel refeito; o guard
+        (lojista_matriz/admin) é mantido. O arquivo MatrizDashboard.tsx
+        segue no repo, só desroteado. */}
     <Route element={<GuardedLayout allowedRoles={["lojista_matriz", "admin"]} redirectTo="/" />}>
-      <Route path="/matriz" element={<MatrizDashboard />} />
-      {/* /matriz-v2 — painel da matriz refeito (Fase 2); o antigo fica intacto */}
+      <Route path="/matriz" element={<Navigate to="/matriz-v2" replace />} />
+      {/* /matriz-v2 — painel da matriz refeito (Fase 2) */}
       <Route path="/matriz-v2" element={<MatrizDashboardV2 />} />
     </Route>
 
