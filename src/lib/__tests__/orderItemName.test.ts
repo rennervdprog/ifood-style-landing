@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames, getOrderItemExtraAddons } from "@/lib/orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames, getOrderItemExtraAddons, getOrderDisplayNumber } from "@/lib/orderItemName";
 
 describe("getOrderItemDisplayName", () => {
   it("retorna nome do produto quando não é meio-a-meio", () => {
@@ -83,5 +83,24 @@ describe("getOrderItemExtraAddons", () => {
     expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: "not-json" })).toEqual([]);
     expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: null })).toEqual([]);
     expect(getOrderItemExtraAddons({ products: { name: "X" }, addons: [{ price: 3 }, { name: "Bacon" }] })).toEqual(["Bacon"]);
+  });
+});
+
+describe("getOrderDisplayNumber (item 3 do plano do KDS)", () => {
+  it("prefere o order_number sequencial", () => {
+    expect(getOrderDisplayNumber({ id: "7e311067-0459-4265-a3db-e7fe56c596bc", order_number: 992038 })).toBe("#992038");
+  });
+
+  it("aceita order_number como string", () => {
+    expect(getOrderDisplayNumber({ id: "7e311067-0459-4265-a3db-e7fe56c596bc", order_number: "992038" })).toBe("#992038");
+  });
+
+  it("cai para o prefixo do UUID quando order_number é nulo (pedido antigo)", () => {
+    expect(getOrderDisplayNumber({ id: "7e311067-0459-4265-a3db-e7fe56c596bc", order_number: null })).toBe("#7e3110");
+    expect(getOrderDisplayNumber({ id: "7e311067-0459-4265-a3db-e7fe56c596bc" })).toBe("#7e3110");
+  });
+
+  it("cai para code quando não há order_number (comportamento legado preservado)", () => {
+    expect(getOrderDisplayNumber({ id: "7e311067-0459-4265-a3db-e7fe56c596bc", code: "A1B2C3" })).toBe("#A1B2C3");
   });
 });

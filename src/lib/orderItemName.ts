@@ -86,3 +86,20 @@ export function getOrderItemExtraAddons(item: ItemLike): string[] {
     .map((a: any) => (typeof a?.name === "string" ? a.name : ""))
     .filter((name) => name !== "" && !fractionNames.has(name));
 }
+
+/**
+ * Número exibido do pedido nas telas do KDS (item 3 do plano do KDS).
+ * Prefere o `order_number` sequencial — o mesmo que cliente e motoboy veem;
+ * cai para `code` (legado, hoje nunca chega) e por fim para o prefixo do UUID
+ * (pedidos antigos sem `order_number`, e a tela do link enquanto a edge `kds`
+ * não devolver o campo — ver item 8 do plano; sem redeploy da edge).
+ */
+export function getOrderDisplayNumber(order: {
+  id: string;
+  order_number?: number | string | null;
+  code?: string | null;
+}): string {
+  if (order.order_number != null && order.order_number !== "") return `#${order.order_number}`;
+  if (order.code) return `#${order.code}`;
+  return `#${order.id.slice(0, 6)}`;
+}
