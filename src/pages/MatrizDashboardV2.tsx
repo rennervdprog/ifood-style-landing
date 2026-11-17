@@ -206,7 +206,22 @@ const MatrizDashboardV2 = () => {
         .select("user_id, email")
         .in("user_id", userIds);
       const emailById = new Map(((profs as any) || []).map((p: any) => [p.user_id, p.email]));
-      return rows.map((r: any) => ({ store_id: r.store_id, user_id: r.user_id, email: emailById.get(r.user_id) ?? null }));
+      // F16 — o e-mail do gerente nao vem de profiles (a policy so libera
+      // perfil proprio + motoboy vinculado + admin), entao o card mostrava
+      // "Gerente:" em branco. Fallback: o e-mail do convite ACEITO daquela
+      // unidade (network_invites.email, legivel pelo dono da rede pela
+      // policy da tabela). Sem alargar policy de profiles.
+      const { data: acceptedInvites } = await (supabase as any)
+        .from("network_invites")
+        .select("store_id, email")
+        .in("store_id", sublojaIds)
+        .eq("status", "accepted")
+        .order("accepted_at", { ascending: false });
+      const inviteEmailByStore = new Map<string, string>();
+      for (const inv of ((acceptedInvites as any) || [])) {
+        if (!inviteEmailByStore.has(inv.store_id) && inv.email) inviteEmailByStore.set(inv.store_id, inv.email);
+      }
+      return rows.map((r: any) => ({ store_id: r.store_id, user_id: r.user_id, email: emailById.get(r.user_id) ?? inviteEmailByStore.get(r.store_id) ?? null }));
     },
     enabled: !!network?.id,
   });
