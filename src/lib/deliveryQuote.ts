@@ -101,6 +101,16 @@ export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null |
   return "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";
 }
 
+// Pedir o CEP quando a localização falha (17/11/2026): a falha é de
+// resolução do endereço — a cascata de geocodificação não achou a rua sem
+// CEP, mas a mesma cotação com CEP resolve (BrasilAPI). Só os dois motivos
+// de endereço entram aqui: `delivery_quote_failed` /
+// `delivery_quote_unavailable` são genéricos (a edge pode estar fora do ar)
+// e pedir o CEP ali seria enganoso — mesma cautela do P2-7 no submit.
+export function isAddressResolutionFailure(value: DeliveryQuoteFailure | null | undefined): boolean {
+  return value?.reason === "address_unavailable" || value?.reason === "address_not_resolved";
+}
+
 /**
  * Mensagem de falha da cotação no pedido manual (painel do lojista, 2026-11-13):
  * a mesma do checkout, exceto sem-motoboy sem mensagem do servidor — sem a

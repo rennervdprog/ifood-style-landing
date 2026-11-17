@@ -14,7 +14,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { isPixDiretoAvailable } from "@/lib/pixDiretoAvailability";
 import { computeGuestCheckoutGates } from "@/lib/guestCheckoutGates";
 import { clearGuestIdempotencyKey, getGuestIdempotencyKey } from "@/lib/guestIdempotency";
-import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
+import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isAddressResolutionFailure, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 
 const BASE_PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
@@ -267,6 +267,17 @@ const GuestCheckoutPage = () => {
   const quoteReady = isPickup || isSuccessfulDeliveryQuote(deliveryQuote);
   const quoteNeedsAddress = !isPickup && !deliveryAddress;
   const quoteFailureMessage = deliveryQuoteFailure ? deliveryQuoteFailureMessage(deliveryQuoteFailure) : null;
+  // Pedir o CEP quando a localização falha (17/11/2026): a cotação falhou
+  // por não resolver o endereço e o CEP está vazio/incompleto — o CEP é o
+  // caminho de recuperação (a mesma cotação com CEP resolve). Com 8 dígitos
+  // a falha já é com CEP, e pedir de novo não resolve nada. A re-cotação ao
+  // preencher o CEP é a do efeito acima: o CEP entra na chave da requisição.
+  const quoteFailedNeedsCep = !isPickup
+    && cep.replace(/\D/g, "").length !== 8
+    && isAddressResolutionFailure(deliveryQuoteFailure);
+  const quoteFailureDisplayMessage = quoteFailedNeedsCep
+    ? "Não conseguimos localizar esse endereço sem o CEP. Informe o CEP para localizar seu endereço."
+    : quoteFailureMessage;
   const quoteBreakdown = deliveryQuoteBreakdown(deliveryQuote);
 
   const handleCepChange = (v: string) => {
@@ -688,13 +699,17 @@ const GuestCheckoutPage = () => {
             <input type="text" placeholder="CEP (opcional)" value={cep}
               onChange={(e) => handleCepChange(e.target.value)}
               inputMode="numeric" maxLength={9}
-              className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
+              className={`flex-1 h-11 px-3 rounded-xl border bg-background text-sm ${quoteFailedNeedsCep ? "border-primary ring-2 ring-primary/30" : "border-border"}`} />
             <button onClick={() => handleCepLookup()} disabled={loadingCep}
               className="px-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-1">Opcional — ajuda a achar sua rua, mas dá pra pedir sem ele.</p>
+          {quoteFailedNeedsCep ? (
+            <p className="text-[11px] text-primary font-medium -mt-1">Informe o CEP para localizar seu endereço.</p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground -mt-1">Opcional — ajuda a achar sua rua, mas dá pra pedir sem ele.</p>
+          )}
           </div>
         </section>
         )}
@@ -790,7 +805,7 @@ const GuestCheckoutPage = () => {
               <div className="text-[11px] text-primary flex items-center gap-1"><MapPin className="h-3 w-3" /> Endereço confirmado · {deliveryQuote.distance.km.toFixed(1)} km da loja</div>
             )}
             {!isPickup && quoteBreakdown && <p className="text-[11px] text-muted-foreground">{quoteBreakdown}</p>}
-            {!isPickup && quoteFailureMessage && <p className="text-[11px] text-destructive">{quoteFailureMessage}</p>}
+            {!isPickup && quoteFailureDisplayMessage && <p className="text-[11px] text-destructive">{quoteFailureDisplayMessage}</p>}
             <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(total)}</span></div>
           </div>
         </section>
@@ -814,7 +829,7 @@ const GuestCheckoutPage = () => {
           <>
             <button onClick={handleConfirm} disabled={submitting || belowMinimum || !payment || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
               className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
-              {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : !payment ? "Escolha a forma de pagamento" : `Confirmar pedido — ${formatBRL(total)}`}
+              {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : quoteFailedNeedsCep ? "Informe o CEP" : "Revise o endereço") : !payment ? "Escolha a forma de pagamento" : `Confirmar pedido — ${formatBRL(total)}`}
             </button>
             <p className="text-center text-[11px] text-muted-foreground mt-2">Sem cadastro · Pagamento direto pra loja</p>
           </>
