@@ -14,10 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ArrowLeft, ChefHat, Clock, CheckCircle2, Loader2 } from "lucide-react";
-import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons } from "@/lib/orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons, getOrderDisplayNumber } from "@/lib/orderItemName";
 
 type KdsOrder = {
   id: string;
+  order_number: number | null;
   status: string;
   created_at: string;
   confirmed_at: string | null;
@@ -102,7 +103,7 @@ export default function PdvKdsPage() {
     if (!storeId) return;
     const { data, error } = await supabase
       .from("orders")
-      .select("id, status, created_at, confirmed_at, order_source, address_details, order_items(id, quantity, observations, addons, products(name))")
+      .select("id, order_number, status, created_at, confirmed_at, order_source, address_details, order_items(id, quantity, observations, addons, products(name))")
       .eq("store_id", storeId)
       .in("status", ACTIVE_STATUSES as any)
       .order("created_at", { ascending: false })
@@ -225,7 +226,7 @@ export default function PdvKdsPage() {
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="text-[10px] font-black uppercase text-muted-foreground">
-                        #{o.id.slice(0, 6)} · {source}
+                        {getOrderDisplayNumber(o)} · {source}
                       </div>
                       <div className={`text-xs font-black pdv-mono ${mins >= 20 ? "text-red-500" : mins >= 10 ? "text-amber-500" : "text-muted-foreground"}`}>
                         {mins}min
