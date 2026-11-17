@@ -244,3 +244,43 @@ describe("Item 1 — modo de atendimento na criação da unidade + troca no card
     expect(v2).toContain("delivery_fee, delivery_enabled, is_matriz");
   });
 });
+
+describe("Item 2b — falha do register_as_matriz mostra erro visível e não navega", () => {
+  it("CadastroLojista mostra toast de erro (sanitizado) quando a RPC falha", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    expect(cadastro).toContain('toast.error(matrizSignupErrorMessage(matrizErr))');
+    expect(cadastro).toContain(
+      'import { matrizSignupErrorMessage } from "@/lib/matrizSignupError"',
+    );
+  });
+
+  it("a falha interrompe o fluxo antes da navegação (sem cair em /matriz-v2 nem /admin)", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    const toastIdx = cadastro.indexOf("toast.error(matrizSignupErrorMessage(matrizErr))");
+    expect(toastIdx).toBeGreaterThan(-1);
+    // Logo após o toast, o fluxo retorna — não chega no toast de sucesso
+    // nem no navigate do fim do handleSubmit.
+    const window = cadastro.slice(toastIdx, toastIdx + 200);
+    expect(window).toContain("return;");
+    expect(window).not.toContain("navigate(");
+  });
+
+  it("a exceção da RPC também mostra erro visível em vez de só logar", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    expect(cadastro).toContain("toast.error(matrizSignupErrorMessage(e))");
+    // O comentário antigo "(não-fatal)" não existe mais nesse caminho.
+    expect(cadastro).not.toContain("matriz exception (não-fatal)");
+  });
+
+  it("o caminho de sucesso segue intacto (item 2) e o cadastro comum não é tocado", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    // O bloco da matriz continua guardado pelo tipo de conta.
+    const rpcIdx = cadastro.indexOf('rpc("register_as_matriz"');
+    expect(rpcIdx).toBeGreaterThan(-1);
+    const window = cadastro.slice(Math.max(0, rpcIdx - 300), rpcIdx);
+    expect(window).toContain('if (accountType === "matriz"');
+    // Sucesso: refetch do item 2 + toast + navegação seguem no fonte.
+    expect(cadastro).toContain("await queryClient.refetchQueries");
+    expect(cadastro).toContain('toast.success("Cadastro realizado! Sua loja já está ativa. 🎉")');
+  });
+});
