@@ -448,15 +448,15 @@ const MatrizDashboardV2 = () => {
         </div>
 
         {!network.is_approved && (
-          <div className="px-4 py-2 bg-amber-500/10 border-t border-amber-500/20 flex items-center gap-2">
-            <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            <p className="text-[11px] text-amber-700 dark:text-amber-400">Aguardando aprovação.</p>
+          <div className="px-4 py-2 bg-primary/10 border-t border-primary/20 flex items-center gap-2">
+            <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+            <p className="text-[11px] text-primary">Aguardando aprovação.</p>
           </div>
         )}
         {network.is_paused && (
-          <div className="px-4 py-2 bg-amber-500/10 border-t border-amber-500/20 flex items-center gap-2">
-            <Pause className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            <p className="text-[11px] text-amber-700 dark:text-amber-400">Rede pausada — as sublojas estão fechadas para pedidos.</p>
+          <div className="px-4 py-2 bg-primary/10 border-t border-primary/20 flex items-center gap-2">
+            <Pause className="h-3.5 w-3.5 text-primary shrink-0" />
+            <p className="text-[11px] text-primary">Rede pausada — as sublojas estão fechadas para pedidos.</p>
           </div>
         )}
 
@@ -593,7 +593,7 @@ const MatrizDashboardV2 = () => {
                     ? (openNow.isOpen ? "bg-green-500/10 text-green-600" : "bg-slate-500/10 text-slate-600")
                     : status === "active" ? "bg-green-500/10 text-green-600"
                     : status === "draft" ? "bg-slate-500/10 text-slate-600"
-                    : "bg-amber-500/10 text-amber-600";
+                    : "bg-primary/10 text-primary";
                   return (
                     <div
                       key={unit.id}
@@ -995,7 +995,7 @@ const MenuSyncModal = ({ unit, networkId, onClose, onSynced }: {
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-bold truncate">{it.productName}</p>
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                        it.status === "preco_proprio" ? "bg-amber-500/10 text-amber-600"
+                        it.status === "preco_proprio" ? "bg-primary/10 text-primary"
                         : it.status === "removido_na_matriz" ? "bg-red-500/10 text-red-600"
                         : "bg-blue-500/10 text-blue-600"
                       }`}>
@@ -1035,7 +1035,7 @@ const MenuSyncModal = ({ unit, networkId, onClose, onSynced }: {
               <button
                 onClick={() => setOverwriteOpen(true)}
                 disabled={loading || syncMutation.isPending}
-                className="flex-1 bg-card border border-amber-500/50 text-amber-600 rounded-xl py-2.5 font-bold text-xs disabled:opacity-50"
+                className="flex-1 bg-card border border-primary/50 text-primary rounded-xl py-2.5 font-bold text-xs disabled:opacity-50"
               >
                 Sobrescrever preços próprios
               </button>

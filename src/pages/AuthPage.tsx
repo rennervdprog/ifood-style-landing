@@ -593,6 +593,20 @@ const AuthPage = () => {
             navigate("/admin", { replace: true });
             return;
           }
+
+          // F1 (E2E matriz 17/11): papéis de rede caíam no fallback /cliente.
+          // Homes iguais às declaradas por useUserRouting.
+          if (prof?.role === "lojista_matriz") {
+            if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
+            navigate("/matriz-v2", { replace: true });
+            return;
+          }
+
+          if (prof?.role === "lojista_unidade") {
+            if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
+            navigate("/admin", { replace: true });
+            return;
+          }
           
           if (prof?.role === "motoboy") {
             if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
@@ -712,6 +726,13 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            // F2 (E2E matriz 17/11): sem as versões aceitas, o perfil
+            // nascia com terms_version_accepted='1.0' (trigger) e o modal
+            // "Termos atualizados" disparava na primeira entrada — mesmo
+            // o aceite já estando em terms_acceptance (insert acima).
+            // Mesmos campos que recordLegalAcceptance grava no reaceite.
+            terms_version_accepted: CURRENT_TERMS_VERSION,
+            privacy_version_accepted: CURRENT_PRIVACY_VERSION,
             // Fase 3 (P0-3): gravar o telefone nos DOIS campos — o bot
             // busca por `phone` OU `whatsapp_number`; sem o `phone` o
             // cadastro do site nunca era achado pelo bot e nascia duplicado.
@@ -720,7 +741,10 @@ const AuthPage = () => {
             full_name: fullName.trim(),
             email: registrationEmail,
             delivery_pin: deliveryPin,
-          }).eq("user_id", signUpData.user.id);
+            // `as any`: os tipos gerados não cobrem as colunas de versão
+            // em profiles (ver src/lib/legalDocuments.ts) — mesmo padrão
+            // do update de CadastroLojista e de PerfilPage.
+          } as any).eq("user_id", signUpData.user.id);
           await supabase.from("saved_addresses").insert({
             user_id: signUpData.user.id,
             label: "Casa",

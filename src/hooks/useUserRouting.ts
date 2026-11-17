@@ -26,7 +26,7 @@ export type HomeRoute =
   | "/super-admin"
   | "/admin/pdv"
   | "/admin"
-  | "/matriz"
+  | "/matriz-v2"
   | "/entregador"
   | "/revendedor"
   | "/moderador"
@@ -124,7 +124,7 @@ export function resolveUserRouting(input: {
 
   let homeRoute: HomeRoute;
   if (isAdmin) homeRoute = "/super-admin";
-  else if (isMatriz) homeRoute = "/matriz";
+  else if (isMatriz) homeRoute = "/matriz-v2";
   else if (isLojista) homeRoute = isPdvOnly ? "/admin/pdv" : "/admin";
   else if (isMotoboy) homeRoute = "/entregador";
   else if (role === "moderador") homeRoute = "/moderador";
