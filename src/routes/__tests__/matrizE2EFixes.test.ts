@@ -208,3 +208,39 @@ describe("Item 2 — cadastro de matriz aguarda o papel novo antes de navegar", 
     expect(window).toContain("} catch {");
   });
 });
+
+describe("Item 1 — modo de atendimento na criação da unidade + troca no card", () => {
+  it("o modal de criação envia _delivery_enabled e taxa/raio vão null sem entrega", () => {
+    const v2 = src("pages", "MatrizDashboardV2.tsx");
+    expect(v2).toContain("_delivery_enabled: form.delivery_enabled");
+    expect(v2).toContain("_delivery_fee: form.delivery_enabled ? parseMoneyField(form.delivery_fee) : null");
+    expect(v2).toContain("_delivery_radius: form.delivery_enabled ? parseMoneyField(form.delivery_radius) : null");
+  });
+
+  it("o formulário nasce em só-retirada e o seletor tem as duas opções", () => {
+    const v2 = src("pages", "MatrizDashboardV2.tsx");
+    expect(v2).toContain("delivery_enabled: false,");
+    expect(v2).toContain('UNIT_DELIVERY_MODE_LABELS[mode]');
+    expect(v2).toContain('(["delivery", "pickup"] as const)');
+  });
+
+  it("taxa e raio ficam desabilitados sem entrega", () => {
+    const v2 = src("pages", "MatrizDashboardV2.tsx");
+    expect(v2).toContain("disabled={!form.delivery_enabled}");
+    expect(v2).toContain("Só retirada: taxa e raio não se aplicam.");
+  });
+
+  it("o card da unidade tem o controle de modo (1b) que atualiza stores.delivery_enabled", () => {
+    const v2 = src("pages", "MatrizDashboardV2.tsx");
+    expect(v2).toContain("Modo de atendimento");
+    expect(v2).toContain(".update({ delivery_enabled: deliveryEnabled })");
+    expect(v2).toContain('deliveryModeFromFlag(unit.delivery_enabled)');
+    // A troca invalida lojas + checklists: o card reflete o modo novo.
+    expect(v2).toContain('queryKey: ["matriz-v2-checklists"]');
+  });
+
+  it("o select de lojas da rede traz delivery_enabled", () => {
+    const v2 = src("pages", "MatrizDashboardV2.tsx");
+    expect(v2).toContain("delivery_fee, delivery_enabled, is_matriz");
+  });
+});
