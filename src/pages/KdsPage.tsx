@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
+import { Loader2, ChefHat, Package, AlertTriangle, Volume2, VolumeX } from "lucide-react";
 import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons, getOrderDisplayNumber } from "@/lib/orderItemName";
+import { useKdsNewOrderSound } from "@/hooks/useKdsNewOrderSound";
 import { toast } from "sonner";
 
 type KdsOrder = {
@@ -113,6 +114,11 @@ export default function KdsPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Item 4 do plano do KDS: sino de pedido novo (só após o gesto de ativar).
+  const orderIds = useMemo(() => orders.map((o) => o.id), [orders]);
+  const { soundEnabled, soundMuted, soundBlocked, activateSound, toggleMuted } =
+    useKdsNewOrderSound(orderIds);
+
   const updateStatus = async (orderId: string, status: KdsOrder["status"]) => {
     setBusyIds((s) => new Set(s).add(orderId));
     // optimistic
@@ -172,12 +178,33 @@ export default function KdsPage() {
             {lastUpdated && <> · atualizado às {lastUpdated.toLocaleTimeString("pt-BR")}</>}
           </p>
         </div>
-        <button
-          onClick={fetchOrders}
-          className="text-xs font-bold px-3 py-2 rounded-lg bg-primary text-primary-foreground"
-        >
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          {!soundEnabled ? (
+            <button
+              onClick={activateSound}
+              title="Ativar alertas sonoros de novos pedidos"
+              aria-label="Ativar alertas sonoros de novos pedidos"
+              className="flex items-center gap-1 whitespace-nowrap bg-primary/10 border border-primary/30 text-primary px-2.5 py-2 rounded-lg text-xs font-bold"
+            >
+              <VolumeX className="h-3.5 w-3.5" /> {soundBlocked ? "Toque para ativar o som" : "Ativar som"}
+            </button>
+          ) : (
+            <button
+              onClick={toggleMuted}
+              title={soundMuted ? "Reativar som" : "Silenciar"}
+              aria-label={soundMuted ? "Reativar som" : "Silenciar"}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
+            >
+              {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          )}
+          <button
+            onClick={fetchOrders}
+            className="text-xs font-bold px-3 py-2 rounded-lg bg-primary text-primary-foreground"
+          >
+            Atualizar
+          </button>
+        </div>
       </header>
 
       {refreshFailed && !error && (
