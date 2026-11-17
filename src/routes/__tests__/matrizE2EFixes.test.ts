@@ -9,6 +9,9 @@
  * F17: âmbar no painel da matriz (badge de preço próprio, botão de
  *     sobrescrever, faixas de status) — laranja da marca + neutros.
  * F10: página do convite sem CTA de cadastro.
+ * Item 2 (pós-E2E): pós-cadastro de matriz caía em /admin (cache de papel
+ *   preenchido com o papel antigo durante o signIn; o F3 — toast "Acesso
+ *   negado" — é a mesma causa).
  *
  * Padrão dos testes estáticos do repo: andar a árvore de rotas sem
  * renderizar + leitura de fonte (ver alinhamentoAdmin.test.ts).
@@ -163,5 +166,45 @@ describe("F10 — página do convite tem CTA de cadastro", () => {
 
   it("ConviteRede não tem âmbar", () => {
     expect(src("pages", "ConviteRede.tsx")).not.toContain("amber");
+  });
+});
+
+describe("Item 2 — cadastro de matriz aguarda o papel novo antes de navegar", () => {
+  it("CadastroLojista invalida o cache de roteamento e aguarda o refetch antes de ir para /matriz-v2", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    expect(cadastro).toContain("USER_ROUTING_QUERY_KEY");
+    expect(cadastro).toContain(
+      "await queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, signUpData.user.id] })",
+    );
+    expect(cadastro).toContain(
+      'await queryClient.invalidateQueries({ queryKey: ["user-role", signUpData.user.id] })',
+    );
+    expect(cadastro).toContain(
+      "await queryClient.refetchQueries({ queryKey: [USER_ROUTING_QUERY_KEY, signUpData.user.id] })",
+    );
+    // A navegação para /matriz-v2 acontece DEPOIS do refetch (ordem no fonte).
+    expect(cadastro.indexOf("await queryClient.refetchQueries")).toBeLessThan(
+      cadastro.indexOf('navigate(accountType === "matriz" ? "/matriz-v2" : "/admin"'),
+    );
+  });
+
+  it("o refresh do cache só roda no caminho de matriz (cadastro comum intacto)", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    const refetchIdx = cadastro.indexOf("await queryClient.refetchQueries");
+    expect(refetchIdx).toBeGreaterThan(-1);
+    // O guard de matriz está imediatamente antes do bloco de refresh.
+    const window = cadastro.slice(Math.max(0, refetchIdx - 600), refetchIdx);
+    expect(window).toContain('if (accountType === "matriz")');
+  });
+
+  it("o refresh nunca trava o cadastro se o refetch falhar (fail-open)", () => {
+    const cadastro = src("pages", "CadastroLojista.tsx");
+    const refetchIdx = cadastro.indexOf("await queryClient.refetchQueries");
+    expect(refetchIdx).toBeGreaterThan(-1);
+    // O bloco de refresh vive dentro de try/catch: falha de rede não impede
+    // a navegação (pior caso = o comportamento antigo).
+    const window = cadastro.slice(Math.max(0, refetchIdx - 600), refetchIdx + 200);
+    expect(window).toContain("try {");
+    expect(window).toContain("} catch {");
   });
 });
