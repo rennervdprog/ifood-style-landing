@@ -249,16 +249,47 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
 const AdminDashboardReorg = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { isMatriz, loading: roleLoading } = useUserRole();
-
-  // Redirecionar matriz para painel matriz (se acessar /admin diretamente)
-  useEffect(() => {
-    if (!roleLoading && isMatriz) {
-      navigate("/matriz", { replace: true });
-    }
-  }, [isMatriz, roleLoading, navigate]);
   const [searchParams] = useSearchParams();
   const simulateStoreId = searchParams.get("storeId");
+  const { isMatriz, loading: roleLoading } = useUserRole();
+
+  // F7 — dono da matriz abre o painel de UMA unidade da propria rede via
+  // /admin?storeId=<id>. A validacao confirma que a loja e uma unidade
+  // (tem rede, nao e a matriz) do proprio usuario — o mesmo criterio de
+  // dono que publish_network_unit usa. Sem ?storeId= valido, o redirect
+  // para /matriz continua exatamente igual.
+  const { data: matrizUnitAccess, isLoading: matrizUnitLoading } = useQuery({
+    queryKey: ["matriz-unit-access", user?.id, simulateStoreId],
+    queryFn: async () => {
+      // (supabase as any): os tipos gerados de stores nao incluem
+      // network_id/is_matriz (mesmo padrao do MatrizDashboardV2).
+      const { data } = await (supabase as any)
+        .from("stores")
+        .select("id, owner_id, network_id, is_matriz")
+        .eq("id", simulateStoreId!)
+        .maybeSingle();
+      const row = data as { owner_id: string; network_id: string | null; is_matriz: boolean | null } | null;
+      if (!row) return false;
+      return row.owner_id === user!.id && !!row.network_id && !row.is_matriz;
+    },
+    enabled: !!user && !!simulateStoreId && !roleLoading && isMatriz,
+    staleTime: 1000 * 60 * 5,
+  });
+  const matrizUnitValid = matrizUnitAccess === true;
+
+  // Redirecionar matriz para painel matriz (se acessar /admin diretamente,
+  // ou com ?storeId= de loja que nao e unidade da propria rede)
+  useEffect(() => {
+    if (roleLoading || !isMatriz) return;
+    if (!simulateStoreId) {
+      navigate("/matriz", { replace: true });
+      return;
+    }
+    if (matrizUnitLoading) return;
+    if (!matrizUnitValid) {
+      navigate("/matriz", { replace: true });
+    }
+  }, [isMatriz, roleLoading, simulateStoreId, matrizUnitLoading, matrizUnitValid, navigate]);
   const initialTabParam = searchParams.get("tab") as DashboardTab | null;
   const queryClient = useQueryClient();
   const { confirm: confirmReprint, ConfirmDialog: ReprintConfirmDialog } = useConfirmDialog();
@@ -366,13 +397,20 @@ const AdminDashboardReorg = () => {
   });
 
   const isPlatformAdmin = Boolean(adminRole);
-  const activeSimulateStoreId = isPlatformAdmin ? simulateStoreId : null;
+  // F7: dono da matriz com ?storeId= validado usa o mesmo caminho do admin
+  // (busca por id — nao reintroduz o maybeSingle por owner_id com varias
+  // lojas do mesmo dono).
+  const activeSimulateStoreId = isPlatformAdmin || matrizUnitValid ? simulateStoreId : null;
 
   useEffect(() => {
-    if (simulateStoreId && !adminRoleLoading && !isPlatformAdmin) {
+    // Aguarda o role e a validacao da unidade antes de descartar o
+    // ?storeId=: sem isso o dono da matriz perderia o id durante o
+    // carregamento e cairia em /matriz antes da validacao resolver.
+    const matrizCheckPending = !!simulateStoreId && (roleLoading || (isMatriz && matrizUnitLoading));
+    if (simulateStoreId && !adminRoleLoading && !matrizCheckPending && !isPlatformAdmin && !matrizUnitValid) {
       navigate("/admin", { replace: true });
     }
-  }, [simulateStoreId, adminRoleLoading, isPlatformAdmin, navigate]);
+  }, [simulateStoreId, adminRoleLoading, isPlatformAdmin, roleLoading, isMatriz, matrizUnitLoading, matrizUnitValid, navigate]);
 
   const { data: store, error: storeError, isLoading: storeLoading } = useQuery({
     queryKey: ["my-store", user?.id, activeSimulateStoreId],
@@ -422,7 +460,10 @@ const AdminDashboardReorg = () => {
       }
       return rows?.[0] ?? null;
     },
-    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
+    // F7: com ?storeId=, aguardar role + validacao da unidade para nao
+    // carregar a loja errada (query por owner_id) antes de saber se o id
+    // e uma unidade valida da rede do usuario.
+    enabled: !!user && (!simulateStoreId || (!adminRoleLoading && !roleLoading && (!isMatriz || !matrizUnitLoading))),
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
   });
 
