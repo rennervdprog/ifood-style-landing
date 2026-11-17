@@ -12,6 +12,8 @@ import {
   checklistMissingLabels,
   checklistMissingKeys,
   isChecklistReady,
+  isDriverRequirementWaived,
+  driverWaivedNote,
   resolveUnitDisplayStatus,
   UNIT_STATUS_LABELS,
   canPublishUnit,
@@ -73,6 +75,42 @@ describe("checklist da subloja (C9/M8)", () => {
 
   it("tem 4 itens e todos têm rótulo", () => {
     expect(CHECKLIST_KEYS).toEqual(["address", "hours", "menu", "driver"]);
+  });
+});
+
+describe("checklist: unidade só-retirada dispensa motoboy (decisão 17/11/2026)", () => {
+  const waived: UnitChecklist = {
+    ...fullChecklist,
+    delivery_enabled: false,
+    driver_required: false,
+  };
+  const deliveryNoDriver: UnitChecklist = {
+    ...fullChecklist,
+    driver: false,
+    delivery_enabled: true,
+    driver_required: true,
+  };
+
+  it("dispensa o motoboy só quando a RPC diz que não é exigido", () => {
+    expect(isDriverRequirementWaived(waived)).toBe(true);
+    expect(isDriverRequirementWaived({ driver_required: false })).toBe(true);
+    expect(isDriverRequirementWaived({ delivery_enabled: false })).toBe(true);
+    expect(isDriverRequirementWaived(deliveryNoDriver)).toBe(false);
+    expect(isDriverRequirementWaived({ driver_required: true, delivery_enabled: true })).toBe(false);
+    // Sem os campos novos (resposta antiga em cache): exige, como antes.
+    expect(isDriverRequirementWaived(fullChecklist)).toBe(false);
+    expect(isDriverRequirementWaived({})).toBe(false);
+  });
+
+  it("publica rascunho só-retirada sem motoboy; com entrega e sem motoboy, bloqueia", () => {
+    expect(canPublishUnit({ is_draft: true }, waived)).toBe(true);
+    expect(canPublishUnit({ is_draft: true }, deliveryNoDriver)).toBe(false);
+  });
+
+  it("nota do item de entregador só aparece quando dispensado", () => {
+    expect(driverWaivedNote(waived)).toBe("Não exigido — só retirada");
+    expect(driverWaivedNote(deliveryNoDriver)).toBeNull();
+    expect(driverWaivedNote(fullChecklist)).toBeNull();
   });
 });
 

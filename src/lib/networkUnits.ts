@@ -27,6 +27,10 @@ export interface UnitChecklist {
   menu: boolean;
   driver: boolean;
   ready: boolean;
+  /** A unidade faz entrega? (false = só-retirada; vem da RPC desde a exceção de 17/11/2026). */
+  delivery_enabled?: boolean;
+  /** O entregador é exigido para publicar? (false = dispensado, só-retirada). */
+  driver_required?: boolean;
 }
 
 /** Rótulo de cada item do checklist (mesma ordem da tela). */
@@ -66,6 +70,25 @@ export function checklistMissingKeys(
   checklist: Pick<UnitChecklist, UnitChecklistKey>,
 ): UnitChecklistKey[] {
   return CHECKLIST_KEYS.filter((k) => !checklist[k]);
+}
+
+/**
+ * O item "entregador" foi dispensado? Unidade só-retirada publica sem
+ * motoboy (decisão do Renner, 17/11/2026): a RPC devolve `driver: true`
+ * com `driver_required: false` / `delivery_enabled: false`. Sem os campos
+ * novos (resposta antiga em cache), exige como antes.
+ */
+export function isDriverRequirementWaived(
+  checklist: Pick<UnitChecklist, "driver_required" | "delivery_enabled">,
+): boolean {
+  return checklist.driver_required === false || checklist.delivery_enabled === false;
+}
+
+/** Nota exibida ao lado do item de entregador quando ele foi dispensado. */
+export function driverWaivedNote(
+  checklist: Pick<UnitChecklist, "driver_required" | "delivery_enabled">,
+): string | null {
+  return isDriverRequirementWaived(checklist) ? "Não exigido — só retirada" : null;
 }
 
 /** Status exibido da subloja na lista do painel da matriz. */

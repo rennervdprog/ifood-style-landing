@@ -10,7 +10,9 @@
  *    NÃO entra na lista nem na contagem de sublojas.
  *  - A subloja nasce RASCUNHO invisível (C9/M8) com checklist (endereço,
  *    horário, cardápio, entregador) — só entra na vitrine quando o dono
- *    publica com o checklist completo.
+ *    publica com o checklist completo. Exceção (decisão 17/11/2026):
+ *    unidade só-retirada (`delivery_enabled = false`) publica sem
+ *    motoboy — o item de entregador vem dispensado da RPC.
  *  - Criação com endereço completo (rua, número, bairro, cidade, CEP) +
  *    taxa de entrega — o formulário antigo nem pedia rua/número/bairro.
  *  - Gerente por CONVITE (7 dias): o dono convida por e-mail e mostra o
@@ -64,6 +66,8 @@ import {
   CHECKLIST_KEYS,
   checklistDoneCount,
   checklistMissingLabels,
+  isDriverRequirementWaived,
+  driverWaivedNote,
   resolveUnitDisplayStatus,
   UNIT_STATUS_LABELS,
   canPublishUnit,
@@ -673,6 +677,9 @@ const MatrizDashboardV2 = () => {
                                   ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
                                   : <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                 <span className={checklist[k] ? "text-muted-foreground" : "font-bold"}>{CHECKLIST_LABELS[k]}</span>
+                                {k === "driver" && isDriverRequirementWaived(checklist) && (
+                                  <span className="text-muted-foreground">· {driverWaivedNote(checklist)}</span>
+                                )}
                               </p>
                             ))}
                           </div>
