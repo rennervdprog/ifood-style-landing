@@ -25,6 +25,8 @@ import {
   buildInviteLink,
   isInvitePastDue,
   parseInviteActionResult,
+  deliveryModeFromFlag,
+  UNIT_DELIVERY_MODE_LABELS,
   type UnitChecklist,
   type CreateUnitForm,
 } from "../networkUnits";
@@ -52,6 +54,7 @@ const emptyForm: CreateUnitForm = {
   delivery_fee: "",
   delivery_radius: "",
   minimum_order_value: "",
+  delivery_enabled: false,
 };
 
 describe("checklist da subloja (C9/M8)", () => {
@@ -189,6 +192,7 @@ describe("validação do formulário de criação (C9/M8)", () => {
   it("slug inválido e valor negativo são barrados", () => {
     const problems = validateCreateUnitForm({
       ...emptyForm,
+      delivery_enabled: true,
       name: "X",
       slug: "Slug_Com Espaço",
       address_street: "Rua A",
@@ -200,6 +204,37 @@ describe("validação do formulário de criação (C9/M8)", () => {
     });
     expect(problems).toContain("O slug só aceita letras minúsculas, números e hífen.");
     expect(problems).toContain("A taxa de entrega precisa ser um valor maior ou igual a zero.");
+  });
+});
+
+describe("modo de atendimento da unidade (Item 1, 17/11/2026)", () => {
+  it("deliveryModeFromFlag: true é entrega, false/NULL/ausente é só-retirada", () => {
+    expect(deliveryModeFromFlag(true)).toBe("delivery");
+    expect(deliveryModeFromFlag(false)).toBe("pickup");
+    expect(deliveryModeFromFlag(null)).toBe("pickup");
+    expect(deliveryModeFromFlag(undefined)).toBe("pickup");
+  });
+
+  it("rótulos do modo", () => {
+    expect(UNIT_DELIVERY_MODE_LABELS.delivery).toBe("Com entrega própria");
+    expect(UNIT_DELIVERY_MODE_LABELS.pickup).toBe("Só retirada");
+  });
+
+  it("form só-retirada sem taxa/raio passa; com entrega e taxa inválida barra", () => {
+    const base = {
+      ...emptyForm,
+      name: "Unidade Teste",
+      slug: "unidade-teste",
+      address_street: "Rua A",
+      address_number: "1",
+      address_neighborhood: "Centro",
+      address_city: "Araruama",
+      address_cep: "28970-000",
+    };
+    expect(validateCreateUnitForm({ ...base, delivery_enabled: false })).toEqual([]);
+    expect(
+      validateCreateUnitForm({ ...base, delivery_enabled: true, delivery_fee: "abc" }),
+    ).toContain("A taxa de entrega precisa ser um valor maior ou igual a zero.");
   });
 });
 

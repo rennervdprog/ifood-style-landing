@@ -170,11 +170,32 @@ export interface CreateUnitForm {
   delivery_fee: string;
   delivery_radius: string;
   minimum_order_value: string;
+  /** Modo de atendimento (Item 1, 17/11/2026): true = com entrega própria, false = só retirada. Default do formulário: só retirada. */
+  delivery_enabled: boolean;
 }
 
-/** Campos obrigatórios do formulário de criação (C9/M8). */
+/** Modo de atendimento da unidade (Item 1, 17/11/2026). */
+export type UnitDeliveryMode = "delivery" | "pickup";
+
+/** Rótulos do modo de atendimento (formulário de criação + card da unidade). */
+export const UNIT_DELIVERY_MODE_LABELS: Record<UnitDeliveryMode, string> = {
+  delivery: "Com entrega própria",
+  pickup: "Só retirada",
+};
+
+/**
+ * Modo a partir do flag do banco. NULL histórico conta como desligado
+ * (só-retirada), mesma semântica do checklist (COALESCE no banco).
+ */
+export function deliveryModeFromFlag(
+  deliveryEnabled: boolean | null | undefined,
+): UnitDeliveryMode {
+  return deliveryEnabled === true ? "delivery" : "pickup";
+}
+
+/** Campos obrigatórios do formulário de criação (C9/M8). Só campos de texto — o modo (booleano) tem default e não entra aqui. */
 export const CREATE_UNIT_REQUIRED_FIELDS: {
-  key: keyof CreateUnitForm;
+  key: Exclude<keyof CreateUnitForm, "delivery_enabled">;
   label: string;
 }[] = [
   { key: "name", label: "Nome da unidade" },
