@@ -13,8 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, ChefHat, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, ChefHat, Clock, CheckCircle2, Loader2, Volume2, VolumeX } from "lucide-react";
 import { getOrderItemDisplayName, getOrderItemFlavors, getOrderItemExtraAddons, getOrderDisplayNumber } from "@/lib/orderItemName";
+import { useKdsNewOrderSound } from "@/hooks/useKdsNewOrderSound";
 
 type KdsOrder = {
   id: string;
@@ -129,6 +130,11 @@ export default function PdvKdsPage() {
     };
   }, [storeId, fetchOrders]);
 
+  // Item 4 do plano do KDS: sino de pedido novo (só após o gesto de ativar).
+  const orderIds = useMemo(() => orders.map((o) => o.id), [orders]);
+  const { soundEnabled, soundMuted, soundBlocked, activateSound, toggleMuted } =
+    useKdsNewOrderSound(orderIds);
+
   const advance = async (order: KdsOrder) => {
     const target = nextStatus(order.status);
     if (!target) return;
@@ -200,7 +206,28 @@ export default function PdvKdsPage() {
           <ChefHat className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-black tracking-tight">Cozinha (KDS)</h1>
         </div>
-        <div className="text-xs text-muted-foreground pdv-mono">{orders.length} ativos</div>
+        <div className="flex items-center gap-2">
+          {!soundEnabled ? (
+            <button
+              onClick={activateSound}
+              title="Ativar alertas sonoros de novos pedidos"
+              aria-label="Ativar alertas sonoros de novos pedidos"
+              className="flex items-center gap-1 whitespace-nowrap bg-primary/10 border border-primary/30 text-primary px-2.5 py-2 rounded-lg text-xs font-bold"
+            >
+              <VolumeX className="h-3.5 w-3.5" /> {soundBlocked ? "Toque para ativar o som" : "Ativar som"}
+            </button>
+          ) : (
+            <button
+              onClick={toggleMuted}
+              title={soundMuted ? "Reativar som" : "Silenciar"}
+              aria-label={soundMuted ? "Reativar som" : "Silenciar"}
+              className="p-2 rounded-lg border border-border text-muted-foreground hover:text-foreground"
+            >
+              {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          )}
+          <div className="text-xs text-muted-foreground pdv-mono">{orders.length} ativos</div>
+        </div>
       </header>
 
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 p-3 overflow-auto">

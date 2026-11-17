@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import KdsPage from "../KdsPage";
 
 // Item 1 do plano do KDS (16/11/2026): a tela do link escondia sabores e
@@ -158,6 +158,65 @@ describe("KdsPage — número real do pedido (item 3)", () => {
     });
     const { unmount } = render(<KdsPage />);
     expect(await screen.findByText("#7e3110")).toBeInTheDocument();
+    unmount();
+  });
+});
+
+describe("KdsPage — som de pedido novo (item 4)", () => {
+  // A detecção (id novo apita, polling não apita) é coberta no teste do
+  // hook; aqui fica a fiação da tela: botão, gesto de ativar e mudo.
+  let playMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    playMock = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockImplementation(playMock);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const loadPage = () => {
+    invokeMock.mockResolvedValue({
+      data: {
+        store_name: "Loja Demonstração",
+        orders: [
+          orderWith([
+            { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+          ]),
+        ],
+      },
+      error: null,
+    });
+    return render(<KdsPage />);
+  };
+
+  it("exibe o botão Ativar som e ativa ao clicar", async () => {
+    const { unmount } = loadPage();
+    const btn = await screen.findByRole("button", { name: "Ativar alertas sonoros de novos pedidos" });
+    expect(btn).toHaveTextContent("Ativar som");
+    expect(playMock).not.toHaveBeenCalled();
+    fireEvent.click(btn);
+    expect(playMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: "Silenciar" })).toBeInTheDocument();
+    unmount();
+  });
+
+  it("botão de mudo alterna entre silenciar e reativar", async () => {
+    const { unmount } = loadPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Ativar alertas sonoros de novos pedidos" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Silenciar" }));
+    expect(await screen.findByRole("button", { name: "Reativar som" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reativar som" }));
+    expect(await screen.findByRole("button", { name: "Silenciar" })).toBeInTheDocument();
+    unmount();
+  });
+
+  it("mostra 'Toque para ativar o som' quando o navegador bloqueia o play", async () => {
+    playMock.mockRejectedValueOnce(new Error("NotAllowedError"));
+    const { unmount } = loadPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Ativar alertas sonoros de novos pedidos" }));
+    expect(await screen.findByText("Toque para ativar o som")).toBeInTheDocument();
     unmount();
   });
 });

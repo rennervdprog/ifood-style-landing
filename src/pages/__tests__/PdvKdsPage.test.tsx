@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import PdvKdsPage from "../PdvKdsPage";
 
 // Item 2 do plano do KDS (16/11/2026): o KDS do PDV só listava adicionais
@@ -172,6 +172,57 @@ describe("PdvKdsPage — número real do pedido (item 3)", () => {
     const { unmount } = render(<PdvKdsPage />);
     expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
     expect(screen.getByText("#7e3110 · Delivery")).toBeInTheDocument();
+    unmount();
+  });
+});
+
+describe("PdvKdsPage — som de pedido novo (item 4)", () => {
+  // A detecção (id novo apita, polling não apita) é coberta no teste do
+  // hook; aqui fica a fiação da tela: botão, gesto de ativar e mudo.
+  let playMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    playMock = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockImplementation(playMock);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const loadPage = () => {
+    ordersResult = {
+      data: [
+        {
+          ...orderWith([
+            { id: "it1", quantity: 1, observations: null, addons: [], products: { name: "Lanche Teste" } },
+          ]),
+          order_number: 992038,
+        },
+      ],
+      error: null,
+    };
+    return render(<PdvKdsPage />);
+  };
+
+  it("exibe o botão Ativar som e ativa ao clicar", async () => {
+    const { unmount } = loadPage();
+    expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
+    const btn = screen.getByRole("button", { name: "Ativar alertas sonoros de novos pedidos" });
+    expect(btn).toHaveTextContent("Ativar som");
+    expect(playMock).not.toHaveBeenCalled();
+    fireEvent.click(btn);
+    expect(playMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: "Silenciar" })).toBeInTheDocument();
+    unmount();
+  });
+
+  it("botão de mudo alterna entre silenciar e reativar", async () => {
+    const { unmount } = loadPage();
+    expect(await screen.findByText("Lanche Teste")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ativar alertas sonoros de novos pedidos" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Silenciar" }));
+    expect(await screen.findByRole("button", { name: "Reativar som" })).toBeInTheDocument();
     unmount();
   });
 });
