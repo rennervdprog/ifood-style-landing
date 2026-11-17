@@ -14,8 +14,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseInviteActionResult } from "@/lib/networkUnits";
+import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import { toast } from "sonner";
-import { Building2, Store, Loader2, CheckCircle2, XCircle, Clock, LogIn } from "lucide-react";
+import { Building2, Store, Loader2, CheckCircle2, XCircle, Clock, LogIn, UserPlus } from "lucide-react";
 
 interface InviteDetails {
   code: string;
@@ -56,9 +57,22 @@ const ConviteRede = () => {
       if (!result.ok) throw new Error(result.error || "Erro ao aceitar convite.");
       return result.storeId;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Convite aceito! Você agora é gerente desta subloja.");
-      navigate("/admin");
+      // F12 (E2E matriz 17/11): o aceite muda o papel no banco (cliente →
+      // lojista_unidade), mas o cache de roteamento (staleTime 5 min) ainda
+      // dizia "cliente" e o RoleGuard do /admin devolvia para /cliente.
+      // Invalida e AGUARDA o refetch antes de navegar, para o guard ler o
+      // papel novo. Se o refetch falhar, navega mesmo assim (pior caso =
+      // o comportamento antigo, nunca uma tela travada).
+      try {
+        await queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, user?.id] });
+        await queryClient.invalidateQueries({ queryKey: ["user-role", user?.id] });
+        await queryClient.refetchQueries({ queryKey: [USER_ROUTING_QUERY_KEY, user?.id] });
+      } catch {
+        // segue para /admin; o guard recarrega o papel se preciso
+      }
+      navigate("/admin", { replace: true });
     },
     onError: (err: any) => {
       // Recarrega o convite: se venceu, a página passa a mostrar "venceu".
@@ -139,7 +153,7 @@ const ConviteRede = () => {
                 <CheckCircle2 className="h-4 w-4" /> Este convite já foi aceito.
               </p>
             ) : (
-              <p className="text-sm font-bold text-amber-600 flex items-center justify-center gap-1.5">
+              <p className="text-sm font-bold text-primary flex items-center justify-center gap-1.5">
                 <Clock className="h-4 w-4" /> Este convite venceu (vale 7 dias). Peça um novo ao dono da rede.
               </p>
             )}
@@ -154,6 +168,15 @@ const ConviteRede = () => {
               className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-black text-sm flex items-center justify-center gap-2"
             >
               <LogIn className="h-4 w-4" /> Entrar para aceitar
+            </button>
+            {/* F10 (E2E matriz 17/11): o texto mandava "cadastrar-se
+                primeiro" sem dizer onde. O cadastro normal é o /auth
+                (3 passos); quem ainda não tem conta vai direto para lá. */}
+            <button
+              onClick={() => navigate("/auth")}
+              className="w-full bg-card border border-border rounded-xl py-3 font-bold text-sm flex items-center justify-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" /> Criar conta com esse e-mail
             </button>
           </div>
         ) : (

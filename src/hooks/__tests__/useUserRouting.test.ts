@@ -29,12 +29,28 @@ describe("resolveUserRouting", () => {
     expect(r.isPdvOnly).toBe(true);
   });
 
-  it("lojista_matriz via network fallback → /matriz", () => {
+  it("lojista_matriz via network fallback → /matriz-v2 (painel antigo aposentado, F4)", () => {
     const r = resolveUserRouting({
       matrizNetwork: { id: "n1", is_approved: true },
     });
     expect(r.isMatriz).toBe(true);
-    expect(r.homeRoute).toBe("/matriz");
+    expect(r.homeRoute).toBe("/matriz-v2");
+  });
+
+  it("lojista_matriz via profile.role → /matriz-v2 (F1)", () => {
+    const r = resolveUserRouting({
+      profile: { role: "lojista_matriz", is_approved: true },
+    });
+    expect(r.isMatriz).toBe(true);
+    expect(r.homeRoute).toBe("/matriz-v2");
+  });
+
+  it("lojista_unidade via profile.role → /admin da unidade (F1)", () => {
+    const r = resolveUserRouting({
+      profile: { role: "lojista_unidade", is_approved: true, unit_store_id: "u1" },
+    });
+    expect(r.isLojista).toBe(true);
+    expect(r.homeRoute).toBe("/admin");
   });
 
   it("motoboy via drivers → /entregador", () => {

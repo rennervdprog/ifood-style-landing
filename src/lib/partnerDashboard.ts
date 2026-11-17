@@ -6,7 +6,7 @@ export type PartnerDashboardPath =
   | "/super-admin"
   | "/admin"
   | "/admin/pdv"
-  | "/matriz"
+  | "/matriz-v2"
   | "/entregador"
   | "/revendedor"
   | "/portal-parceiro";

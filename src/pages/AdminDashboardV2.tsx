@@ -214,7 +214,7 @@ const AdminDashboard = () => {
   // Redirecionar matriz para painel matriz (se acessar /admin diretamente)
   useEffect(() => {
     if (!roleLoading && isMatriz) {
-      navigate("/matriz", { replace: true });
+      navigate("/matriz-v2", { replace: true });
     }
   }, [isMatriz, roleLoading, navigate]);
   const [searchParams] = useSearchParams();
