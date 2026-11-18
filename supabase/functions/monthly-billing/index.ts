@@ -392,6 +392,51 @@ Deno.serve(async (req) => {
           if (!lockRows || lockRows.length === 0) continue;
         }
 
+        // Dedupe por ciclo (correção 18/11): sem esta trava, o cron criava
+        // uma fatura nova por dia enquanto a anterior seguia pendente, pois
+        // next_billing_date só avança no pagamento. Se já existe fatura
+        // mensal pendente com o PIX ainda válido (a cobrança Woovi expira
+        // em 3 dias), não cria outra. Faturas pendentes já vencidas são
+        // canceladas e uma nova é emitida, para o lojista nunca ficar com
+        // um QR expirado sem reposição.
+        {
+          const { data: pendingMonthly } = await supabase
+            .from("financial_transactions")
+            .select("id, reference_code, created_at, metadata")
+            .eq("store_id", store.id)
+            .eq("transaction_kind", "commission_charge")
+            .eq("status", "pending")
+            .or("reference_code.like.#MENS-*,reference_code.like.#ASSIN-*")
+            .order("created_at", { ascending: false });
+          const chargeValidMs = 3 * 24 * 60 * 60 * 1000; // igual ao expiresInSeconds da Woovi
+          const isLive = (row: any) =>
+            new Date(row.created_at).getTime() + chargeValidMs > now.getTime();
+          const live = (pendingMonthly || []).filter(isLive);
+          if (live.length > 0) {
+            results.push({
+              store: store.name,
+              reference: live[0].reference_code,
+              status: dryRun ? "would_skip_pending_exists" : "skipped_pending_exists",
+            });
+            continue;
+          }
+          if (!dryRun) {
+            for (const row of (pendingMonthly || []).filter((r: any) => !isLive(r))) {
+              await supabase
+                .from("financial_transactions")
+                .update({
+                  status: "cancelled",
+                  metadata: {
+                    ...((row.metadata as Record<string, unknown>) || {}),
+                    cancelled_reason: "fatura expirada sem pagamento; substituída por nova fatura do ciclo",
+                  },
+                })
+                .eq("id", row.id)
+                .eq("status", "pending");
+            }
+          }
+        }
+
         // O modo seco não consome numeração financeira nem altera qualquer estado.
         const referenceCode = dryRun
           ? `#MENS-DRY-${String(plan.id).slice(0, 8).toUpperCase()}`
@@ -729,6 +774,48 @@ Deno.serve(async (req) => {
                   continue;
                 }
                 if (!lockRows || lockRows.length === 0) continue;
+              }
+
+              // Dedupe por ciclo (rede) — mesmo padrão do loop de lojas:
+              // sem esta trava, a rede ganharia uma fatura #REDE- por dia
+              // enquanto a anterior seguisse pendente.
+              {
+                const { data: pendingNetwork } = await supabase
+                  .from("financial_transactions")
+                  .select("id, reference_code, created_at, metadata")
+                  .eq("store_id", anchor.id)
+                  .eq("transaction_kind", "commission_charge")
+                  .eq("status", "pending")
+                  .like("reference_code", "#REDE-%")
+                  .order("created_at", { ascending: false });
+                const chargeValidMs = 3 * 24 * 60 * 60 * 1000;
+                const isLive = (row: any) =>
+                  new Date(row.created_at).getTime() + chargeValidMs > now.getTime();
+                const live = (pendingNetwork || []).filter(isLive);
+                if (live.length > 0) {
+                  networkResults.push({
+                    network: net.name,
+                    network_id: net.id,
+                    reference: live[0].reference_code,
+                    status: dryRun ? "would_skip_pending_exists" : "skipped_pending_exists",
+                  });
+                  continue;
+                }
+                if (!dryRun) {
+                  for (const row of (pendingNetwork || []).filter((r: any) => !isLive(r))) {
+                    await supabase
+                      .from("financial_transactions")
+                      .update({
+                        status: "cancelled",
+                        metadata: {
+                          ...((row.metadata as Record<string, unknown>) || {}),
+                          cancelled_reason: "fatura expirada sem pagamento; substituída por nova fatura do ciclo",
+                        },
+                      })
+                      .eq("id", row.id)
+                      .eq("status", "pending");
+                  }
+                }
               }
 
               // A regra vive na RPC (mesma do front e do relatório):

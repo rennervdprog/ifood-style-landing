@@ -148,13 +148,79 @@ const AReceberTabTeste = () => {
           .eq("store_id", row.store_id)
           .eq("is_active", true);
       } else if (kind === "mensalidade") {
-        const next = new Date();
-        next.setMonth(next.getMonth() + 1);
-        await supabase
-          .from("store_plans")
-          .update({ next_billing_date: next.toISOString() })
+        // Baixa as faturas #MENS/#ASSIN pendentes junto (precedente Pastelão
+        // 10/11): sem isso o TrialExpiredGuard segue bloqueando o painel,
+        // pois hasUnpaidBill lê as faturas pendentes, não a data do plano.
+        // A mais recente vira 'paid' (recebido por fora); as mais antigas
+        // são canceladas como duplicadas do mesmo ciclo. A RPC
+        // settle_monthly_subscription_payment é service_role-only, por isso
+        // a baixa é direta (RLS permite UPDATE ao platform admin) espelhando
+        // a semântica da RPC: +30 dias, zera a tentativa e desconta só a
+        // comissão PDV que estava na fatura baixada.
+        const { data: pendingInvoices } = await supabase
+          .from("financial_transactions")
+          .select("id, reference_code, created_at, metadata")
           .eq("store_id", row.store_id)
-          .eq("is_active", true);
+          .eq("transaction_kind", "commission_charge")
+          .eq("status", "pending")
+          .or("reference_code.like.#MENS-*,reference_code.like.#ASSIN-*")
+          .order("created_at", { ascending: false });
+        const settledAt = new Date();
+        if (pendingInvoices && pendingInvoices.length > 0) {
+          const [newest, ...older] = pendingInvoices as any[];
+          const pdvBilled = Math.max(0, Number((newest.metadata as any)?.pdv_pending_billed || 0));
+          const { error: settleErr } = await supabase
+            .from("financial_transactions")
+            .update({
+              status: "paid",
+              settled_at: settledAt.toISOString(),
+              metadata: {
+                ...((newest.metadata as any) || {}),
+                manual_settlement: `recebido por fora (fora da Woovi); baixa manual super admin ${settledAt.toISOString().slice(0, 10)}`,
+              },
+            } as any)
+            .eq("id", newest.id)
+            .eq("status", "pending");
+          if (settleErr) throw settleErr;
+          for (const old of older) {
+            const { error: cancelErr } = await supabase
+              .from("financial_transactions")
+              .update({
+                status: "cancelled",
+                metadata: {
+                  ...((old.metadata as any) || {}),
+                  cancelled_reason: `duplicada do mesmo ciclo; mensalidade baixada na ${newest.reference_code}`,
+                },
+              } as any)
+              .eq("id", old.id)
+              .eq("status", "pending");
+            if (cancelErr) throw cancelErr;
+          }
+          const { data: planRow } = await supabase
+            .from("store_plans")
+            .select("pdv_commission_pending")
+            .eq("store_id", row.store_id)
+            .eq("is_active", true)
+            .maybeSingle();
+          const next = new Date(settledAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+          await supabase
+            .from("store_plans")
+            .update({
+              next_billing_date: next.toISOString(),
+              last_billing_attempt_at: null,
+              pdv_commission_pending: Math.max(0, Number((planRow as any)?.pdv_commission_pending || 0) - pdvBilled),
+            })
+            .eq("store_id", row.store_id)
+            .eq("is_active", true);
+        } else {
+          const next = new Date();
+          next.setMonth(next.getMonth() + 1);
+          await supabase
+            .from("store_plans")
+            .update({ next_billing_date: next.toISOString() })
+            .eq("store_id", row.store_id)
+            .eq("is_active", true);
+        }
       }
 
       toast.success(`${KIND_META[kind].label} de ${row.name} marcada como paga`);
