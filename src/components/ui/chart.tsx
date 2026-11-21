@@ -65,6 +65,10 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
+  // Item 7 (auditoria 40 itens): seguro — o CSS é gerado só a partir de
+  // `config.theme`/`config.color` do ChartConfig, definido pelo desenvolvedor
+  // no código; nenhum valor vem de entrada de usuário ou do banco. O único
+  // HTML injetado aqui são declarações `--color-*` dentro de um <style>.
   return (
     <style
       dangerouslySetInnerHTML={{
