@@ -74,7 +74,11 @@ async function createWooviCharge(params: {
   const body: Record<string, unknown> = {
     correlationID: params.externalId,
     value: Math.round(params.amount * 100),
-    comment: String(params.description).substring(0, 140),
+    // A Woovi rejeita o comentário quando contém "emoji" — o validador dela
+    // flagra o travessão longo (—, U+2014) e o meio-travessão (–, U+2013).
+    // Normaliza para hífen simples antes de enviar (o chargeDescription usa
+    // — em vários lugares e a cobrança morria com "Emoji não é permitido").
+    comment: String(params.description).replace(/[—–]/g, "-").substring(0, 140),
     expiresIn: 60 * 60 * 24 * 7,
     customer: {
       name: params.customerName || "Lojista",
