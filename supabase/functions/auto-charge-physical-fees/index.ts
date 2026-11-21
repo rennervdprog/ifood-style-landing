@@ -399,16 +399,69 @@ Deno.serve(async (req) => {
       }
 
       // O teto de R$ 500 bloqueia novas vendas até a quitação, sem desativar o plano.
-      if (chargeAmount >= REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
-        if (!dryRun) await blockStoreForBilling(supabase, balance.store_id, "threshold");
+      // A segunda também deixa UMA cobrança com o total junto: cancela as de
+      // repasse em aberto (#REP-*) e emite uma nova com o saldo total, para o
+      // lojista ter o que pagar e desbloquear sozinho. A mensalidade (#MENS)
+      // é outra dívida e nunca é cancelada aqui.
+      const isThresholdBlock = chargeAmount >= REPASSE_POLICY.BLOCK_THRESHOLD_BRL;
+      if (isThresholdBlock) {
+        if (dryRun) {
+          const { count: pendingRepCount } = await supabase
+            .from("financial_transactions")
+            .select("id", { count: "exact", head: true })
+            .eq("store_id", balance.store_id)
+            .eq("transaction_kind", "commission_charge")
+            .eq("status", "pending")
+            .like("reference_code", "#REP-%");
+          results.push({
+            store: store.name,
+            status: "would_block",
+            reason: `Saldo pendente atingiu R$${REPASSE_POLICY.BLOCK_THRESHOLD_BRL}`,
+            amount: chargeAmount,
+            would_cancel_rep_charges: pendingRepCount ?? 0,
+            would_charge_combined: chargeAmount,
+            dry_run: true,
+          });
+          continue;
+        }
+        await blockStoreForBilling(supabase, balance.store_id, "threshold");
         results.push({
           store: store.name,
-          status: dryRun ? "would_block" : "blocked",
+          status: "blocked",
           reason: `Saldo pendente atingiu R$${REPASSE_POLICY.BLOCK_THRESHOLD_BRL}`,
           amount: chargeAmount,
-          dry_run: dryRun,
+          dry_run: false,
         });
-        continue;
+
+        // Cobrança de repasse gerada há menos de 5 min (ex.: botão "pagar" do
+        // painel) já cobre o saldo total: reutiliza, sem cancelar nem duplicar.
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: freshCharge } = await supabase
+          .from("financial_transactions")
+          .select("id, amount, reference_code")
+          .eq("store_id", balance.store_id)
+          .eq("transaction_kind", "commission_charge")
+          .eq("status", "pending")
+          .like("reference_code", "#REP-%")
+          .gte("created_at", fiveMinAgo)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (freshCharge) {
+          results.push({
+            store: store.name,
+            status: "reused",
+            amount: Number((freshCharge as any).amount),
+            reference_code: (freshCharge as any).reference_code,
+            reason: "Cobrança do total gerada há menos de 5 min; reutilizada",
+          });
+          continue;
+        }
+
+        chargeDescription = `${chargeDescription} — total junto`;
+        // Sem `continue`: cai na emissão abaixo com o saldo TOTAL. As
+        // antigas só são canceladas DEPOIS que a nova é criada (ver fim da
+        // emissão): se a Woovi falhar, o lojista ainda tem as antigas p/ pagar.
       }
 
       // Buscar TODAS as cobranças em aberto: cada ciclo gera uma cobrança
@@ -430,7 +483,9 @@ Deno.serve(async (req) => {
       // A cobrança mais antiga sem quitação bloqueia após o prazo canônico.
       // O plano não é desativado: o webhook reativa após a quitação integral.
       const oldest = (openCharges || [])[0];
-      if (oldest) {
+      // No bloqueio por teto, a checagem de atraso não se aplica: a loja já
+      // está bloqueada e a cobrança nova é o saldo total.
+      if (!isThresholdBlock && oldest) {
         const daysPending = ageInDays(oldest.created_at, now);
         if (daysPending > OVERDUE_DAYS_TO_BLOCK) {
           if (!dryRun) await blockStoreForBilling(supabase, balance.store_id, "overdue");
@@ -445,17 +500,21 @@ Deno.serve(async (req) => {
       }
 
       // Delta do ciclo = saldo atual − o que já foi emitido em cobranças abertas.
-      const cycleAmount = Number((chargeAmount - alreadyBilled).toFixed(2));
-      if (cycleAmount < MIN_CHARGE_AMOUNT) {
-        results.push({
-          store: store.name,
-          status: "skip",
-          reason: `Delta do ciclo (R$${cycleAmount.toFixed(2)}) abaixo do mínimo de R$${MIN_CHARGE_AMOUNT}`,
-        });
-        continue;
+      // No bloqueio por teto não há delta: as antigas foram canceladas e a
+      // cobrança é o saldo TOTAL.
+      if (!isThresholdBlock) {
+        const cycleAmount = Number((chargeAmount - alreadyBilled).toFixed(2));
+        if (cycleAmount < MIN_CHARGE_AMOUNT) {
+          results.push({
+            store: store.name,
+            status: "skip",
+            reason: `Delta do ciclo (R$${cycleAmount.toFixed(2)}) abaixo do mínimo de R$${MIN_CHARGE_AMOUNT}`,
+          });
+          continue;
+        }
+        chargeAmount = cycleAmount;
+        chargeDescription = `${chargeDescription} — ciclo ${new Date().toLocaleDateString("pt-BR")}`;
       }
-      chargeAmount = cycleAmount;
-      chargeDescription = `${chargeDescription} — ciclo ${new Date().toLocaleDateString("pt-BR")}`;
 
       if (dryRun) {
         results.push({
@@ -660,6 +719,37 @@ Deno.serve(async (req) => {
         due_date: dueDateStr,
         plan: planType,
       });
+
+      // Bloqueio por teto: a cobrança nova é o total junto — cancela as de
+      // repasse em aberto anteriores (exceto a recém-criada). Só roda quando
+      // a nova foi criada de fato; se a emissão falhar, as antigas ficam.
+      if (isThresholdBlock && transaction.created_new) {
+        const { data: cancelledRep, error: cancelError } = await supabase
+          .from("financial_transactions")
+          .update({ status: "cancelled", settled_at: now.toISOString(), updated_at: now.toISOString() })
+          .eq("store_id", balance.store_id)
+          .eq("transaction_kind", "commission_charge")
+          .eq("status", "pending")
+          .like("reference_code", "#REP-%")
+          .neq("reference_code", referenceCode)
+          .select("id, amount");
+        if (cancelError) {
+          console.error("[auto-charge] falha ao cancelar repasses antigos:", cancelError);
+          results.push({ store: store.name, status: "error", reason: "Cobrança criada; falha ao cancelar as antigas" });
+        } else {
+          const cancelledCount = (cancelledRep || []).length;
+          const cancelledTotal = (cancelledRep || []).reduce((s: number, c: any) => s + Number(c.amount || 0), 0);
+          if (cancelledCount > 0) {
+            results.push({
+              store: store.name,
+              status: "cancelled_rep_charges",
+              count: cancelledCount,
+              amount: Number(cancelledTotal.toFixed(2)),
+              reason: "Cobranças de repasse em aberto canceladas; total junto na nova cobrança",
+            });
+          }
+        }
+      }
     }
 
     const charged = results.filter(r => r.status === "charged").length;
