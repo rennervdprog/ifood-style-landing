@@ -1,13 +1,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const headers = cors(origin);
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: headers });
   }
 
   try {
@@ -15,7 +31,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -29,7 +45,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -40,7 +56,7 @@ Deno.serve(async (req) => {
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Apenas administradores podem enviar broadcasts." }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -56,19 +72,19 @@ Deno.serve(async (req) => {
     if (!title || title.length > 120) {
       return new Response(JSON.stringify({ error: "Título obrigatório (máx 120 caracteres)." }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
     if (message.length > 500) {
       return new Response(JSON.stringify({ error: "Mensagem máx 500 caracteres." }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
     if (link.length > 500 || (!link.startsWith("/") && !link.startsWith("https://"))) {
       return new Response(JSON.stringify({ error: "Link inválido (use /caminho ou https://...)." }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -99,7 +115,7 @@ Deno.serve(async (req) => {
 
     if (userIds.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0, total: 0, note: "Nenhum destinatário encontrado." }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -142,13 +158,13 @@ Deno.serve(async (req) => {
         failed: totalFailed,
         audience,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...headers, "Content-Type": "application/json" } }
     );
   } catch (e: any) {
     console.error("[admin-broadcast-push] error:", e);
     return new Response(JSON.stringify({ error: e?.message || "Internal error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   }
 });
