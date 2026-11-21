@@ -59,6 +59,42 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     if (!baseUrl || !apiKey) return json({ error: "Evolution não configurado" }, 500);
 
+    // AUTH (item 9 — 21/11): esta função envia WhatsApp como a plataforma.
+    // Sem auth, qualquer um com a chave anônima (pública) mandava mensagem.
+    // Aceita: service key (as 5 edges servidoras já mandam Bearer <service key>),
+    // CRON_SECRET (cron, via Bearer ou x-cron-secret) ou JWT de admin da
+    // plataforma (o painel super-admin manda o JWT da sessão).
+    const authHeader = req.headers.get("Authorization") || "";
+    const bearer = authHeader.replace(/^Bearer\s+/i, "");
+    const cronSecret = Deno.env.get("CRON_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+      Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
+    const cronOk = !!cronSecret &&
+      (bearer === cronSecret || req.headers.get("x-cron-secret") === cronSecret);
+    const serviceOk = !!serviceKey && bearer === serviceKey;
+    let adminOk = false;
+    if (!cronOk && !serviceOk && bearer) {
+      try {
+        const authClient = createClient(EXT_URL, EXT_KEY);
+        const { data: userData } = await authClient.auth.getUser(bearer);
+        if (userData?.user) {
+          const { data: role } = await authClient
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userData.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          adminOk = !!role;
+        }
+      } catch {
+        adminOk = false;
+      }
+    }
+    if (!cronOk && !serviceOk && !adminOk) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
     const body = await req.json().catch(() => ({}));
     const phoneRaw: string = String(body?.phone || "").replace(/\D/g, "");
     const message: string = String(body?.message || "");
