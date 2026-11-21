@@ -33,6 +33,10 @@ export default function SejaRevendedor() {
       <meta property="og:type" content="website" />
       <meta name="twitter:card" content="summary_large_image" />
       <link rel="canonical" href={typeof window !== "undefined" ? `${window.location.origin}/seja-revendedor` : ""} />
+      {/* Item 7 (auditoria 40 itens): seguro — o JSON-LD é gerado por
+          JSON.stringify a partir de literais estáticos deste arquivo; nenhum
+          trecho vem de entrada de usuário, banco ou URL, e nenhuma string
+          contém `</script>`. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
