@@ -242,6 +242,10 @@ export default function PdvLandingPage() {
                     <p className="text-muted-foreground text-base sm:text-[17px] mb-4">{f.desc}</p>
                     <ul className="space-y-2">
                       {f.bullets.map((b) => (
+                        // Item 7 (auditoria 40 itens): seguro — `b` vem do
+                        // literal estático FEATURES no topo deste arquivo; o
+                        // replace só envolve `**texto**` em <b>, sem inserir
+                        // dado de usuário, banco ou URL.
                         <li key={b} className="flex gap-2.5 text-[15px] sm:text-base"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" strokeWidth={3} /><span dangerouslySetInnerHTML={{ __html: b.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") }} /></li>
                       ))}
                     </ul>
@@ -393,6 +397,10 @@ export default function PdvLandingPage() {
                 <AccordionItem key={i} value={`q${i}`} className="border-[1.5px] border-orange-100 rounded-2xl px-5 sm:px-6 bg-white data-[state=open]:border-primary">
                   <AccordionTrigger className="font-bold text-left text-[15px] sm:text-base py-4 sm:py-5 hover:no-underline">{f.q}</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-[14.5px] sm:text-[15px] pb-5">
+                    {/* Item 7 (auditoria 40 itens): seguro — `f.a` vem do
+                        literal estático FAQS no topo deste arquivo; o replace
+                        só envolve `**texto**` em <b>, sem inserir dado de
+                        usuário, banco ou URL. */}
                     <div dangerouslySetInnerHTML={{ __html: f.a.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") }} />
                   </AccordionContent>
                 </AccordionItem>
