@@ -121,6 +121,10 @@ if (typeof requestIdleCallback !== "undefined") {
 
 // Fase 6 — Vercel Analytics + Speed Insights (Web Vitals reais p/ dashboard Vercel)
 // Só roda em produção web (não em dev, iframe preview Lovable ou Capacitor nativo).
+// LGPD (item 15): só injeta com consentimento de analytics
+// (`itasuper_consent`, ver src/lib/cookieConsent.ts). Sem consentimento,
+// nada carrega — o site funciona igual. Se o visitante aceitar depois,
+// o listener abaixo injeta na hora, sem recarregar a página.
 (() => {
   try {
     if (import.meta.env.DEV) return;
@@ -129,7 +133,19 @@ if (typeof requestIdleCallback !== "undefined") {
     if (window.self !== window.top) return; // iframe (preview Lovable)
     const host = window.location.hostname;
     if (host.endsWith("lovable.app") || host.endsWith("lovableproject.com")) return;
+    let injected = false;
     const load = () => {
+      if (injected) return;
+      // Lê o consentimento na hora de injetar (não no boot): quem aceitou
+      // no banner depois do carregamento inicial também passa a medir.
+      let consent = false;
+      try {
+        consent = JSON.parse(window.localStorage.getItem("itasuper_consent") ?? "null")?.analytics === true;
+      } catch {
+        consent = false;
+      }
+      if (!consent) return;
+      injected = true;
       Promise.all([
         import("@vercel/analytics"),
         import("@vercel/speed-insights"),
@@ -140,8 +156,13 @@ if (typeof requestIdleCallback !== "undefined") {
         })
         .catch(() => {});
     };
-    if (typeof requestIdleCallback !== "undefined") requestIdleCallback(load, { timeout: 4000 });
-    else setTimeout(load, 2500);
+    const scheduleLoad = () => {
+      if (typeof requestIdleCallback !== "undefined") requestIdleCallback(load, { timeout: 4000 });
+      else setTimeout(load, 2500);
+    };
+    scheduleLoad();
+    // Aceitou depois do boot? Injeta sem recarregar.
+    window.addEventListener("itasuper:consent-changed", scheduleLoad);
   } catch {}
 })();
 

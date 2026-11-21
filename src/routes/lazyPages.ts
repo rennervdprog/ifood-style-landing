@@ -49,6 +49,7 @@ export const CadastroLojista = lazy(() => import("@/pages/CadastroLojista"));
 export const CadastroMotoboyLoja = lazy(() => import("@/pages/CadastroMotoboyLoja"));
 export const TermosDeUso = lazy(() => import("@/pages/TermosDeUso"));
 export const PoliticaPrivacidade = lazy(() => import("@/pages/PoliticaPrivacidade"));
+export const PoliticaCookies = lazy(() => import("@/pages/PoliticaCookies"));
 export const PlanosPage = lazy(() => import("@/pages/PlanosPage"));
 export const ModeradorDashboard = lazy(() => import("@/pages/ModeradorDashboard"));
 export const ResellerDashboard = lazy(() => import("@/pages/ResellerDashboard"));

@@ -533,6 +533,7 @@ const faqs = [
         <div className="mt-3 flex items-center justify-center gap-4 text-xs">
           <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos</a>
           <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política</a>
+          <a href="/cookies" className="hover:text-primary transition-colors">Cookies</a>
         </div>
       </footer>
     </div>
