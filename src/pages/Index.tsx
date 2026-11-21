@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Zap, Star,
+  PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Zap,
   ShoppingBag, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown,
   Search, Shield, MessageCircle, BarChart3, TrendingUp, Crown, Rocket,
    CheckCircle2, X, Check, MapPin, Navigation, UserCheck, SmartphoneNfc,
@@ -116,12 +116,6 @@ const painPoints = [
 const plans = [
   { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "R$ 89,90 após o gatilho de R$ 5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 0,99 quando aplicável.", popular: true },
   { name: "Somente PDV", price: "R$120", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
-];
-
-const testimonials = [
-  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "2.400+ pedidos" },
-  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "3.100+ pedidos" },
-  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "1.800+ pedidos" },
 ];
 
 const faqs = [
@@ -524,43 +518,6 @@ const Index = () => {
           ))}
         </div>
       </section>
-
-       {/* ══════ TESTIMONIALS ══════ */}
-       <section className="py-24 px-4 bg-background">
-         <div className="mx-auto max-w-6xl">
-           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
-               Quem usa, aprova ⭐
-             </h2>
-             <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
-               Lojistas que decidiram profissionalizar sua gestão e hoje colhem os resultados.
-             </p>
-           </div>
-           <div className="grid sm:grid-cols-3 gap-8">
-             {testimonials.map((t) => (
-               <Card key={t.name} className="border-border rounded-[2rem] hover:shadow-2xl transition-all duration-300 bg-muted/30 p-2 border-none">
-                 <CardContent className="pt-8 px-6 pb-8">
-                   <div className="flex gap-1 mb-6">
-                     {Array.from({ length: t.rating }).map((_, i) => (
-                       <Star key={i} className="h-5 w-5 fill-primary text-primary" />
-                     ))}
-                   </div>
-                   <p className="text-lg text-foreground font-medium leading-relaxed mb-8 italic">"{t.text}"</p>
-                   <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
-                       {t.name.charAt(0)}
-                     </div>
-                     <div>
-                       <p className="font-bold text-foreground">{t.name}</p>
-                       <p className="text-sm text-muted-foreground font-semibold">{t.store} • {t.orders}</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-             ))}
-           </div>
-         </div>
-       </section>
 
        {/* ══════ FAQ ══════ */}
        <section className="py-24 px-4 bg-muted/40">

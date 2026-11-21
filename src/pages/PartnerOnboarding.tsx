@@ -8,7 +8,7 @@ import { z } from "zod";
 import {
   Store, Bike, ArrowLeft, ArrowRight, Camera, Upload,
   User, FileText, Truck, ChefHat, MessageCircle,
-  Package, TrendingUp, Crown, Check, Zap, Star,
+  Package, TrendingUp, Crown, Check, Zap,
   Smartphone, QrCode, CreditCard, Bell, Shield,
   Clock, BarChart3, Gift, ChevronDown, Rocket,
 } from "lucide-react";
@@ -96,12 +96,6 @@ const howItWorks = [
   { step: "02", icon: QrCode, title: "Monte o cardápio", desc: "Adicione produtos, fotos e preços pelo painel de gestão." },
   { step: "03", icon: Bell, title: "Receba pedidos", desc: "Clientes pedem online e você recebe tudo organizado." },
   { step: "04", icon: TrendingUp, title: "Cresça seu negócio", desc: "Acompanhe relatórios e fidelize seus clientes." },
-];
-
-const testimonials = [
-  { name: "João P.", role: "Pizzaria do João", text: "Desde que entrei no ItaSuper, meus pedidos triplicaram. O cardápio digital é profissional e fácil de usar.", rating: 5 },
-  { name: "Maria L.", role: "Doceria Amor em Cada Fatia", text: "O PIX automático mudou minha vida! Não preciso mais ficar verificando comprovantes manualmente.", rating: 5 },
-  { name: "Carlos R.", role: "Burger House", text: "O painel financeiro é incrível. Sei exatamente quanto vendi e quanto vou receber a cada semana.", rating: 5 },
 ];
 
 const faqs = [
@@ -414,30 +408,6 @@ const PartnerOnboarding = () => {
               <Button variant="outline" onClick={() => navigate("/planos")} className="rounded-2xl px-6">
                 Ver comparativo completo <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Testimonials ── */}
-        <section className="py-16 px-4">
-          <div className="mx-auto max-w-5xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">O que nossos parceiros dizem ⭐</h2>
-            <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">Lojistas reais que transformaram seu delivery.</p>
-            <div className="grid sm:grid-cols-3 gap-6">
-              {testimonials.map((t) => (
-                <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-0.5 mb-3">
-                      {Array.from({ length: t.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
-                    <p className="text-sm font-bold text-foreground">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
           </div>
         </section>

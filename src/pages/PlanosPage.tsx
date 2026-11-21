@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Check,
-  Star,
   Zap,
   ArrowRight,
   MessageCircle,
@@ -97,12 +96,6 @@ const steps = [
   { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
   { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
   { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
-];
-
-const testimonials = [
-  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "2.400+ pedidos" },
-  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "3.100+ pedidos" },
-  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "1.800+ pedidos" },
 ];
 
 const faqs = [
@@ -456,41 +449,6 @@ const faqs = [
             Simule seu volume mensal e veja o custo real em cada plano
           </p>
           <ROICalculator />
-        </div>
-      </section>
-
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section className="py-20 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Quem usa, recomenda
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Veja o que nossos lojistas dizem sobre a plataforma.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex gap-0.5 mb-3">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.store}</p>
-                    </div>
-                    <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
-                      {t.orders}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
