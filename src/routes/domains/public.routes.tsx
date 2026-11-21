@@ -6,6 +6,7 @@ import {
   CityStoresPage,
   TermosDeUso,
   PoliticaPrivacidade,
+  PoliticaCookies,
   PlanosPage,
   LinksPage,
   DownloadApp,
@@ -36,6 +37,8 @@ export const publicRoutes = (
     <Route path="/lojas/:cidade" element={<CityStoresPage />} />
     <Route path="/termos-de-uso" element={<TermosDeUso />} />
     <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+    <Route path="/cookies" element={<PoliticaCookies />} />
+    <Route path="/politica-de-cookies" element={<Navigate to="/cookies" replace />} />
     <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
     <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
     {/* Redirects de typos comuns (antes caíam em 404 global). */}
