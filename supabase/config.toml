@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.whatsapp-send-worker]
 verify_jwt = false
+
+[functions.woovi-webhook]
+verify_jwt = false
