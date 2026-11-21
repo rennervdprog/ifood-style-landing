@@ -134,25 +134,25 @@ export default function CookieConsent() {
                 </p>
               </div>
             </div>
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:gap-2 sm:items-center">
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="h-11 flex-1 rounded-xl bg-primary px-4 text-sm font-black text-primary-foreground"
+                className="h-14 sm:h-11 flex-1 rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
               >
                 Aceitar tudo
               </button>
               <button
                 type="button"
                 onClick={handleRejectAll}
-                className="h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-sm font-black text-foreground"
+                className="h-14 sm:h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
               >
                 Recusar
               </button>
               <button
                 type="button"
                 onClick={() => openPreferences(getConsent())}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold text-muted-foreground hover:text-foreground"
+                className="flex h-14 sm:h-11 items-center justify-center gap-2 rounded-xl px-4 text-base sm:text-sm font-bold text-muted-foreground hover:text-foreground max-sm:border-2 max-sm:border-border max-sm:bg-card max-sm:font-black max-sm:text-foreground"
               >
                 <Settings2 className="h-4 w-4" />
                 Preferências
@@ -173,7 +173,7 @@ export default function CookieConsent() {
                 type="button"
                 onClick={() => setShowPreferences(false)}
                 aria-label="Voltar ao banner"
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="rounded-lg p-3 sm:p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -198,18 +198,18 @@ export default function CookieConsent() {
                 onChange={setMarketing}
               />
             </div>
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <div className="mt-5 flex flex-col gap-3 sm:gap-2 sm:flex-row">
               <button
                 type="button"
                 onClick={handleSavePreferences}
-                className="h-11 flex-1 rounded-xl bg-primary px-4 text-sm font-black text-primary-foreground"
+                className="h-14 sm:h-11 flex-1 rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
               >
                 Salvar preferências
               </button>
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-sm font-black text-foreground"
+                className="h-14 sm:h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
               >
                 Aceitar tudo
               </button>
