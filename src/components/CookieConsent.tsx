@@ -138,14 +138,14 @@ export default function CookieConsent() {
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="h-14 sm:h-11 flex-1 rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
+                className="h-14 sm:h-11 flex-1 max-sm:flex-none rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
               >
                 Aceitar tudo
               </button>
               <button
                 type="button"
                 onClick={handleRejectAll}
-                className="h-14 sm:h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
+                className="h-14 sm:h-11 flex-1 max-sm:flex-none rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
               >
                 Recusar
               </button>
@@ -202,14 +202,14 @@ export default function CookieConsent() {
               <button
                 type="button"
                 onClick={handleSavePreferences}
-                className="h-14 sm:h-11 flex-1 rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
+                className="h-14 sm:h-11 flex-1 max-sm:flex-none rounded-xl bg-primary px-4 text-base sm:text-sm font-black text-primary-foreground"
               >
                 Salvar preferências
               </button>
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="h-14 sm:h-11 flex-1 rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
+                className="h-14 sm:h-11 flex-1 max-sm:flex-none rounded-xl border-2 border-border bg-card px-4 text-base sm:text-sm font-black text-foreground"
               >
                 Aceitar tudo
               </button>
