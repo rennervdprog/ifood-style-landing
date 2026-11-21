@@ -2,13 +2,25 @@
 // GET ?order_id=<uuid>&last4=<últimos 4 do telefone>
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "*", "Access-Control-Max-Age": "86400",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
-const json = (b: unknown, s = 200, extraHeaders: Record<string, string> = {}) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json", ...extraHeaders } });
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
+}
 
 const makePin = () => String(Math.floor(1000 + Math.random() * 9000));
 
@@ -36,7 +48,11 @@ const clientIp = (req: Request): string | null => {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const origin = req.headers.get("Origin");
+  const headers = cors(origin);
+  const json = (b: unknown, s = 200, extraHeaders: Record<string, string> = {}) =>
+    new Response(JSON.stringify(b), { status: s, headers: { ...headers, "Content-Type": "application/json", ...extraHeaders } });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: headers });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
   try {
