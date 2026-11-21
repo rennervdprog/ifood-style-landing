@@ -1,5 +1,7 @@
 // Webhook Woovi/OpenPix — confirma pagamentos de mensalidade/comissão da plataforma.
-// URL: <functions>/woovi-webhook?webhookSecret=<WOOVI_WEBHOOK_SECRET>
+// Autenticação: assinatura RSA-SHA256 da Woovi (header x-webhook-signature)
+// verificada com WOOVI_PUBLIC_KEY — a chave pública publicada pela Woovi,
+// a mesma para todas as contas. Sem assinatura válida, nada é aceito.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { REPASSE_POLICY } from "../_shared/repasse-policy.ts";
 
@@ -74,23 +76,19 @@ Deno.serve(async (req) => {
 
   const rawBody = await req.text();
 
-  // 1) Assinatura criptográfica (fonte da verdade quando WOOVI_PUBLIC_KEY existe)
+  // 1) Assinatura criptográfica RSA-SHA256 (Woovi/OpenPix) — única
+  // autenticação. Sem a chave pública configurada ou sem assinatura
+  // válida, a requisição é recusada (fail-closed).
   const publicKey = Deno.env.get("WOOVI_PUBLIC_KEY") || "";
   const signature = req.headers.get("x-webhook-signature");
-  if (publicKey) {
-    const valid = await verifyWooviSignature(rawBody, signature);
-    if (!valid) {
-      console.warn("[woovi-webhook] assinatura inválida — requisição rejeitada");
-      return json({ error: "invalid_signature" }, 401);
-    }
-  } else {
-    // 2) Fallback legado: secret na query string (menos seguro, só até a chave pública ser configurada)
-    const secret = Deno.env.get("WOOVI_WEBHOOK_SECRET") || "";
-    const url = new URL(req.url);
-    if (!secret || url.searchParams.get("webhookSecret") !== secret) {
-      return json({ error: "unauthorized" }, 401);
-    }
-    console.warn("[woovi-webhook] WOOVI_PUBLIC_KEY ausente — validando apenas por query secret");
+  if (!publicKey) {
+    console.error("[woovi-webhook] WOOVI_PUBLIC_KEY ausente — recusando");
+    return json({ error: "unauthorized" }, 401);
+  }
+  const valid = await verifyWooviSignature(rawBody, signature);
+  if (!valid) {
+    console.warn("[woovi-webhook] assinatura inválida — requisição rejeitada");
+    return json({ error: "invalid_signature" }, 401);
   }
 
   const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
