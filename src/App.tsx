@@ -24,6 +24,7 @@ import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { TermsUpdateModal } from "@/components/TermsUpdateModal";
+import CookieConsent from "@/components/CookieConsent";
 import ClientPinChecker from "@/components/ClientPinChecker";
 import RecoveryRedirect from "@/components/RecoveryRedirect";
 import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
@@ -368,6 +369,7 @@ const App = () => {
         <StoreProvider>
         <CartProvider>
           <Toaster />
+          <CookieConsent />
           {showAncillary && <GlobalRealtimeSync />}
           {showAncillary && <CapacitorPermissionsOnboarding />}
           {showAncillary && !partnerNative && <InstallPrompt />}

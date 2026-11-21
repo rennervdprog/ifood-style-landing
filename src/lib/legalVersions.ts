@@ -12,7 +12,7 @@
  * já pendente de reaceite e registra aceite de um texto que ele não leu.
  */
 export const CURRENT_TERMS_VERSION = "6.8";
-export const CURRENT_PRIVACY_VERSION = "6.7";
+export const CURRENT_PRIVACY_VERSION = "6.8";
 
 /**
  * Compara duas versões legais no formato "maior.menor".

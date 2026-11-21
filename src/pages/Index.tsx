@@ -677,6 +677,7 @@ const Index = () => {
                  <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
                  <li><a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</a></li>
                  <li><a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</a></li>
+                 <li><a href="/cookies" className="hover:text-primary transition-colors">Política de Cookies</a></li>
                </ul>
              </div>
              <div>
