@@ -1,7 +1,7 @@
 project_id = "lktzrqjvqoojlrhqnxuz"
 
 [functions.create-asaas-subaccount]
-verify_jwt = false
+verify_jwt = true
 
 [functions.zapi-webhook]
 verify_jwt = false
@@ -19,13 +19,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.admin-set-pin-autofill]
-verify_jwt = false
+verify_jwt = true
 
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
 [functions.asaas-financial-panel]
-verify_jwt = false
+verify_jwt = true
 
 [functions.evolution-webhook]
 verify_jwt = false
@@ -40,7 +40,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.whatsapp-diag]
-verify_jwt = false
+verify_jwt = true
 [functions.kds]
 verify_jwt = false
 
@@ -48,7 +48,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.manage-store-addon]
-verify_jwt = false
+verify_jwt = true
 
 [functions.platform-whatsapp-send]
 verify_jwt = false
@@ -86,4 +86,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.whatsapp-send-worker]
+verify_jwt = false
+
+[functions.woovi-webhook]
 verify_jwt = false
