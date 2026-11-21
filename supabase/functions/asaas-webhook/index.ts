@@ -9,7 +9,9 @@
  *
  * IMPORTANTE: este endpoint é PÚBLICO (verify_jwt=false). A autenticação é feita
  * comparando o header `asaas-access-token` com o secret `ASAAS_WEBHOOK_TOKEN`.
- * Se o secret não estiver configurado, aceita qualquer chamada (modo permissivo p/ debug).
+ * Sem o secret configurado, a função rejeita tudo com 401 — nunca aceita chamada sem token.
+ * (O comentário antigo dizia "modo permissivo p/ debug" — estava errado: o código
+ * sempre rejeitou; a auditoria de 20/11 leu o comentário e concluiu o contrário.)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -49,7 +51,7 @@ Deno.serve(async (req) => {
   const receivedToken = req.headers.get("asaas-access-token") || "";
   if (!expectedToken) {
     console.error("[asaas-webhook] ASAAS_WEBHOOK_TOKEN não configurado — rejeitando todas as chamadas");
-    return json({ error: "Webhook not configured" }, 500);
+    return json({ error: "Unauthorized" }, 401);
   }
   if (receivedToken !== expectedToken) {
     console.warn("[asaas-webhook] Invalid token");
