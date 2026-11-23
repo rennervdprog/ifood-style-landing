@@ -1,0 +1,11 @@
+# Dependabot — itens 10/39 (auditoria de 40 itens, 23/11/2026)
+# Updates semanais de npm, com limite de PRs abertos para não virar ruído.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"

@@ -13,6 +13,20 @@
 | Função Edge de catálogo | Parâmetro do visitante podia alternar leitura para `stores` sob credencial de serviço | **Corrigido**: lê exclusivamente `stores_public` | Chamada HTTP anônima não retornou nenhuma chave sensível |
 | Frontend público | Carrinho, checkout de convidado, diretório e outras telas ainda consultavam `stores` | **Corrigido** nos fluxos públicos afetados | Compilação, testes e build concluídos |
 
+## Atualização 23/11/2026 — itens 10, 39 e 36 (auditoria de 40 itens)
+
+**Data:** 23 de novembro de 2026
+**Escopo desta atualização:** gestão de dependências e testes de segurança no CI. Nenhuma vulnerabilidade foi corrigida neste PR — o trabalho aqui é o processo (detecção contínua); o inventário fresco vem da 1ª rodada do CI.
+
+| Mudança | Detalhe |
+|---|---|
+| Dependabot (itens 10/39) | `.github/dependabot.yml` criado: updates semanais de npm, limite de 5 PRs abertos para não virar ruído. |
+| `npm audit` no CI (itens 10/39/36) | Step `npm audit --audit-level=high` adicionado ao workflow `pdv-tests.yml` (o "required"). Primeira rodada **não-bloqueante** (`continue-on-error: true`) para levantar as contagens frescas; se o resultado for zero altas/críticas, o próximo PR torna o step bloqueante. |
+| Guard de segurança (item 36) | Job `security-checks` em workflow dedicado (`.github/workflows/security-checks.yml`) + `scripts/security-guard.sh`. Falha o CI se o **diff** do PR introduzir `exec_sql`, `Access-Control-Allow-Origin: "*"` ou `verify_jwt = false`. Escopado ao diff: a main atual já contém esses padrões em vários arquivos, e o guard não falha no que já existe. |
+| Inventário de dependências | **Inventário fresco — 1ª rodada do `npm audit` no CI, 23/11/2026 (job Vitest - PDV, run 45208038222): 46 vulnerabilidades (3 baixas, 12 moderadas, 23 altas, 8 críticas)** — pior que o inventário de 14/08/2026 (30 no total: 5 críticas, 20 altas, 3 moderadas, 2 baixas). Críticas (6 pacotes): `@capacitor/android` e `@capacitor/ios` 8.0.0–8.3.4 (conteúdo remoto na origem do app via proxy HTTP interno), `protobufjs` ≤7.6.4, `tar` ≤7.5.20, `tinypool` ≤2.1.1, `websocket-driver` ≤0.7.4. Altas (20 pacotes): `@babel/plugin-transform-modules-systemjs`, `@grpc/grpc-js`, `@remix-run/router` (XSS via open redirect), `@xmldom/xmldom`, `brace-expansion`, `browserslist`, `fast-uri`, `flatted`, `form-data`, `glob`, `js-yaml`, `lodash`, `minimatch`, `nanoid`, `picomatch`, `postcss`, `rollup`, `source-map-js`, `ws`, `zod`. **Todas as 36 ocorrências listadas têm fix disponível via `npm audit fix`** (nenhum bloco sem fix) — mas os fixes podem ser breaking e precisam de PR próprio com testes. Como há altas/críticas, **o step de audit segue não-bloqueante** (não vira bloqueante neste lote). |
+
+**Follow-up (não neste PR):** corrigir as vulnerabilidades altas/críticas do inventário fresco, uma por uma, com PR próprio e teste (começar pelas críticas de runtime: `@capacitor/android`/`@capacitor/ios` e `@remix-run/router`); o step de audit **segue não-bloqueante** porque o CI mostrou 23 altas + 8 críticas (só viraria bloqueante com zero altas/críticas); repetir a auditoria dos 40 itens a cada 3 meses (próxima em fevereiro/2027).
+
 ## Correção implantada
 
 A migração `20260814021000_harden_public_store_access.sql` foi aplicada ao projeto de produção. Ela removeu a política RLS **`Public can read stores`**, revogou `SELECT` da relação base para o papel `anon` e criou uma política de leitura privada para lojistas, gestores de unidade e administradores. Assim, dados financeiros, cadastrais e operacionais da loja voltam a ficar acessíveis somente a quem tem necessidade funcional e autorização apropriada.
@@ -60,7 +74,7 @@ A auditoria pós-correção ainda reporta riscos importantes. Eles não foram re
 | **P1** | Proteção contra senhas vazadas desativada no Auth | Pendente, requer configuração | Habilitar a verificação de senha vazada nas configurações de autenticação do Supabase e comunicar a nova regra de senha. [3] |
 | **P1** | `ext-sql-runner` sem JWT | Aceito temporariamente | Manter segredo forte, rotacionável e fora do código; preferir JWT assinado ou restringir por rede/IP quando a integração permitir. Revisar logs e chamadas antes de qualquer alteração. |
 | **P2** | Tabelas com RLS sem políticas: `asaas_subaccounts_registry`, `whatsapp_inbound_log`, `whatsapp_send_log` | Informativo | Confirmar que não há `GRANT` para papéis cliente. Sem política, o RLS bloqueia por padrão; documentar esse comportamento. [4] |
-| **P2** | Dependências npm vulneráveis | Pendente | A auditoria atual identificou **5 críticas, 20 altas, 3 moderadas e 2 baixas**. Atualizar em uma branch de teste, revisar mudanças incompatíveis e executar testes de checkout, PIX, PDV, WebSocket e Capacitor antes de publicar. |
+| **P2** | Dependências npm vulneráveis | Em andamento (23/11/2026) — Dependabot + `npm audit` no CI; inventário fresco registrado: 46 vulnerabilidades (3 baixas, 12 moderadas, 23 altas, 8 críticas) | A auditoria de 14/08/2026 identificou **5 críticas, 20 altas, 3 moderadas e 2 baixas**. Atualizar em uma branch de teste, revisar mudanças incompatíveis e executar testes de checkout, PIX, PDV, WebSocket e Capacitor antes de publicar. |
 | **P3** | `owner_id` ainda aparece no contrato público | Risco aceito com mitigação | Ele atende ao chat/notificação atual. Em uma fase posterior, substituir por um identificador público ou uma função de notificação do servidor para não expor UUIDs de usuários. |
 
 ## Recomendações operacionais

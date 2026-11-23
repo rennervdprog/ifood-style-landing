@@ -1,0 +1,19 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  security-checks:
+    name: Security guard (diff-scoped)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard against newly introduced risky patterns
+        run: bash scripts/security-guard.sh "${{ github.event.pull_request.base.sha || github.event.before }}"
