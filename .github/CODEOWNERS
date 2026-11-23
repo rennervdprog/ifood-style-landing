@@ -1,0 +1,6 @@
+# Renner é o dono de todo o repositório (projeto solo).
+# O arquivo serve para o GitHub exigir a revisão dele nos PRs
+# e para documentar quem aprova cada mudança.
+# A proteção da branch main (exigir PR + CI verde) é ligada por ele
+# em Settings → Branches — ver AGENTS.md, seção "Fluxo de entrega".
+* @rennervdprog
