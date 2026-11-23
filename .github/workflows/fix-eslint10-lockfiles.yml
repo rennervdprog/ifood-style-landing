@@ -1,0 +1,51 @@
+# TEMPORARIO — remover antes do merge. Regenera package-lock.json e bun.lock
+# no PR do fix do ESLint 10 e valida que `npm install` passa (o passo que
+# quebra o deploy da Vercel) e que o eslint.config.js carrega com os plugins
+# novos. Roda no PR (mesmo repo), com token de escrita, e commita os
+# lockfiles de volta na branch. Nenhum script de pacote roda com esse token.
+name: Fix ESLint 10 lockfiles (temporario)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-lockfiles:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Regenerate package-lock.json
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Regenerate bun.lock
+        run: bun install --ignore-scripts
+      - name: Validar npm install (o passo que quebra na Vercel)
+        run: npm ci --ignore-scripts
+      - name: Validar que o eslint.config.js carrega
+        run: node --input-type=module -e "import('./eslint.config.js').then(m => console.log('eslint config OK, entradas:', m.default.length)).catch(e => { console.error(e); process.exit(1); })"
+      - name: Commit lockfiles if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json bun.lock
+          git add bun.lockb 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "lockfiles ja sincronizados"
+          else
+            git commit -m "chore: regenerate lockfiles for ESLint 10 peer fix"
+            git push
+          fi
