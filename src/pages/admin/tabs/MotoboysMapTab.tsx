@@ -280,7 +280,7 @@ export default function MotoboysMapTab({ storeId }: { storeId: string }) {
   // Mapa: cria uma vez
   useEffect(() => {
     if (!L || !mapRef.current || mapInstanceRef.current) return;
-    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([-22.87, -42.33], 13);
+    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: true }).setView([-22.87, -42.33], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
     mapInstanceRef.current = map;
     setMapReady(true);

@@ -3,6 +3,51 @@ import * as SentryCapacitor from "@sentry/capacitor";
 import { Capacitor } from "@capacitor/core";
 import { APP_VERSION } from "./appVersion";
 
+// ── Item 32 — redação de dados sensíveis antes de enviar ao Sentry ───────
+// Nenhum valor original é logado nem enviado: só o marcador ([CPF],
+// [EMAIL], [TELEFONE], [CHAVE PIX], [REDACTED]). A ordem importa: CNPJ
+// antes de CPF e os rótulos (token/chave Pix) antes dos padrões genéricos.
+const SENSITIVE_PATTERNS: Array<[RegExp, string]> = [
+  // CNPJ (com ou sem formatação)
+  [/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, "[CNPJ]"],
+  // CPF (com ou sem formatação)
+  [/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, "[CPF]"],
+  // E-mail
+  [/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[EMAIL]"],
+  // Telefone BR (10–11 dígitos, com ou sem DDD/formatação)
+  [/\(?\d{2}\)?[\s-]?\d{4,5}[\s-]?\d{4}\b/g, "[TELEFONE]"],
+  // Chave Pix aleatória (UUID EVP)
+  [/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "[CHAVE PIX]"],
+  // Chave Pix rotulada — mantém o rótulo, some com o valor
+  [/(pix[_-]?key|chave[_-]?pix)[\"'\s:=]+[^\s\"',}\]]+/gi, "$1=[CHAVE PIX]"],
+  // Token/segredo rotulado — mantém o rótulo, some com o valor
+  [/((?:access_?token|refresh_?token|api[_-]?key|apikey|authorization|bearer|id_?token|service_?role(?:_key)?|secret|senha|password)[\"'\s:=]+)[^\s\"',}\]]{6,}/gi, "$1[REDACTED]"],
+];
+
+const redactString = (value: string): string => {
+  let out = value;
+  for (const [pattern, replacement] of SENSITIVE_PATTERNS) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
+};
+
+const SENSITIVE_KEY = /^(cpf|cnpj|email|e-mail|telefone|phone|token|pix|pix_key|senha|password|secret|authorization|api[_-]?key|apikey|access_?token|refresh_?token)$/i;
+
+// Redação recursiva (mensagem, exceções, breadcrumbs, extra, contexts):
+// chaves sensíveis têm o valor inteiro substituído sem inspecionar o
+// conteúdo; demais strings passam pelos padrões acima.
+const redactDeep = (value: unknown, depth = 0): unknown => {
+  if (typeof value === "string") return redactString(value);
+  if (depth > 6 || value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((item) => redactDeep(item, depth + 1));
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    out[key] = SENSITIVE_KEY.test(key) ? "[REDACTED]" : redactDeep(item, depth + 1);
+  }
+  return out;
+};
+
 export const initSentry = () => {
   const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
@@ -46,6 +91,10 @@ export const initSentry = () => {
       /The user aborted a request/i,
       /AbortError/i,
     ],
+    // Item 32: redige CPF, CNPJ, e-mail, telefone, token e chave Pix de
+    // todo o evento (mensagem, exceções, breadcrumbs, extra) antes de
+    // enviar — nada sensível sai do aparelho.
+    beforeSend: (event: any) => redactDeep(event),
   } as const;
 
   if (isNative) {

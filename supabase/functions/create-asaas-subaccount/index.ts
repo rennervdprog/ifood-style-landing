@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
     const userId = userData.user.id;
-    log("user_authenticated", { userId });
+    log("user_authenticated", { userId: userId.slice(0, 8) });
 
     // Admin pode operar em qualquer loja (necessário para fluxo sandbox via seed-test-accounts).
     const { data: adminRole } = await adminClient

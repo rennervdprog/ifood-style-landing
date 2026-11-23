@@ -216,7 +216,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     if (!L || !mapRef.current || mapInstanceRef.current) return;
     const map = L.map(mapRef.current, {
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
     }).setView([-23.25, -48.65], 14);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);

@@ -336,15 +336,16 @@ const SalesCoachPanel = () => {
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 shrink-0">
           <div className="flex items-center gap-2">
             <Bot className="h-4 w-4 text-primary" />
-            <p className="text-sm font-black text-foreground">Coach de Vendas ItaSuper</p>
+            <p className="text-sm font-black text-foreground">Coach de Vendas ItaSuper · com IA</p>
           </div>
           {messages.length > 0 && (
             <button onClick={clear}
-              className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">
+              className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">
               <Trash2 className="h-3.5 w-3.5" /> Limpar
             </button>
           )}
         </div>
+        <p className="px-4 pt-2 text-[11px] text-muted-foreground">Sugestões geradas por IA — revise antes de aplicar.</p>
 
         {/* Mensagens */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
