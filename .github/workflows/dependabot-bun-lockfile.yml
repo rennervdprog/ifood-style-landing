@@ -1,0 +1,45 @@
+# Dependabot + Bun: o `bun install --frozen-lockfile` do CI quebra nos PRs do
+# Dependabot porque o ecossistema npm dele atualiza package.json e
+# package-lock.json, mas nunca o bun.lock/bun.lockb. Este workflow regenera o
+# lockfile do Bun na branch do PR e commita de volta, para o CI rodar.
+# Usa pull_request_target (roda a partir da main, com token de escrita) e
+# `bun install --ignore-scripts`, para nenhum script de pacote executar com
+# esse token. So roda para PRs do dependabot[bot]. Se nao houver mudanca no
+# lockfile, nao commita nada. O push dispara o CI do PR de novo.
+name: Dependabot Bun lockfile
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  update-bun-lockfile:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Regenerate Bun lockfile
+        run: bun install --ignore-scripts
+      - name: Commit Bun lockfile if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bun.lock
+          git add bun.lockb 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "lockfile ja sincronizado"
+          else
+            git commit -m "chore: regenerate Bun lockfile for Dependabot bump"
+            git push
+          fi
