@@ -135,6 +135,22 @@ const PerfilPage = () => {
      enabled: !!user,
    });
 
+  /* Solicitações LGPD do próprio usuário (tabela lgpd_requests) */
+  const { data: myLgpdRequests } = useQuery({
+    queryKey: ["my-lgpd-requests", user?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("lgpd_requests")
+        .select("id, request_type, status, requested_at, due_at")
+        .eq("user_id", user!.id)
+        .order("requested_at", { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+
   /* ── Local state ── */
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
@@ -157,6 +173,13 @@ const PerfilPage = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteStep, setDeleteStep] = useState(0);
+
+  const [showLgpdModal, setShowLgpdModal] = useState(false);
+  const [lgpdRequestType, setLgpdRequestType] = useState<"anonimizacao" | "correcao" | "eliminacao">("anonimizacao");
+  const [lgpdRequestNote, setLgpdRequestNote] = useState("");
+  const [sendingLgpdRequest, setSendingLgpdRequest] = useState(false);
+  const [downloadingMyData, setDownloadingMyData] = useState(false);
+
   const [fullName, setFullName] = useState("");
   const [document, setDocument] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
@@ -479,6 +502,106 @@ const PerfilPage = () => {
       toast.error(err.message || "Erro ao excluir conta");
     } finally {
       setDeletingAccount(false);
+    }
+  };
+
+
+  const LGPD_TYPE_LABELS: Record<string, string> = {
+    acesso: "Acesso aos dados",
+    portabilidade: "Portabilidade",
+    anonimizacao: "Anonimização",
+    correcao: "Correção de dados",
+    eliminacao: "Eliminação de dados",
+  };
+
+  const LGPD_STATUS_LABELS: Record<string, string> = {
+    pendente: "Pendente",
+    em_atendimento: "Em atendimento",
+    concluido: "Concluído",
+    recusado: "Recusado",
+  };
+
+  /* Baixar meus dados (LGPD, art. 18): SOMENTE os dados do próprio usuário
+     logado — todas as consultas filtram por user.id (auth.uid()). */
+  const handleDownloadMyData = async () => {
+    if (!user) return;
+    setDownloadingMyData(true);
+    try {
+      const [ordersRes, termsRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, store_id, status, total_price, subtotal, payment_method, created_at, neighborhood, address_details")
+          .eq("client_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("terms_acceptance")
+          .select("terms_version, privacy_version, accepted_at")
+          .eq("user_id", user.id)
+          .order("accepted_at", { ascending: false }),
+      ]);
+      const prof: any = profile || {};
+      const data = {
+        exportado_em: new Date().toISOString(),
+        titular: { id: user.id, email: user.email },
+        perfil: {
+          nome: prof.full_name || null,
+          email: prof.email || user.email,
+          documento: prof.document || null,
+          telefone: prof.phone || null,
+          whatsapp: prof.whatsapp_number || null,
+          endereco: {
+            cep: prof.cep || null, rua: prof.street || null, numero: prof.number || null,
+            complemento: prof.complement || null, referencia: prof.reference_point || null,
+            bairro: prof.neighborhood || null, cidade: prof.city || null,
+          },
+          pix: { tipo: prof.pix_type || null, chave: prof.pix_key || null },
+          funcao: prof.role || null,
+          conta_criada_em: prof.created_at || null,
+        },
+        pedidos: ordersRes.data || [],
+        aceites_termos: termsRes.data || [],
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `meus-dados-itasuper_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Seus dados foram baixados em JSON.");
+    } catch (err: any) {
+      toast.error(err?.message || "Não foi possível baixar seus dados agora.");
+    } finally {
+      setDownloadingMyData(false);
+    }
+  };
+
+  /* Pedir anonimização/correção/eliminação: só REGISTRA o pedido na fila
+     (tabela lgpd_requests, prazo de 15 dias). A execução é manual. */
+  const handleSendLgpdRequest = async () => {
+    if (!user) return;
+    setSendingLgpdRequest(true);
+    try {
+      const dueAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+      const { error } = await (supabase as any).from("lgpd_requests").insert({
+        user_id: user.id,
+        request_type: lgpdRequestType,
+        requester_name: (profile as any)?.full_name || userName,
+        requester_email: user.email,
+        notes: lgpdRequestNote.trim() || null,
+        status: "pendente",
+        due_at: dueAt.toISOString(),
+      });
+      if (error) throw error;
+      toast.success("Solicitação registrada. Prazo de resposta: 15 dias.");
+      setShowLgpdModal(false);
+      setLgpdRequestNote("");
+      queryClient.invalidateQueries({ queryKey: ["my-lgpd-requests", user.id] });
+    } catch (err: any) {
+      toast.error(err?.message || "Não foi possível registrar a solicitação agora.");
+    } finally {
+      setSendingLgpdRequest(false);
     }
   };
 
@@ -1022,6 +1145,52 @@ const PerfilPage = () => {
           </div>
         </Card>
 
+
+        {/* ── Meus dados (LGPD) ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Meus dados (LGPD)</p>
+        </div>
+        <Card>
+          <div className="divide-y divide-border/50">
+            <MenuRow
+              icon={Download}
+              title="Baixar meus dados"
+              subtitle="Perfil, endereço e pedidos em JSON"
+              onClick={handleDownloadMyData}
+              trailing={downloadingMyData ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : undefined}
+            />
+            <MenuRow
+              icon={FileText}
+              title="Pedir anonimização ou correção"
+              subtitle="Solicitação registrada com prazo de 15 dias"
+              onClick={() => setShowLgpdModal(true)}
+            />
+          </div>
+          {myLgpdRequests && myLgpdRequests.length > 0 && (
+            <div className="border-t border-border/50 px-4 py-3 space-y-2">
+              <p className="text-xs font-bold text-foreground">Minhas solicitações</p>
+              {myLgpdRequests.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="font-semibold text-foreground">{LGPD_TYPE_LABELS[r.request_type] || r.request_type}</span>
+                  <span className="text-muted-foreground">
+                    Prazo: {new Date(r.due_at).toLocaleDateString("pt-BR")}
+                  </span>
+                  <span className={`font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                    r.status === "concluido" ? "bg-green-500/10 text-green-600"
+                    : r.status === "recusado" ? "bg-destructive/10 text-destructive"
+                    : "bg-primary/10 text-primary"
+                  }`}>
+                    {LGPD_STATUS_LABELS[r.status] || r.status}
+                  </span>
+                </div>
+              ))}
+              <p className="text-[11px] text-muted-foreground">
+                O atendimento é manual: nossa equipe responde em até 15 dias corridos (art. 18 da LGPD).
+              </p>
+            </div>
+          )}
+        </Card>
+
         {/* ── Zona de Perigo ── */}
         <div className="pt-1">
           <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 px-1 mb-2">Conta</p>
@@ -1078,6 +1247,51 @@ const PerfilPage = () => {
             </div>
           </div>
         )}
+
+
+        {/* LGPD request modal */}
+        {showLgpdModal && (
+          <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => !sendingLgpdRequest && setShowLgpdModal(false)}>
+            <div className="bg-card w-full max-w-md rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Solicitar sobre meus dados</h3>
+                  <p className="text-xs text-muted-foreground">Atendimento manual em até 15 dias corridos</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">O que você quer solicitar?</label>
+                <select value={lgpdRequestType} onChange={(e) => setLgpdRequestType(e.target.value as "anonimizacao" | "correcao" | "eliminacao")}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none transition-all">
+                  <option value="anonimizacao">Anonimização dos meus dados</option>
+                  <option value="correcao">Correção dos meus dados</option>
+                  <option value="eliminacao">Eliminação dos meus dados</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Detalhes (opcional)</label>
+                <textarea value={lgpdRequestNote} onChange={(e) => setLgpdRequestNote(e.target.value)}
+                  placeholder="Ex.: corrigir meu nome para..."
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-20" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sua solicitação fica registrada com o prazo de 15 dias. Não enviamos e-mail automático — nossa equipe entra em contato para atender o pedido.
+              </p>
+              <button onClick={handleSendLgpdRequest} disabled={sendingLgpdRequest}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50">
+                {sendingLgpdRequest ? "Registrando..." : "Enviar solicitação"}
+              </button>
+              <button onClick={() => setShowLgpdModal(false)} disabled={sendingLgpdRequest}
+                className="w-full py-3 rounded-xl border border-border text-muted-foreground font-bold text-sm disabled:opacity-50">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* Delete account confirmation modal */}
         {showDeleteConfirm && (
