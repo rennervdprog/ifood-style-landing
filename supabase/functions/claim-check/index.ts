@@ -10,8 +10,40 @@ const cors = {
   "Access-Control-Allow-Headers": "*", "Access-Control-Max-Age": "86400",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
+const json = (b: unknown, s = 200, extraHeaders: Record<string, string> = {}) =>
+  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json", ...extraHeaders } });
+
+// Rate limit (item 8, auditoria 40 itens) — mesmo padrão de
+// guest-order-status (contador em guest_tracking_attempts + 429), sem
+// inventar padrão novo: janela de 10 min, `{ error: "rate_limited" }` com
+// header `Retry-After: 600`, limpeza best-effort de registros com mais de
+// 1 dia. A diferença é o que conta: aqui não há "tentativa errada" —
+// todo lookup conta (a edge é um oráculo de enumeração de telefone), então
+// contam TODAS as chamadas, 10 por telefone e 30 por IP em 10 min. Um
+// uso legítimo (reivindicar a própria conta) faz 1 ou 2 chamadas; a
+// trava só para enumeração automatizada. A chave da tabela é uuid, então
+// o telefone vira um uuid determinístico (SHA-256, primeiros 128 bits).
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const MAX_ATTEMPTS_PER_PHONE = 10;
+const MAX_ATTEMPTS_PER_IP = 30;
+const ATTEMPT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+const clientIp = (req: Request): string | null => {
+  const raw = req.headers.get("x-forwarded-for") || "";
+  const first = raw.split(",")[0]?.trim() || "";
+  return first ? first.slice(0, 45) : null;
+};
+
+const phoneKeyUuid = async (phone: string): Promise<string> => {
+  const hash = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`claim-check:${phone}`),
+  );
+  const hex = [...new Uint8Array(hash)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+};
 
 function normalizePhoneBR(input: unknown): string | null {
   const d = String(input || "").replace(/\D/g, "");
@@ -110,6 +142,48 @@ Deno.serve(async (req) => {
         Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } },
     );
+
+    // Rate limit (mesmo padrão de guest-order-status): checa o limite
+    // ANTES de qualquer lookup que revele se o telefone tem conta, e
+    // registra a tentativa. O 429 não registra nada. Se a contagem ou o
+    // registro falhar, a função segue sem travar (fail-open, igual ao
+    // padrão — a checagem nunca pode quebrar o fluxo legítimo).
+    const ip = clientIp(req);
+    const phoneKey = await phoneKeyUuid(phone);
+    try {
+      await sb.from("guest_tracking_attempts")
+        .delete()
+        .lt("attempted_at", new Date(Date.now() - ATTEMPT_RETENTION_MS).toISOString());
+    } catch (e) {
+      console.error("[claim-check] cleanup error:", e);
+    }
+    const attemptsInWindow = async (column: "order_id" | "ip", value: string): Promise<number> => {
+      try {
+        const { count, error } = await sb.from("guest_tracking_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq(column, value)
+          .gt("attempted_at", new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString());
+        if (error) {
+          console.error("[claim-check] rate limit count error:", error);
+          return 0;
+        }
+        return count ?? 0;
+      } catch (e) {
+        console.error("[claim-check] rate limit count error:", e);
+        return 0;
+      }
+    };
+    if ((await attemptsInWindow("order_id", phoneKey)) >= MAX_ATTEMPTS_PER_PHONE) {
+      return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
+    }
+    if (ip && (await attemptsInWindow("ip", ip)) >= MAX_ATTEMPTS_PER_IP) {
+      return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
+    }
+    try {
+      await sb.from("guest_tracking_attempts").insert({ order_id: phoneKey, ok: true, ip } as any);
+    } catch (e) {
+      console.error("[claim-check] record attempt error:", e);
+    }
 
     // 1) Conta de verdade? Busca nos DOIS campos (Fase 3: o site grava
     // phone E whatsapp_number; o bot busca nos dois). Se existir guest E
