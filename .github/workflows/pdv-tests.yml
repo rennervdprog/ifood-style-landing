@@ -18,5 +18,12 @@ jobs:
           bun-version: latest
       - name: Install deps
         run: bun install --frozen-lockfile
+      - name: Audit dependencies (non-blocking first run)
+        # Itens 10/39: npm audit --audit-level=high. Primeira rodada roda
+        # como nao-bloqueante (continue-on-error) para levantar as contagens
+        # frescas no CI; se o resultado for zero altas/criticas, o proximo
+        # PR torna o step bloqueante (remove o continue-on-error).
+        continue-on-error: true
+        run: npm audit --audit-level=high
       - name: Run PDV test suite
         run: bun run test:pdv
