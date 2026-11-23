@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       const { data: roleRow } = await admin
         .from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
       if (!roleRow) return json({ error: "Apenas admin" }, 403);
-      log("auth_admin", true, { admin_user_id: u.user.id });
+      log("auth_admin", true, { admin_user_id: u.user.id.slice(0, 8) });
     }
 
     // 1) cliente sandbox
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       x.email?.toLowerCase() === "sandbox+cliente1@itasuper.test",
     );
     if (!client) return json({ error: "Cliente sandbox não encontrado. Rode 'Criar perfis sandbox' antes.", steps }, 400);
-    log("pick_client", true, { client_id: client.id });
+    log("pick_client", true, { client_id: client.id.slice(0, 8) });
 
     // 2) loja sandbox com wallet
     const { data: stores } = await admin
