@@ -10,11 +10,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const json = (body: unknown, status = 200) =>
+const json = (body: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
   });
+
+// Rate limit (item 8, auditoria 40 itens) — mesmo padrão de
+// guest-order-status (contador em guest_tracking_attempts + 429, janela de
+// 10 min, `{ error: "rate_limited" }` com header `Retry-After: 600`,
+// limpeza best-effort de registros com mais de 1 dia), com os limites
+// calibrados para ESTE fluxo: o cliente legítimo faz polling a cada
+// poucos segundos (~120 chamadas/10 min a 5 s), então o limite é
+// 600/pedido e 1200/IP em 10 min (~1/s sustentado) — só trava abuso
+// automatizado, nunca o polling normal. Conta como "errada" (ok=false)
+// a chamada em que o pagamento ainda não foi confirmado; a confirmação
+// grava ok=true. O bypass do webhook (asaas-webhook → esta edge, com
+// service key) NÃO passa pelo limite: é servidor-servidor e travar ele
+// atrasaria confirmação de pagamento real. As contagens/registros são
+// best-effort e fail-open (igual ao padrão): se falharem, o fluxo segue.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const MAX_POLLS_PER_ORDER = 600;
+const MAX_POLLS_PER_IP = 1200;
+const ATTEMPT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+const clientIp = (req: Request): string | null => {
+  const raw = req.headers.get("x-forwarded-for") || "";
+  const first = raw.split(",")[0]?.trim() || "";
+  return first ? first.slice(0, 45) : null;
+};
 
 function getServiceRoleKey() {
   return (
@@ -305,6 +329,70 @@ Deno.serve(async (req) => {
 
     if (!ord) return json({ error: "Pedido não encontrado" }, 404);
     if (!isWebhookBypass && ord.client_id !== userId) return json({ error: "Sem permissão" }, 403);
+
+    // Rate limit (mesmo padrão de guest-order-status; só para chamadas
+    // de cliente — o bypass do webhook é isento). A tabela
+    // guest_tracking_attempts só é legível por service_role, então o
+    // contador usa um cliente service-role próprio; sem service key, as
+    // contagens falham e o fluxo segue sem travar (fail-open). O contador
+    // só cresce nas chamadas que chegam à consulta ao Asaas (abaixo): os
+    // retornos antecipados (already_processed etc.) são leituras baratas
+    // e não contam — o que a trava protege é a consulta ao Asaas + split.
+    const ip = clientIp(req);
+    let counterClient: ReturnType<typeof createClient> | null = null;
+    try {
+      if (serviceKey) {
+        counterClient = createClient(
+          (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+          serviceKey,
+          { auth: { persistSession: false } },
+        );
+      }
+    } catch (e) {
+      console.error("[confirm-order-payment] counter client error:", e);
+    }
+    const pollsInWindow = async (column: "order_id" | "ip", value: string): Promise<number> => {
+      if (!counterClient) return 0;
+      try {
+        const { count, error } = await counterClient.from("guest_tracking_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq(column, value)
+          .eq("ok", false)
+          .gt("attempted_at", new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString());
+        if (error) {
+          console.error("[confirm-order-payment] rate limit count error:", error);
+          return 0;
+        }
+        return count ?? 0;
+      } catch (e) {
+        console.error("[confirm-order-payment] rate limit count error:", e);
+        return 0;
+      }
+    };
+    const recordPollAttempt = async (ok: boolean) => {
+      if (!counterClient) return;
+      try {
+        await counterClient.from("guest_tracking_attempts").insert({ order_id: orderId, ok, ip } as any);
+      } catch (e) {
+        console.error("[confirm-order-payment] record attempt error:", e);
+      }
+    };
+    if (!isWebhookBypass && counterClient) {
+      try {
+        await counterClient.from("guest_tracking_attempts")
+          .delete()
+          .lt("attempted_at", new Date(Date.now() - ATTEMPT_RETENTION_MS).toISOString());
+      } catch (e) {
+        console.error("[confirm-order-payment] cleanup error:", e);
+      }
+      if ((await pollsInWindow("order_id", orderId)) >= MAX_POLLS_PER_ORDER) {
+        return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
+      }
+      if (ip && (await pollsInWindow("ip", ip)) >= MAX_POLLS_PER_IP) {
+        return json({ error: "rate_limited" }, 429, { "Retry-After": "600" });
+      }
+    }
+
     // When called by the asaas-webhook, the order may already be in "pendente"
     // (the webhook updates status before delegating here). We MUST still run
     // the split/transfer logic — confirmAndSplit is idempotent and skips the
@@ -337,6 +425,7 @@ Deno.serve(async (req) => {
     if (!searchRes.ok) {
       const txt = await searchRes.text();
       console.error("[confirm-order-payment] asaas search failed", searchRes.status, txt);
+      await recordPollAttempt(false);
       return json({ confirmed: false, reason: "asaas_search_failed" });
     }
 
@@ -345,6 +434,7 @@ Deno.serve(async (req) => {
     const paid = payments.find((p) => p?.status === "RECEIVED" || p?.status === "CONFIRMED" || p?.status === "RECEIVED_IN_CASH");
 
     if (!paid) {
+      await recordPollAttempt(false);
       return json({ confirmed: false, reason: "not_paid_yet", checked: payments.length });
     }
 
@@ -355,6 +445,7 @@ Deno.serve(async (req) => {
     );
 
     const result = await confirmAndSplit(adminClient, orderId, paid.id);
+    await recordPollAttempt(true);
     return json(result);
   } catch (err) {
     console.error("[confirm-order-payment] exception:", err);

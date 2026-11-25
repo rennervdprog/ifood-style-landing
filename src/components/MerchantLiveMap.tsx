@@ -124,7 +124,7 @@ export default function MerchantLiveMap({ orderId, driverId, driverName, clientL
 
   useEffect(() => {
     if (!L || !mapRef.current || mapInstanceRef.current) return;
-    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([-22.86, -42.33], 14);
+    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: true }).setView([-22.86, -42.33], 14);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
     mapInstanceRef.current = map;
     setMapReady(true);

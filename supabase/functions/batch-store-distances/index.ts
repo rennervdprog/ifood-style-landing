@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     const counts = results.reduce((acc: Record<string, number>, r: any) => {
       acc[r.source] = (acc[r.source] ?? 0) + 1; return acc;
     }, {});
-    console.log(JSON.stringify({ evt: 'batch_distances', ip, n: results.length, sources: counts }));
+    console.log(JSON.stringify({ evt: 'batch_distances', n: results.length, sources: counts }));
     // Persistência de métricas (best-effort, não bloqueia resposta).
     Promise.all(
       Object.entries(counts).map(([src, n]) =>

@@ -69,7 +69,7 @@ async function sendOneSignalByExternalId(
 ): Promise<{ sent: number; failed: number; debug: string }> {
   if (userIds.length === 0) return { sent: 0, failed: 0, debug: "no_user_ids" };
 
-  console.log("[OneSignal] Sending via external_id:", JSON.stringify({ app_id: appId, user_ids: userIds, title }));
+  console.log("[OneSignal] Sending via external_id:", JSON.stringify({ app_id: appId, user_ids: userIds.map((id) => id.slice(0, 8)), title }));
 
   const strategies = [
     {
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
       }
       callerUserId = user.id;
     }
-    console.log(`[send-push] Authenticated: ${isServiceRole ? "service_role" : callerUserId}`);
+    console.log(`[send-push] Authenticated: ${isServiceRole ? "service_role" : callerUserId.slice(0, 8)}`);
 
     const body = await req.json();
     const { user_ids, title, body: msgBody, data } = body;
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
            headers: { ...corsHeaders, "Content-Type": "application/json" },
          });
        }
-       console.log(`[send-push] Effective role for ${callerUserId}: ${effectiveRole}`);
+       console.log(`[send-push] Effective role for ${callerUserId.slice(0, 8)}: ${effectiveRole}`);
 
       // Validate that target user_ids are related to caller's orders
       const requestedUserIds = [...new Set((user_ids as string[]).filter(Boolean))];

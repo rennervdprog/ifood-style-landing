@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
@@ -15,6 +15,50 @@ const JuridicoTab = () => {
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [userTerms, setUserTerms] = useState<any[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const [lgpdRequests, setLgpdRequests] = useState<any[]>([]);
+  const [loadingLgpd, setLoadingLgpd] = useState(false);
+  const [updatingLgpdId, setUpdatingLgpdId] = useState<string | null>(null);
+
+
+
+  const loadLgpdQueue = async () => {
+    setLoadingLgpd(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("lgpd_requests")
+        .select("id, user_id, request_type, status, requester_name, requester_email, notes, requested_at, due_at")
+        .order("due_at", { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      setLgpdRequests(data || []);
+    } catch (err: any) {
+      console.error("Erro ao carregar fila LGPD:", err);
+    } finally {
+      setLoadingLgpd(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLgpdQueue();
+  }, []);
+
+  const updateLgpdStatus = async (id: string, status: "em_atendimento" | "concluido" | "recusado") => {
+    setUpdatingLgpdId(id);
+    try {
+      const patch: any = { status, updated_at: new Date().toISOString() };
+      if (status !== "pendente") patch.handled_at = new Date().toISOString();
+      const { error } = await (supabase as any).from("lgpd_requests").update(patch).eq("id", id);
+      if (error) throw error;
+      toast.success(`Solicitação marcada como ${LGPD_STATUS_LABELS[status]}.`);
+      loadLgpdQueue();
+    } catch (err: any) {
+      toast.error(err?.message || "Não foi possível atualizar a solicitação.");
+    } finally {
+      setUpdatingLgpdId(null);
+    }
+  };
+
 
   const handleSearch = async () => {
     if (!search.trim()) return;
@@ -178,6 +222,15 @@ const JuridicoTab = () => {
   };
 
   const roleLabels: Record<string, string> = { cliente: "Cliente", lojista: "Lojista", motoboy: "Entregador" };
+
+  const LGPD_TYPE_LABELS: Record<string, string> = {
+    acesso: "Acesso", portabilidade: "Portabilidade", anonimizacao: "Anonimização",
+    correcao: "Correção", eliminacao: "Eliminação",
+  };
+  const LGPD_STATUS_LABELS: Record<string, string> = {
+    pendente: "Pendente", em_atendimento: "Em atendimento", concluido: "Concluído", recusado: "Recusado",
+  };
+
   const statusLabels: Record<string, string> = {
     pendente: "Pendente", preparando: "Preparando", pronto_para_entrega: "Pronto",
     saiu_entrega: "Saiu Entrega", em_transito: "Em Trânsito", entregue: "Entregue",
@@ -232,6 +285,80 @@ const JuridicoTab = () => {
           </button>
         </div>
       </div>
+
+
+      {/* Fila de solicitações LGPD */}
+      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            Solicitações LGPD ({lgpdRequests.filter((r: any) => r.status === "pendente" || r.status === "em_atendimento").length} abertas)
+          </h3>
+          <button onClick={loadLgpdQueue} disabled={loadingLgpd} className="text-xs font-bold text-primary hover:underline disabled:opacity-50">
+            {loadingLgpd ? "Carregando..." : "Atualizar"}
+          </button>
+        </div>
+        {loadingLgpd ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+        ) : lgpdRequests.length === 0 ? (
+          <p className="text-sm text-muted-foreground px-4 py-5 text-center">Nenhuma solicitação registrada.</p>
+        ) : (
+          <div className="divide-y divide-border">
+            {lgpdRequests.map((r: any) => {
+              const due = new Date(r.due_at);
+              const daysLeft = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              const overdue = daysLeft < 0 && r.status !== "concluido" && r.status !== "recusado";
+              return (
+                <div key={r.id} className="px-4 py-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-foreground">{LGPD_TYPE_LABELS[r.request_type] || r.request_type}</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      r.status === "concluido" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : r.status === "recusado" ? "bg-destructive/10 text-destructive"
+                      : r.status === "em_atendimento" ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground"
+                    }`}>
+                      {LGPD_STATUS_LABELS[r.status] || r.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {r.requester_name || "Sem nome"} • {r.requester_email || "sem e-mail"}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Solicitado em {new Date(r.requested_at).toLocaleDateString("pt-BR")} • Prazo: {due.toLocaleDateString("pt-BR")}
+                    {overdue ? (
+                      <span className="font-bold text-destructive"> • vencido há {-daysLeft} dia(s)</span>
+                    ) : (r.status === "pendente" || r.status === "em_atendimento") ? (
+                      <span> • {daysLeft} dia(s) restante(s)</span>
+                    ) : null}
+                  </p>
+                  {r.notes && <p className="text-xs text-muted-foreground">“{r.notes}”</p>}
+                  {(r.status === "pendente" || r.status === "em_atendimento") && (
+                    <div className="flex gap-2 pt-1">
+                      {r.status === "pendente" && (
+                        <button onClick={() => updateLgpdStatus(r.id, "em_atendimento")} disabled={updatingLgpdId === r.id}
+                          className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold disabled:opacity-50">
+                          Iniciar atendimento
+                        </button>
+                      )}
+                      <button onClick={() => updateLgpdStatus(r.id, "concluido")} disabled={updatingLgpdId === r.id}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-xs font-bold disabled:opacity-50">
+                        Concluir
+                      </button>
+                      <button onClick={() => updateLgpdStatus(r.id, "recusado")} disabled={updatingLgpdId === r.id}
+                        className="px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50">
+                        Recusar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
 
       {/* Results */}
       {(results.length > 0 || archivedResults.length > 0) && !selectedUser && (

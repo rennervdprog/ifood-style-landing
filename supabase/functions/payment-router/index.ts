@@ -2093,7 +2093,7 @@ Deno.serve(async (req) => {
     const userEmail = userData.user.email || "";
 
     const rawBody = await req.json();
-    console.log(`[PR ${reqId}] 👤 user=${userId.slice(0, 8)} action=${(rawBody as any)?.action} body=${JSON.stringify(rawBody).slice(0, 300)}`);
+    console.log(`[PR ${reqId}] 👤 user=${userId.slice(0, 8)} action=${(rawBody as any)?.action} keys=${Object.keys(rawBody ?? {}).join(",")}`);
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
       console.warn(`[PR ${reqId}] ❌ Schema invalid:`, JSON.stringify(parsed.error.flatten().fieldErrors));

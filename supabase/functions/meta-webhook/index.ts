@@ -41,6 +41,11 @@ const json = (b: unknown, s = 200)=>new Response(JSON.stringify(b), {
   });
 const sleep = (ms: number)=>new Promise((resolve)=>setTimeout(resolve, ms));
 const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+// Item 32: telefone mascarado nos logs — nunca o número completo.
+const maskPhone = (value: string | null | undefined): string | null => {
+  const digits = String(value || "").split("@")[0].replace(/\D/g, "");
+  return digits ? `${digits.slice(0, 4)}****${digits.slice(-2)}` : null;
+};
 const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 // Opt-out EXPLÍCITO ("PARAR"/"STOP", palavra exata): é o único que
 // registra a blacklist ANTES do bot. "cancelar"/"sair" NÃO entram aqui —
@@ -456,7 +461,7 @@ Deno.serve(async (req)=>{
           });
           console.log("[meta-webhook] bot dispatch", {
             store: storeId,
-            phone: number,
+            phone: maskPhone(number),
             out: botOut
           });
           if (botOut?.handled) return;

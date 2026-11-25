@@ -155,6 +155,12 @@ const fetchImageBase64 = async (instance: string, data: EvolutionIncoming)=>{
   }
 };
 const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+// Item 32: telefone mascarado nos logs — nunca o número completo
+// (remoteJid traz o número: "551499...@s.whatsapp.net").
+const maskPhone = (value: string | null | undefined): string | null => {
+  const digits = String(value || "").split("@")[0].replace(/\D/g, "");
+  return digits ? `${digits.slice(0, 4)}****${digits.slice(-2)}` : null;
+};
 const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 // Opt-out EXPLÍCITO ("PARAR"/"STOP", palavra exata): é o único que
 // registra a blacklist ANTES do bot. "cancelar"/"sair" NÃO entram aqui —
@@ -246,7 +252,7 @@ Deno.serve(async (req)=>{
       event,
       instance,
       hasData: Boolean(data),
-      remoteJid: data?.key?.remoteJid || data?.messages?.[0]?.key?.remoteJid || null,
+      remoteJid: maskPhone(data?.key?.remoteJid || data?.messages?.[0]?.key?.remoteJid || null),
       fromMe: data?.key?.fromMe ?? data?.messages?.[0]?.key?.fromMe ?? null
     });
     if (!instance) return json({
@@ -292,7 +298,7 @@ Deno.serve(async (req)=>{
             console.log("[evolution-webhook] platform connection", {
               instance,
               newStatus,
-              phone,
+              phone: maskPhone(phone),
               phoneChanged
             });
           }
@@ -348,7 +354,7 @@ Deno.serve(async (req)=>{
         console.log("[evolution-webhook] store connection", {
           instance,
           newStatus,
-          phone,
+          phone: maskPhone(phone),
           phoneChanged
         });
       }
@@ -496,7 +502,7 @@ Deno.serve(async (req)=>{
               body: JSON.stringify({ store_id: cfg.store_id, phone: number, text, image_base64, image_mime }),
             });
             const botOut = await botRes.json().catch(() => ({} as any));
-            console.log("[evolution-webhook] bot dispatch", { store: cfg.store_id, phone: number, status: botRes.status, out: botOut });
+            console.log("[evolution-webhook] bot dispatch", { store: cfg.store_id, phone: maskPhone(number), status: botRes.status, out: botOut });
             if (botOut?.handled) {
               return json({ ok: true, bot: botOut.action || "handled" });
             }

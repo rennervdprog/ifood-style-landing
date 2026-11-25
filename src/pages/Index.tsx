@@ -699,6 +699,9 @@ const Index = () => {
              </div>
              </div>
            </div>
+           <p className="pb-2 text-center text-xs text-muted-foreground">
+             RENNER VINICIUS DIAS (MEI) — CNPJ 66.155.289/0001-26 — Itatinga/SP
+           </p>
          </div>
        </footer>
 
