@@ -13,7 +13,7 @@ export interface PlanInfo {
   forWho: string;        // "Pra quem..."
   monthlyFee: number;    // R$/mês
   commissionRate: number;// % por pedido (0–100)
-  pixFee: number;        // R$ por PIX (lojista paga)
+  pixFee: number;        // legado: taxa do Pix online (caminho extinto) — manter 0
   deliveryFee: number;   // R$ por entrega plataforma (cliente paga, somado à taxa do lojista)
   icon: LucideIcon;
   accent: string;        // tailwind text color
@@ -92,18 +92,17 @@ const fixed: PlanInfo = {
   forWho: "Para quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
   monthlyFee: 89.90,
   commissionRate: 0,
-  pixFee: 1.99,
+  pixFee: 0,
   deliveryFee: 0.99,
   icon: Crown,
   accent: "text-primary",
   accentBg: "bg-primary/10",
-  badge: "🎁 Grátis pra começar",
+  badge: "Grátis pra começar",
   highlight: true,
   features: [
-    "Gratuidade até atingir R$ 5.000 no período de análise de 60 dias",
-    "R$ 89,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
-    "Integração com motoboy contratado pelo Lojista + Suporte conforme plano",
+    "Você contrata e paga o seu motoboy — a entrega é organizada pela sua loja",
+    "Suporte incluído no plano",
     "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
@@ -118,7 +117,7 @@ const supporter: PlanInfo = {
   forWho: "Edição de lançamento — só 10 vagas, preço fixo pra sempre",
   monthlyFee: 75,
   commissionRate: 0,
-  pixFee: 1.99,
+  pixFee: 0,
   deliveryFee: 0.99,
   icon: Sparkles,
   accent: "text-amber-600 dark:text-amber-400",
@@ -146,12 +145,12 @@ const autonomy: PlanInfo = {
   forWho: "Para quem quer máxima autonomia e fica com 100% da taxa de entrega que cobra",
   monthlyFee: 199.90,
   commissionRate: 0,
-  pixFee: 1.99,
+  pixFee: 0,
   deliveryFee: 0,
   icon: Crown,
   accent: "text-primary",
   accentBg: "bg-primary/10",
-  badge: "🎁 Grátis pra começar",
+  badge: "Grátis pra começar",
   highlight: false,
   features: [
     "Grátis até atingir R$ 2.500 em vendas no período de análise",
@@ -159,7 +158,6 @@ const autonomy: PlanInfo = {
     "Sem comissão por pedido",
     "Sem taxa de R$ 0,99 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
-    "PIX online: R$1,99 por pedido (só se usar)",
     "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
@@ -178,7 +176,7 @@ const pdv_only: PlanInfo = {
   icon: CreditCard,
   accent: "text-primary",
   accentBg: "bg-primary/10",
-  badge: "🏪 Balcão",
+  badge: "Balcão",
   highlight: false,
   features: [
     "PDV completo (vendas, sangria, fechamento)",
@@ -212,10 +210,6 @@ export const PLANS_ORDER: StorePlanType[] = [...NEW_STORE_PLAN_TYPES];
 /** Linha única de explicação da taxa de entrega para as ofertas vigentes. */
 export const DELIVERY_FEE_NOTE =
   "No plano Essencial, a plataforma pode adicionar R$ 0,99 à taxa de entrega informada pela loja. Ex.: você cobra R$ 5 → o cliente paga R$ 5,99. Os R$ 0,99 ficam com a plataforma e os R$ 5 são seus; nada é descontado da taxa de entrega definida pela loja.";
-
-/** Linha única para a taxa PIX, conforme o plano e o meio de pagamento utilizado. */
-export const PIX_FEE_NOTE =
-  "No checkout público, o Cliente usa Pix Direto com comprovante, cartão ou dinheiro conforme a configuração da loja. PIX online fica reservado à relação financeira entre Lojista e ItaSuper.";
 
 /**
  * Label canônico do plano. Use SEMPRE isto em vez de strings soltas

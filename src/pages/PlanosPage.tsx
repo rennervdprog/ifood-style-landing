@@ -32,7 +32,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
-import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
 import { Monitor } from "lucide-react";
@@ -100,7 +100,7 @@ const steps = [
 
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
-  { q: "Como funciona o PIX?", a: "No checkout, o Cliente pode usar Pix Direto com envio de comprovante, cartão ou dinheiro, conforme a configuração da loja. PIX online não é oferecido ao Cliente; ele fica reservado à relação ItaSuper–Lojista para mensalidades e repasses acumulados." },
+  { q: "Como funciona o PIX?", a: "No checkout, o Cliente pode usar Pix Direto com envio de comprovante, cartão ou dinheiro, conforme a configuração da loja. O Pix vai 100% para a loja — nada é descontado do pedido. O acerto com a plataforma (R$ 0,99 por entrega) é feito pela loja uma vez por semana." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
   { q: "O plano Essencial cobra alguma comissão?", a: "Não há comissão sobre pedidos no Essencial. A plataforma pode acrescentar R$ 0,99 à taxa de entrega definida pela loja, conforme a configuração de quem paga. O Essencial permanece sem mensalidade até atingir R$ 5.000 acumulados em uma janela móvel de 60 dias; depois, passa a R$ 89,90/mês sem retorno automático à gratuidade." },
   { q: "Como funciona a cobrança dos repasses?", a: "Quando o Lojista recebe diretamente em dinheiro ou Pix Direto, os R$ 0,99 da taxa de plataforma acumulam no Financeiro. O repasse é processado às segundas-feiras, com mínimo de R$ 150; a partir de R$ 500 pode haver bloqueio operacional, e cobrança pendente por mais de 30 dias pode suspender ou bloquear a operação, conforme as regras vigentes." },
@@ -710,7 +710,7 @@ function ROICalculator() {
       )}
 
       <p className="text-[11px] text-muted-foreground text-center mt-4">
-        Simulação aproximada. Não inclui a taxa de entrega da plataforma, que pode ser somada à entrega e paga pelo Cliente quando aplicável. O Pix Direto do Cliente não é tratado como PIX online nesta simulação.
+        Simulação aproximada. Não inclui a taxa de entrega da plataforma, que pode ser somada à entrega e paga pelo Cliente quando aplicável. O Pix Direto do Cliente vai 100% para a loja.
       </p>
     </div>
   );

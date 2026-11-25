@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
-import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
@@ -91,7 +91,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
   });
 
 const features = [
-  { key: "allowPix", label: "Pagamento PIX online", icon: CreditCard },
+  { key: "allowPix", label: "Pagamento via PIX", icon: CreditCard },
   { key: "allowLoyalty", label: "Programa de fidelidade", icon: Heart },
   { key: "allowBanners", label: "Banners promocionais", icon: ImageIcon },
   { key: "allowScheduling", label: "Agendamento de pedidos", icon: Clock },
