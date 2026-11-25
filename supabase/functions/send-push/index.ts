@@ -1,9 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 // Google OAuth2 JWT for FCM v1 API
 async function getAccessToken(serviceAccount: any): Promise<string> {
@@ -174,8 +188,10 @@ async function sendOneSignalByPlayerIds(
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const headers = cors(origin);
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: headers });
   }
 
   try {
@@ -183,7 +199,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -204,7 +220,7 @@ Deno.serve(async (req) => {
         console.error("[send-push] Auth failed:", authError?.message || "no user");
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...headers, "Content-Type": "application/json" },
         });
       }
       callerUserId = user.id;
@@ -218,7 +234,7 @@ Deno.serve(async (req) => {
       console.error("[send-push] ❌ Validation failed: user_ids or title missing", { user_ids, title });
       return new Response(JSON.stringify({ error: "user_ids (array) and title are required" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -263,7 +279,7 @@ Deno.serve(async (req) => {
          console.warn(`[send-push] Denied: user ${callerUserId} has role ${callerRole}, isStoreOwner=${isStoreOwner}, isDriver=${isDriver}`);
          return new Response(JSON.stringify({ error: "Sem permissão para enviar notificações." }), {
            status: 403,
-           headers: { ...corsHeaders, "Content-Type": "application/json" },
+           headers: { ...headers, "Content-Type": "application/json" },
          });
        }
        console.log(`[send-push] Effective role for ${callerUserId.slice(0, 8)}: ${effectiveRole}`);
@@ -326,7 +342,7 @@ Deno.serve(async (req) => {
       if (filteredUserIds.length === 0) {
         return new Response(JSON.stringify({ error: "Nenhum destinatário autorizado." }), {
           status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...headers, "Content-Type": "application/json" },
         });
       }
 
@@ -543,13 +559,13 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("[send-push] error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
     });
   }
 });

@@ -1,10 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, baggage, sentry-trace",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, baggage, sentry-trace",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 // Roda no projeto Supabase que hospeda esta função (externo, em produção).
 // Usa as env vars padrão disponíveis em qualquer projeto Supabase, com
@@ -29,7 +42,14 @@ function authClient() {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const origin = req.headers.get("Origin");
+  const headers = cors(origin);
+  function json(payload: unknown, status = 200) {
+    return new Response(JSON.stringify(payload), {
+      status, headers: { ...headers, "Content-Type": "application/json" },
+    });
+  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: headers });
   try {
     const authHeader = req.headers.get("Authorization") || "";
     const jwt = authHeader.replace(/^Bearer\s+/i, "");
@@ -207,11 +227,6 @@ Deno.serve(async (req) => {
   }
 });
 
-function json(payload: unknown, status = 200) {
-  return new Response(JSON.stringify(payload), {
-    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
 
 // Retorna crédito em centavos correspondente aos dias restantes do mês civil.
 function computeUnusedCredit(priceReais: number, now: Date): number {

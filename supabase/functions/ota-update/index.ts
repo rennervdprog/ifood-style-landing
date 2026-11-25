@@ -1,8 +1,21 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 type AppMode = "cliente" | "parceiro";
 
@@ -57,8 +70,10 @@ async function readManifest(baseUrl: string, mode: AppMode) {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const headers = cors(origin);
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: headers });
   }
 
   try {
@@ -66,7 +81,7 @@ Deno.serve(async (req) => {
     if (!baseUrl) {
       return new Response(JSON.stringify({ error: "missing_storage_base", message: "OTA storage não configurado" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
       });
     }
 
@@ -97,14 +112,14 @@ Deno.serve(async (req) => {
         }),
         {
           status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+          headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
         },
       );
     }
 
     return new Response(JSON.stringify({ ...manifest, statusCode: 200 }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+      headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
   } catch (e) {
     return new Response(
@@ -115,7 +130,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+        headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
       },
     );
   }
