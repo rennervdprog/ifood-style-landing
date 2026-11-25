@@ -9,7 +9,7 @@ export interface StorePlanFeatures {
   planType: StorePlanType;
   monthlyFee: number;
   commissionRate: number;
-  /** PIX online payment allowed */
+  /** Pagamento via PIX permitido */
   allowPix: boolean;
   /** Platform delivery (motoboys) allowed */
   allowPlatformDelivery: boolean;
@@ -255,7 +255,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     isFixedPlan,
     isItatingaFixed: isFixedPlan, // backward compat
     pixOperationalFee: isFixedPlan
-      ? ((data?.plan as any)?.pix_operational_fee_override ?? 1.99)
+      ? ((data?.plan as any)?.pix_operational_fee_override ?? 0)
       : 0,
     // 🔒 R$0,99 plataforma se aplica a TODOS os planos (regra de negócio global)
     // own delivery: somado em cima da taxa do lojista no CheckoutPage

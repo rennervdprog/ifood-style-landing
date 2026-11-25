@@ -9,7 +9,7 @@ import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
-import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE } from "@/lib/plansInfo";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { matrizSignupErrorMessage } from "@/lib/matrizSignupError";
 import {
@@ -705,7 +705,7 @@ const CadastroLojista = () => {
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Condições, valores e início da cobrança conforme a oferta do plano
+                    <strong className="text-foreground">Sem comissão por pedido.</strong> Você recebe 100% de cada venda.
                   </p>
                 </div>
 
@@ -750,13 +750,14 @@ const CadastroLojista = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-sm text-foreground">Plano {p.name}</h3>
-                            <p className="text-[11px] text-muted-foreground leading-snug truncate">{p.forWho}</p>
+                            <p className="text-[11px] text-muted-foreground leading-snug">{p.forWho}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-xl font-black text-foreground tabular-nums">
                               {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee.toFixed(2).replace(".", ",")}`}
                             </span>
                             {p.monthlyFee > 0 && <span className="text-[10px] text-muted-foreground ml-0.5">/mês</span>}
+                            {id === "fixed" && <span className="block text-[11px] text-emerald-600 font-bold mt-0.5">grátis até R$ 5.000</span>}
                           </div>
                         </div>
 
@@ -765,22 +766,18 @@ const CadastroLojista = () => {
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
                             Comissão {p.commissionRate === 0 ? "0%" : `${p.commissionRate}%`}
                           </span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
-                          </span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            {id === "pdv_only" ? "Sem delivery" : "Entrega +R$ 0,99"}
-                          </span>
-                          {p.monthlyFee > 0 && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                              Condições da oferta
+                          {p.pixFee === 0 ? (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                              Pix 100% seu
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                              PIX R${p.pixFee.toFixed(2).replace(".", ",")}
                             </span>
                           )}
-                          {isDynamic && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                              📈 Dinâmico
-                            </span>
-                          )}
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                            {id === "pdv_only" ? "Sem delivery" : "Entrega +R$ 0,99, pago pelo cliente"}
+                          </span>
                         </div>
                       </button>
 
@@ -798,13 +795,13 @@ const CadastroLojista = () => {
                       {/* Conteúdo expandido */}
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/50">
-                          {p.monthlyFee > 0 && (
-                            <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-                              <p className="text-[12px] font-bold text-foreground mb-1">Condições do período inicial</p>
+                          {isDynamic && (
+                            <div className="rounded-lg bg-card border border-border border-l-[3px] border-l-primary px-3 py-2">
+                              <p className="text-[12px] font-bold text-foreground mb-1">Como funciona</p>
                               <ul className="text-[11px] text-muted-foreground leading-relaxed space-y-0.5">
-                                <li>• Duração, gatilho e início da cobrança conforme a oferta exibida</li>
-                                <li>• Confira o valor mensal e as condições antes de aceitar</li>
-                                {isDynamic && <li>• Essencial: a tela informa análise de 60 dias até R$ 5.000, com mensalidade após o gatilho</li>}
+                                <li>• <strong className="text-foreground">Você começa de graça.</strong> A mensalidade só começa quando a loja vender R$ 5.000 em até 60 dias</li>
+                                <li>• <strong className="text-foreground">Antes de cobrar qualquer coisa,</strong> você recebe um aviso de 30 dias e precisa aceitar</li>
+                                <li>• Enquanto não atingir, você não paga mensalidade. E a entrega não sai do seu bolso: quem paga é o cliente</li>
                               </ul>
                             </div>
                           )}
@@ -820,7 +817,7 @@ const CadastroLojista = () => {
 
                           {id !== "pdv_only" && (
                             <p className="text-[11px] text-muted-foreground leading-relaxed">
-                              💡 O <strong>PDV de balcão</strong> é um módulo à parte (R$ 49/mês), independente do plano. Você pode ativar/cancelar quando quiser em "Meu Plano".
+                              O <strong>PDV de balcão</strong> é um módulo à parte (R$ 49/mês), independente do plano. Você pode ativar/cancelar quando quiser em "Meu Plano".
                             </p>
                           )}
 
@@ -829,23 +826,16 @@ const CadastroLojista = () => {
                           {id !== "pdv_only" && (
                             <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
                               <span>
-                                <>Entrega: cliente paga sua taxa + R$ 0,99 da plataforma. Nada sai do seu caixa.</>
+                                <>Entrega: você define a taxa, o cliente paga. Exemplo: você cobra R$ 5 → o cliente paga R$ 5,99. Os R$ 5 são seus; os R$ 0,99 ficam com a plataforma.</>
                               </span>
                               <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
                             </div>
                           )}
 
-                          {p.pixFee > 0 && (
-                            <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
-                              <span>PIX: R${p.pixFee.toFixed(2).replace(".", ",")} por pedido pago via PIX.</span>
-                              <WhyThisCharge title="Taxa PIX">{PIX_FEE_NOTE}</WhyThisCharge>
-                            </div>
-                          )}
-
                           {isDynamic && (
-                            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+                            <div className="rounded-lg bg-card border border-border border-l-[3px] border-l-primary px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ 5.000</strong> (60 dias), a mensalidade passa a <strong>R$ 89,90/mês</strong> — com 30 dias de aviso e seu aceite expresso.
+                                <strong>Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja vender <strong>R$ 5.000 em até 60 dias</strong>, a mensalidade passa a <strong>R$ 89,90/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}
@@ -856,17 +846,21 @@ const CadastroLojista = () => {
                 })}
                 </div>
 
+                <p className="text-[12px] text-muted-foreground leading-relaxed text-center">
+                  <strong className="text-foreground">Não sabe qual escolher?</strong> O Essencial é pra vender online. O Somente PDV é só o caixa da loja física.
+                </p>
+
                 {isDynamicPlan && (
-                  <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-3">
+                  <div className="rounded-xl border-2 border-primary bg-card p-3">
                     <label className="flex items-start gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={acceptedDynamic}
                         onChange={(e) => setAcceptedDynamic(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-2 border-amber-600 accent-amber-600 cursor-pointer shrink-0"
+                        className="mt-0.5 h-4 w-4 rounded border-2 border-primary accent-primary cursor-pointer shrink-0"
                       />
                       <span className="text-[12px] font-semibold text-foreground leading-snug">
-                        Entendi e aceito que a mensalidade pode aumentar conforme o faturamento (plano dinâmico)
+                        Entendi e aceito: a mensalidade de R$ 89,90/mês só começa depois que minha loja vender R$ 5.000 em até 60 dias, com aviso de 30 dias e meu aceite.
                       </span>
                     </label>
                   </div>
